@@ -12,12 +12,13 @@
     <name>project-management-system</name>
 
     <modules>
+        <module>service-discovery</module>
+        <module>config-server</module>
+        <module>api-gateway</module>
         <module>auth-service</module>
+        <module>user-service</module>
         <module>project-service</module>
         <module>task-service</module>
-        <module>config-server</module>
-        <module>service-discovery</module>
-        <module>api-gateway</module>
     </modules>
 
     <properties>
