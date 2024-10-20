@@ -4,6 +4,7 @@ import local.pms.authservice.config.jwt.JwtTokenProvider;
 
 import local.pms.authservice.dto.authuser.AuthUserDto;
 import local.pms.authservice.dto.authuser.AuthRoleDto;
+import local.pms.authservice.dto.authuser.AuthPermissionDto;
 
 import local.pms.authservice.mapping.AuthUserMapper;
 
@@ -53,13 +54,9 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> data = new HashMap<>();
         data.put("authUserId", authUserDto.id());
         data.put("username", authUserDto.username());
-        data.put("roles", isAdmin(getRoles(authUserDto.authRoles())));
+        data.put("roles", getRoles(authUserDto.authRoles()));
+        data.put("permissions", getPermissions(authUserDto.authPermissions()));
         return data;
-    }
-
-    private boolean isAdmin(List<String> roles) {
-        return roles.stream()
-                .anyMatch(role -> role.equals("ADMIN"));
     }
 
     private List<String> getRoles(List<AuthRoleDto> authRoles) {
@@ -67,4 +64,11 @@ public class AuthServiceImpl implements AuthService {
                 .map(AuthRoleDto::authority)
                 .collect(Collectors.toList());
     }
+
+    private List<String> getPermissions(List<AuthPermissionDto> authPermissions) {
+        return authPermissions.stream()
+                .map(AuthPermissionDto::permission)
+                .collect(Collectors.toList());
+    }
+
 }
