@@ -31,6 +31,9 @@ public class AuthUser extends AbstractBaseModel {
     @OneToMany(mappedBy = "authUser", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     List<AuthRole> authRoles;
 
+    @OneToMany(mappedBy = "authUser", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    List<AuthPermission> authPermissions;
+
 }
 
 

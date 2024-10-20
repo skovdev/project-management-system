@@ -24,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.ArrayList;
+
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Service("userDetailsService")
 @Transactional
@@ -38,8 +40,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AuthUser authUser = authUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username + " is not found"));
-        List<GrantedAuthority> roles = new ArrayList<>();
-        authUser.getAuthRoles().forEach(r -> roles.add(new SimpleGrantedAuthority("ROLE_" + r.getAuthority())));
-        return new UserPrincipal(authUser.getId(), authUser.getUsername(), authUser.getPassword(), roles);
+        return new UserPrincipal(authUser.getId(), authUser.getUsername(), authUser.getPassword(), getAuthorities(authUser));
+    }
+
+    private List<GrantedAuthority> getAuthorities(AuthUser authUser) {
+        return Stream.concat(
+                authUser.getAuthRoles()
+                        .stream()
+                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getAuthority())),
+                authUser.getAuthPermissions()
+                        .stream()
+                        .map(p -> new SimpleGrantedAuthority(p.getPermission()))
+        ).collect(Collectors.toList());
     }
 }
