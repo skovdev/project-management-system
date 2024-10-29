@@ -41,10 +41,13 @@
         <spring.cloud.loadbalancer.version>4.1.0</spring.cloud.loadbalancer.version>
         <spring.cloud.openfeign.version>4.1.0</spring.cloud.openfeign.version>
         <jakarta.persistence.api.version>3.1.0</jakarta.persistence.api.version>
+        <jjwt.version>0.12.6</jjwt.version>
         <jackson.version>2.17.2</jackson.version>
         <gson.version>2.11.0</gson.version>
         <projectlombok.version>1.18.34</projectlombok.version>
         <slf4j.version>2.0.16</slf4j.version>
+        <mapstruct.version>1.6.2</mapstruct.version>
+        <postgresql.version>42.7.4</postgresql.version>
         <!-- Plugin versions -->
         <spring.boot.maven.plugin.version>3.0.2</spring.boot.maven.plugin.version>
         <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
@@ -127,6 +130,22 @@
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.api.version}</version>
             </dependency>
+            <!-- JWT -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
             <!-- FasterXML Jackson -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -155,6 +174,23 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <!-- MapStruct -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <!-- PostgreSQL -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
