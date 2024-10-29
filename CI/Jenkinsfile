@@ -16,11 +16,12 @@ pipeline {
                 }
             }
         }
-        stage ("Tests") {
+        stage("Tests") {
             steps {
                 withMaven(jdk: 'jdk-20', maven: 'apache-maven-3.9.3') {
                     sh "mvn test"
                 }
             }
         }
+    }
 }
