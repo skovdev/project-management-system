@@ -14,7 +14,7 @@ services:
       - project-management-system-network
 
   eureka-service-discovery:
-    image: eureka-service-discovery-1.0
+    image: service-discovery-1.0
     ports:
       - "8761:8761"
     networks:
@@ -42,8 +42,8 @@ services:
     networks:
       - project-management-system-network
 
-  auth-server:
-    image: auth-server-1.0
+  auth-service:
+    image: auth-service-1.0
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
@@ -133,10 +133,14 @@ services:
     networks:
         - project-management-system-network
 
-  app-client:
-    image: app-client-1.0
-    ports:
-      - "3000:3000"
-    volumes:
-      - /app/node_modules
-      - ./:/app
+#  app-client:
+#    image: app-client-1.0
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - /app/node_modules
+#      - ./:/app
+
+networks:
+  project-management-system-network:
+    driver: bridge
