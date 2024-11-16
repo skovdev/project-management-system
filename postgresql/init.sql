@@ -1,0 +1,40 @@
+CREATE USER project_management_system_auth_service_user WITH PASSWORD 'project_management_system_auth_service_password';
+CREATE DATABASE project_management_system_auth_service_db;
+GRANT ALL PRIVILEGES ON DATABASE project_management_system_auth_service_db to project_management_system_auth_service_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO project_management_system_auth_service_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO project_management_system_auth_service_user;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO project_management_system_auth_service_user;
+GRANT USAGE ON SCHEMA public TO project_management_system_auth_service_user;
+GRANT CREATE ON SCHEMA public TO project_management_system_auth_service_user;
+
+CREATE USER project_management_system_user_service_user WITH PASSWORD 'project_management_system_user_service_password';
+CREATE DATABASE project_management_system_user_service_db;
+GRANT ALL PRIVILEGES ON DATABASE project_management_system_user_service_db to project_management_system_user_service_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO project_management_system_user_service_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO project_management_system_user_service_user;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO project_management_system_user_service_user;
+GRANT USAGE ON SCHEMA public TO project_management_system_user_service_user;
+GRANT CREATE ON SCHEMA public TO project_management_system_user_service_user;
+
+CREATE USER project_management_system_project_service_user WITH PASSWORD 'project_management_system_project_service_password';
+CREATE DATABASE project_management_system_project_service_db;
+GRANT ALL PRIVILEGES ON DATABASE project_management_system_project_service_db to project_management_system_project_service_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO project_management_system_project_service_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO project_management_system_project_service_user;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO project_management_system_project_service_user;
+GRANT USAGE ON SCHEMA public TO project_management_system_project_service_user;
+GRANT CREATE ON SCHEMA public TO project_management_system_project_service_user;
+
+CREATE USER project_management_system_task_service_user WITH PASSWORD 'project_management_system_task_service_password';
+CREATE DATABASE project_management_system_task_service_db;
+GRANT ALL PRIVILEGES ON DATABASE project_management_system_task_service_db to project_management_system_task_service_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO project_management_system_task_service_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO project_management_system_task_service_user;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO project_management_system_task_service_user;
+GRANT USAGE ON SCHEMA public TO project_management_system_task_service_user;
+GRANT CREATE ON SCHEMA public TO project_management_system_task_service_user;
+
+ALTER DATABASE project_management_system_auth_service_db OWNER TO project_management_system_auth_service_user;
+ALTER DATABASE project_management_system_user_service_db OWNER TO project_management_system_user_service_user;
+ALTER DATABASE project_management_system_project_service_db OWNER TO project_management_system_project_service_user;
+ALTER DATABASE project_management_system_task_service_db OWNER TO project_management_system_task_service_user;
