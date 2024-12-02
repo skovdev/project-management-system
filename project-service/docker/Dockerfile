@@ -1,4 +1,4 @@
-FROM openjdk:latest
+FROM openjdk:20
 
 EXPOSE 8082
 
