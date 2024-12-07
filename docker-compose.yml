@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgresql:
-    image: postgres:latest
+    image: postgresql-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -13,7 +13,7 @@ services:
     networks:
       - project-management-system-network
 
-  eureka-service-discovery:
+  service-discovery:
     image: service-discovery-1.0
     ports:
       - "8761:8761"
@@ -36,7 +36,7 @@ services:
       - "8762:8762"
       - "5009:5009"
     depends_on:
-      - eureka-service-discovery
+      - service-discovery
       - config-server
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009 -jar api-gateway-1.0.jar
     networks:
@@ -51,11 +51,12 @@ services:
       - "8080:8080"
       - "5005:5005"
     depends_on:
-      - eureka-service-discovery
+      - service-discovery
       - config-server
       - api-gateway
+      - postgresql
       - kafka
-    entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar auth-server-1.0.jar
+    entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar auth-service-1.0.jar
     networks:
       - project-management-system-network
 
@@ -68,9 +69,10 @@ services:
       - "8081:8081"
       - "5006:5006"
     depends_on:
-      - eureka-service-discovery
+      - service-discovery
       - config-server
       - api-gateway
+      - postgresql
       - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006 -jar user-service-1.0.jar
     networks:
@@ -85,9 +87,10 @@ services:
       - "8082:8082"
       - "5007:5007"
     depends_on:
-      - eureka-service-discovery
+      - service-discovery
       - config-server
       - api-gateway
+      - postgresql
       - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007 -jar project-service-1.0.jar
     networks:
@@ -102,9 +105,10 @@ services:
       - "8083:8083"
       - "5008:5008"
     depends_on:
-      - eureka-service-discovery
+      - service-discovery
       - config-server
       - api-gateway
+      - postgresql
       - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008 -jar task-service-1.0.jar
     networks:
