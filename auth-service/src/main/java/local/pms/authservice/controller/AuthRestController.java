@@ -2,6 +2,8 @@ package local.pms.authservice.controller;
 
 import local.pms.authservice.dto.SignInDto;
 
+import local.pms.authservice.dto.SignUpDto;
+
 import local.pms.authservice.dto.authuser.AuthUserDto;
 
 import local.pms.authservice.exception.AuthenticationUserException;
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 import static local.pms.authservice.constant.VersionAPI.API_V1;
 
@@ -47,6 +50,19 @@ public class AuthRestController {
 
     final AuthService authService;
     final AuthenticationManager authenticationManager;
+
+    @PostMapping(value = "/sign-up", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> signUp(@RequestBody SignUpDto signUpDto) {
+        Optional<AuthUserDto> authUser = authService.findByUsername(signUpDto.username());
+        if (authUser.isPresent() && authUser.get().username().equalsIgnoreCase(signUpDto.username())) {
+            log.info("User '{}' with this username already exists in database", authUser.get().username());
+            return ResponseEntity.badRequest().body(authUser.get().username() + " is exists in databases");
+        } else {
+            authService.signUp(signUpDto);
+            log.info("User '{}' successfully registered", signUpDto.username());
+            return ResponseEntity.ok("'" + signUpDto.username() + "' signed up");
+        }
+    }
 
     @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> signIn(@RequestBody SignInDto signInDto) {
