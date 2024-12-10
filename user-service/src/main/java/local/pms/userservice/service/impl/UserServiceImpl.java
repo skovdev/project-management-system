@@ -16,6 +16,8 @@ import lombok.experimental.FieldDefaults;
 
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -28,10 +30,17 @@ public class UserServiceImpl implements UserService {
     final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         return userRepository.findAll()
                 .stream()
                 .map(userMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void save(UserDto userDto) {
+        userRepository.save(userMapper.toEntity(userDto));
     }
 }

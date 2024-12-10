@@ -26,4 +26,7 @@ public class User extends AbstractBaseModel {
     @Column(name = "email", nullable = false, unique = true)
     String email;
 
+    @Column(name = "auth_user_id", nullable = false, unique = true)
+    String authUserId;
+
 }
