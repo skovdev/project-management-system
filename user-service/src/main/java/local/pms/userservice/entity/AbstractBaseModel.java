@@ -1,6 +1,8 @@
 package local.pms.userservice.entity;
 
 import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.MappedSuperclass;
 
 import lombok.Setter;
@@ -17,5 +19,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AbstractBaseModel {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 }

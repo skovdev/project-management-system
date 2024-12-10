@@ -1,3 +1,5 @@
 package local.pms.userservice.dto;
 
-public record UserDto(String id, String username, String email) {}
+import java.util.UUID;
+
+public record UserDto(UUID id, String firstName, String lastName, String email, UUID authUserId) {}
