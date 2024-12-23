@@ -47,7 +47,7 @@
         <jackson.version>2.17.2</jackson.version>
         <gson.version>2.11.0</gson.version>
         <swagger.annotations.version>2.2.27</swagger.annotations.version>
-        <springdoc.openapi.ui.version>1.6.9</springdoc.openapi.ui.version>
+        <springdoc.openapi.webmvc.ui.version>2.6.0</springdoc.openapi.webmvc.ui.version>
         <projectlombok.version>1.18.34</projectlombok.version>
         <slf4j.version>2.0.16</slf4j.version>
         <mapstruct.version>1.6.2</mapstruct.version>
@@ -187,8 +187,8 @@
             <!-- SpringDoc -->
             <dependency>
                 <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-ui</artifactId>
-                <version>${springdoc.openapi.ui.version}</version>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.openapi.webmvc.ui.version}</version>
             </dependency>
             <!-- Project Lombok -->
             <dependency>
