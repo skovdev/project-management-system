@@ -1,13 +1,19 @@
 package local.pms.authservice.controller;
 
-import local.pms.authservice.dto.SignInDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import jakarta.validation.Valid;
+
+import local.pms.authservice.dto.SignInDto;
 import local.pms.authservice.dto.SignUpDto;
 
 import local.pms.authservice.dto.authuser.AuthUserDto;
-
-import local.pms.authservice.exception.AuthenticationUserException;
-import local.pms.authservice.exception.AuthenticationUserNotFoundException;
 
 import local.pms.authservice.service.AuthService;
 
@@ -19,14 +25,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.MediaType;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +37,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Optional;
 
 import static local.pms.authservice.constant.VersionAPI.API_V1;
@@ -49,10 +49,15 @@ import static local.pms.authservice.constant.VersionAPI.API_V1;
 public class AuthRestController {
 
     final AuthService authService;
-    final AuthenticationManager authenticationManager;
 
+    @Operation(summary = "Sign up")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User successfully registered"),
+            @ApiResponse(responseCode = "400", description = "User with this username already exists in the database")
+    })
     @PostMapping(value = "/sign-up", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> signUp(@RequestBody SignUpDto signUpDto) {
+    public ResponseEntity<?> signUp(@Parameter(description = "This parameter contains the user's data to register")
+                                        @Valid @RequestBody SignUpDto signUpDto) {
         Optional<AuthUserDto> authUser = authService.findByUsername(signUpDto.username());
         if (authUser.isPresent() && authUser.get().username().equalsIgnoreCase(signUpDto.username())) {
             log.info("User '{}' with this username already exists in database", authUser.get().username());
@@ -64,39 +69,36 @@ public class AuthRestController {
         }
     }
 
+    @Operation(summary = "Sign in")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User successfully authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+            @ApiResponse(responseCode = "401", description = "Invalid username or password")
+    })
     @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> signIn(@RequestBody SignInDto signInDto) {
-        try {
-            authenticateAuthUser(signInDto);
-            AuthUserDto authUser = authService.findByUsername(signInDto.username())
-                    .orElseThrow(() -> new AuthenticationUserNotFoundException(signInDto.username() + " is not found"));
-            log.info("User { id: {}, username: {} } successfully authenticated", authUser.id(), authUser.username());
-            String token = authService.generateToken(authUser);
-            return ResponseEntity.ok(createResponseModel(authUser, token));
-        } catch (AuthenticationUserException | BadCredentialsException e) {
-            log.info("Authorization error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<?> signIn(@Parameter(description = "This parameter contains the user's data to authenticate")
+                                        @Valid @RequestBody SignInDto signInDto) {
+        AuthUserDto authUserDto = authService.authenticate(signInDto.username(), signInDto.password());
+        log.info("User { id: {}, username: {} } successfully authenticated", authUserDto.id(), authUserDto.username());
+        String token = authService.generateToken(authUserDto);
+        return ResponseEntity.ok(Map.of(
+                "authUserId", authUserDto.id(),
+                "username", authUserDto.username(),
+                "token", token));
     }
 
+    @Operation(summary = "Find user by username")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> findByUsername(@PathVariable("username") String username) {
+    public ResponseEntity<AuthUserDto> findByUsername(@Parameter(description = "This parameter contains the username to find")
+                                                          @PathVariable("username") String username) {
         return authService.findByUsername(username)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    private void authenticateAuthUser(SignInDto signInDto) {
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(signInDto.username(), signInDto.password());
-        authenticationManager.authenticate(authentication);
-    }
-
-    private Map<Object, Object> createResponseModel(AuthUserDto authUserDto, String token) {
-        Map<Object, Object> model = new HashMap<>();
-        model.put("authUserId", authUserDto.id());
-        model.put("username", authUserDto.username());
-        model.put("token", token);
-        return model;
     }
 }

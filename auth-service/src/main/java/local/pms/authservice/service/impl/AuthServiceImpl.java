@@ -14,6 +14,8 @@ import local.pms.authservice.entity.AuthPermission;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 
+import local.pms.authservice.exception.AuthenticationUserNotFoundException;
+
 import local.pms.authservice.mapping.AuthUserMapper;
 
 import local.pms.authservice.repository.AuthUserRepository;
@@ -29,7 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.ApplicationEventPublisher;
 
+import org.springframework.security.authentication.AuthenticationManager;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import org.springframework.security.core.Authentication;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Component;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -59,9 +68,18 @@ public class AuthServiceImpl implements AuthService {
     final AuthUserMapper authUserMapper = AuthUserMapper.INSTANCE;
 
     final AuthUserRepository authUserRepository;
+    final AuthenticationManager authenticationManager;
     final JwtTokenProvider jwtTokenProvider;
     final ApplicationEventPublisher applicationEventPublisher;
     final PasswordEncoder passwordEncoder;
+
+    @Override
+    public Optional<AuthUserDto> findByUsername(String username) {
+        return authUserRepository.findByUsername(username)
+                .stream()
+                .map(authUserMapper::toDto)
+                .findFirst();
+    }
 
     @Override
     @Transactional
@@ -98,12 +116,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Optional<AuthUserDto> findByUsername(String username) {
-        return authUserRepository.findByUsername(username)
-                .stream()
-                .map(authUserMapper::toDto)
-                .findFirst();
+    public AuthUserDto authenticate(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        String authenticatedUsername = authentication.getName();
+        return findByUsername(authenticatedUsername)
+                .orElseThrow(() -> new AuthenticationUserNotFoundException(authenticatedUsername + " is not found"));
     }
+
 
     @Override
     public String generateToken(AuthUserDto authUserDto) {
