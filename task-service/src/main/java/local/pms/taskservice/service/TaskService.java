@@ -1,9 +1,9 @@
 package local.pms.taskservice.service;
 
-import local.pms.taskservice.entity.Task;
+import local.pms.taskservice.dto.TaskDto;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface TaskService {
-    List<Task> findAll();
+    Page<TaskDto> findAll(int page, int size, String sortBy, String order);
 }
