@@ -1,9 +1,9 @@
 package local.pms.projectservice.service;
 
-import local.pms.projectservice.entity.Project;
+import local.pms.projectservice.dto.ProjectDto;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface ProjectService {
-    List<Project> findAll();
+    Page<ProjectDto> findAll(int page, int size, String sortBy, String order);
 }
