@@ -10,11 +10,16 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.security.authentication.AuthenticationManager;
+
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
@@ -49,10 +54,24 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
+                                .requestMatchers("/v3/api-docs/**",
+                                        "/swagger-ui.html", "/swagger-ui/**").permitAll()
                                 .anyRequest()
                                 .authenticated())
                 .addFilterBefore(jwtVerificationTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/v3/api-docs/**",
+                "/swagger-ui.html", "/swagger-ui/**");
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        return authenticationManagerBuilder.build();
     }
 
     @Bean

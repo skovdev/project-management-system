@@ -85,12 +85,12 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
             handleErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token is expired.");
             return;
         }
-        SecurityContextHolder.getContext().setAuthentication(getJwtAuthenticationToken(token));
         tokenService.setToken(token);
+        SecurityContextHolder.getContext().setAuthentication(fillAuthenticationToken(token));
         chain.doFilter(request, response);
     }
 
-    private UsernamePasswordAuthenticationToken getJwtAuthenticationToken(String bearerToken) {
+    private UsernamePasswordAuthenticationToken fillAuthenticationToken(String bearerToken) {
         String username = jwtUtil.extractUsername(bearerToken);
         List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(bearerToken);
         return new UsernamePasswordAuthenticationToken(username, null, authorities);
