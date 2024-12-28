@@ -21,9 +21,9 @@ public class ApiGatewayConfig {
                 .route("user-service", r -> r.path("/api/v1/users/**")
                         .uri(serviceHosts().get("user-service")))
                 .route("project-service", r -> r.path("/api/v1/projects/**")
-                        .uri(serviceHosts().get("profile-service")))
+                        .uri(serviceHosts().get("project-service")))
                 .route("task-service", r -> r.path("/api/v1/task/**")
-                        .uri(serviceHosts().get("profile-service")))
+                        .uri(serviceHosts().get("task-service")))
                 .build();
     }
 
