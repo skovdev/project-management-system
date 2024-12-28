@@ -14,11 +14,13 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.experimental.FieldDefaults;
 
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -31,11 +33,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> findAll() {
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toDto)
-                .toList();
+    public Page<UserDto> findAll(int page, int size, String sortBy, String order) {
+        return userRepository.findAll(pageRequest(page, size, sortBy, order))
+                .map(userMapper::toDto);
+    }
+
+    private PageRequest pageRequest(int page, int size, String sortBy, String order) {
+        return PageRequest.of(page, size, sorting(sortBy, order));
+    }
+
+    private Sort sorting(String sortBy, String order) {
+        return Sort.by(Sort.Order.by(sortBy)
+                .with(Sort.Direction.fromString(order)));
     }
 
     @Override

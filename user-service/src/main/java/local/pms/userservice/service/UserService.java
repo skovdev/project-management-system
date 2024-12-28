@@ -2,9 +2,9 @@ package local.pms.userservice.service;
 
 import local.pms.userservice.dto.UserDto;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface UserService {
-    List<UserDto> findAll();
+    Page<UserDto> findAll(int page, int size, String sortBy, String order);
     void save(UserDto userDto);
 }
