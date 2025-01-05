@@ -33,10 +33,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 
 import static local.pms.authservice.constant.VersionAPI.API_V1;
@@ -100,5 +102,25 @@ public class AuthRestController {
         return authService.findByUsername(username)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Delete user by identifier")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<String> deleteById(@Parameter(description = "This parameter contains the user's id to delete")
+                               @PathVariable("id") UUID id) {
+        Optional<AuthUserDto> authUserDto = authService.findById(id);
+        if (authUserDto.isPresent()) {
+            authService.deleteById(id);
+            log.info("User { id: {}, username: {} } successfully deleted", authUserDto.get().id(), authUserDto.get().username());
+            return ResponseEntity.ok("User { id: " + authUserDto.get().id() + ", username: " + authUserDto.get().username() + " } successfully deleted");
+        } else {
+            log.info("User with id '{}' not found", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 }
