@@ -5,18 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 
-import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import local.pms.authservice.exception.InvalidJwtAuthenticationException;
 
-import lombok.AccessLevel;
+import local.pms.authservice.service.AWSSecretsManagerService;
+
 import lombok.RequiredArgsConstructor;
 
-import lombok.experimental.FieldDefaults;
-
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
@@ -25,53 +24,67 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.Key;
+import java.security.PublicKey;
+import java.security.PrivateKey;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 
-import java.nio.charset.StandardCharsets;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
 
 import java.util.Map;
 import java.util.Date;
+import java.util.Base64;
 import java.util.Optional;
 
-import java.util.stream.Collectors;
-
+@Slf4j
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    @Value("${security.jwt.token.secret-key}")
-    String secretKey;
+    private static final String PRIVATE_KEY = "project-management-system-private-key";
+    private static final String PUBLIC_KEY = "project-management-system-public-key";
 
-    @Value("${security.jwt.token.expire-length}")
-    long validityInMilliseconds;
+    private PrivateKey privateKey;
+    private PublicKey publicKey;
 
-    final UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
+    private final AWSSecretsManagerService awsSecretsManagerService;
+
+    @PostConstruct
+    public void init() {
+        privateKey = loadKey(PRIVATE_KEY, "RSA", true);
+        publicKey = loadKey(PUBLIC_KEY, "RSA", false);
+    }
 
     public String createToken(Map<String, Object> data) {
         Date now = new Date();
-        Date validity = new Date(now.getTime() + validityInMilliseconds);
+        Date validity = new Date(now.getTime() + 3600000);
         return Jwts.builder()
                 .claims(data).issuedAt(now).expiration(validity)
-                .signWith(getSecretKey())
+                .signWith(privateKey)
                 .compact();
     }
 
-    public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(extractUsername(token));
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    public Authentication authenticate(String token) {
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(extractUsername(token));
+            return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        } catch (UsernameNotFoundException e) {
+            throw new UsernameNotFoundException("User not found");
+        }
     }
 
     public String extractUsername(String token) {
         return parseSignedClaims(token)
                 .getPayload()
-                .entrySet()
-                .stream()
-                .filter(entry -> entry.getKey().equals("username"))
-                .map(entry -> String.valueOf(entry.getValue()))
-                .collect(Collectors.joining());
+                .get("username", String.class);
     }
 
     public String resolveToken(HttpServletRequest request) {
@@ -92,13 +105,30 @@ public class JwtTokenProvider {
 
     private Jws<Claims> parseSignedClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSecretKey())
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token);
     }
 
-    private SecretKey getSecretKey() {
-        byte[] secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_16);
-        return Keys.hmacShaKeyFor(secretKeyBytes);
+    @SuppressWarnings("unchecked")
+    private <T extends Key> T loadKey(String key, String algorithm, boolean isPrivate) {
+        String keyContent = cleanKey(awsSecretsManagerService.getKey(key));
+        byte[] decodedKey = Base64.getDecoder().decode(keyContent);
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+            return isPrivate
+                    ? (T) keyFactory.generatePrivate(new PKCS8EncodedKeySpec(decodedKey))
+                    : (T) keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+            log.error("Failed to load key. Error: {}", e.getMessage());
+            throw new RuntimeException("Failed to load key", e);
+        }
+    }
+
+    private String cleanKey(String keyContent) {
+        return keyContent
+                .replaceAll("-----BEGIN [A-Z ]+-----", "")
+                .replaceAll("-----END [A-Z ]+-----", "")
+                .replaceAll("\\s", "");
     }
 }

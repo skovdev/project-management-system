@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    static final String ROLE_USER = "ROLE_USER";
+    static final String ROLE_USER = "USER";
     static final String READ_ALL = "READ_ALL";
     static final String AUTH_USER_ID_KEY = "authUserId";
     static final String USERNAME_KEY = "username";
@@ -72,6 +72,12 @@ public class AuthServiceImpl implements AuthService {
     final JwtTokenProvider jwtTokenProvider;
     final ApplicationEventPublisher applicationEventPublisher;
     final PasswordEncoder passwordEncoder;
+
+    @Override
+    public Optional<AuthUserDto> findById(UUID id) {
+        return authUserRepository.findById(id)
+                .map(authUserMapper::toDto);
+    }
 
     @Override
     public Optional<AuthUserDto> findByUsername(String username) {
@@ -152,6 +158,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void deleteById(UUID id) {
         authUserRepository.deleteById(id);
     }

@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.Optional;
 
 public interface AuthService {
+    Optional<AuthUserDto> findById(UUID id);
     Optional<AuthUserDto> findByUsername(String username);
     void signUp(SignUpDto signUpDto);
     AuthUserDto authenticate(String username, String password);
