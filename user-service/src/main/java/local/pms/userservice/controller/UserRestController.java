@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import static local.pms.userservice.constant.VersionAPI.API_V1;
 
-
 @Tag(name = "User", description = "User REST API")
 @RestController
 @FieldDefaults(level = AccessLevel.PRIVATE)
