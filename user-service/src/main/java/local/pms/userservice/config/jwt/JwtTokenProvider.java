@@ -1,15 +1,15 @@
-package local.pms.userservice.util;
+package local.pms.userservice.config.jwt;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 
-import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
-import lombok.AccessLevel;
+import local.pms.userservice.service.AWSSecretsManagerService;
 
-import lombok.experimental.FieldDefaults;
+import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.GrantedAuthority;
 
@@ -17,23 +17,37 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 
-import java.nio.charset.StandardCharsets;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Base64;
 import java.util.Collections;
 
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class JwtUtil {
+@RequiredArgsConstructor
+public class JwtTokenProvider {
 
-    @Value("${security.jwt.token.secret-key}")
-    String secretKey;
+    private static final String ALGORITHM = "RSA";
+    private static final String PUBLIC_KEY = "project-management-system-public-key";
+
+    private final AWSSecretsManagerService awsSecretsManagerService;
+
+    private PublicKey publicKey;
+
+    @PostConstruct
+    public void init() {
+        publicKey = loadPublicKey();
+    }
 
     public boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
@@ -76,14 +90,28 @@ public class JwtUtil {
 
     private Claims extractClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignerKey())
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    private SecretKey getSignerKey() {
-        byte[] secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_16);
-        return Keys.hmacShaKeyFor(secretKeyBytes);
+    private PublicKey loadPublicKey() {
+        String keyContent = cleanKey(awsSecretsManagerService.getKey(PUBLIC_KEY));
+        byte[] decodedKey = Base64.getDecoder().decode(keyContent);
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+            return keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+            log.error("Failed to load key. Error: {}", e.getMessage());
+            throw new RuntimeException("Failed to load key", e);
+        }
+    }
+
+    private String cleanKey(String keyContent) {
+        return keyContent
+                .replaceAll("-----BEGIN [A-Z ]+-----", "")
+                .replaceAll("-----END [A-Z ]+-----", "")
+                .replaceAll("\\s", "");
     }
 }
