@@ -9,14 +9,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import local.pms.projectservice.config.jwt.JwtTokenProvider;
+
 import local.pms.projectservice.service.TokenService;
 
-import local.pms.projectservice.util.JwtUtil;
-
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-
-import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,12 +33,11 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class JwtVerificationTokenFilter extends OncePerRequestFilter {
 
-    final TokenService tokenService;
-    final JwtUtil jwtUtil;
+    private final TokenService tokenService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException {
@@ -80,7 +76,7 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
     }
 
     private void validateTokenAndProceed(HttpServletRequest request, HttpServletResponse response, FilterChain chain, String token) throws IOException, ServletException {
-        if (jwtUtil.isTokenExpired(token)) {
+        if (jwtTokenProvider.isTokenExpired(token)) {
             handleErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token is expired.");
             return;
         }
@@ -90,8 +86,8 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
     }
 
     private UsernamePasswordAuthenticationToken fillAuthenticationToken(String bearerToken) {
-        String username = jwtUtil.extractUsername(bearerToken);
-        List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(bearerToken);
+        String username = jwtTokenProvider.extractUsername(bearerToken);
+        List<GrantedAuthority> authorities = jwtTokenProvider.extractAuthorities(bearerToken);
         return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 
