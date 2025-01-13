@@ -3,18 +3,16 @@ package local.pms.taskservice.filter;
 import io.jsonwebtoken.MalformedJwtException;
 
 import jakarta.servlet.FilterChain;
-
 import jakarta.servlet.ServletException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import local.pms.taskservice.config.jwt.JwtTokenProvider;
+
 import local.pms.taskservice.service.TokenService;
 
-import local.pms.taskservice.util.JwtUtil;
-
 import lombok.AccessLevel;
-
 import lombok.RequiredArgsConstructor;
 
 import lombok.experimental.FieldDefaults;
@@ -41,8 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtVerificationTokenFilter extends OncePerRequestFilter {
 
+    final JwtTokenProvider jwtTokenProvider;
     final TokenService tokenService;
-    final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException {
@@ -81,7 +79,7 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
     }
 
     private void validateTokenAndProceed(HttpServletRequest request, HttpServletResponse response, FilterChain chain, String token) throws IOException, ServletException {
-        if (jwtUtil.isTokenExpired(token)) {
+        if (jwtTokenProvider.isTokenExpired(token)) {
             handleErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token is expired.");
             return;
         }
@@ -91,8 +89,8 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
     }
 
     private UsernamePasswordAuthenticationToken fillAuthenticationToken(String bearerToken) {
-        String username = jwtUtil.extractUsername(bearerToken);
-        List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(bearerToken);
+        String username = jwtTokenProvider.extractUsername(bearerToken);
+        List<GrantedAuthority> authorities = jwtTokenProvider.extractAuthorities(bearerToken);
         return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 
