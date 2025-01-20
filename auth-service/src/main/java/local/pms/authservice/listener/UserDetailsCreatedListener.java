@@ -19,12 +19,12 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
-public class UserDetailsListener {
+public class UserDetailsCreatedListener {
 
     final UserDetailsCreationProducer userDetailsCreationProducer;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleUserDetailsEvent(UserDetailsCreatedEvent event) {
+    public void handleUserDetailsCreatedEvent(UserDetailsCreatedEvent event) {
          userDetailsCreationProducer.sendUserDetailsToCreate(KafkaTopics.USER_DETAILS_CREATED_TOPIC,
                  event.signUp(), event.authUserId());
     }

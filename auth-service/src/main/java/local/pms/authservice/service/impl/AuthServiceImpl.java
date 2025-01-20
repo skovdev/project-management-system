@@ -13,6 +13,7 @@ import local.pms.authservice.entity.AuthRole;
 import local.pms.authservice.entity.AuthPermission;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
+import local.pms.authservice.event.UserDetailsDeletedEvent;
 
 import local.pms.authservice.exception.AuthenticationUserNotFoundException;
 
@@ -161,5 +162,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void deleteById(UUID id) {
         authUserRepository.deleteById(id);
+        log.info("The authentication user is saved successfully. AuthUserID: {}", id);
+        applicationEventPublisher.publishEvent(new UserDetailsDeletedEvent(id));
     }
 }
