@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -51,5 +53,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void save(UserDto userDto) {
         userRepository.save(userMapper.toEntity(userDto));
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(UUID id) {
+        userRepository.deleteById(id);
     }
 }
