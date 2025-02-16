@@ -47,7 +47,7 @@ public class UserRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
             })
     })
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<UserDto> findAll(@Parameter(description = "This parameter contains the page number")
                                  @RequestParam(defaultValue = "0") int page,
