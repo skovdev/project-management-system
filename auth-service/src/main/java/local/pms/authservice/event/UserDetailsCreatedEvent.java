@@ -1,7 +1,5 @@
 package local.pms.authservice.event;
 
-import local.pms.authservice.dto.SignUpDto;
+import local.pms.authservice.dto.authuser.UserDetailsDto;
 
-import java.util.UUID;
-
-public record UserDetailsCreatedEvent(SignUpDto signUp, UUID authUserId) {}
+public record UserDetailsCreatedEvent(UserDetailsDto userDetailsDto) {}
