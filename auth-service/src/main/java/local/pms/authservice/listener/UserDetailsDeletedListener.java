@@ -21,6 +21,6 @@ public class UserDetailsDeletedListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserDetailsDeletedEvent(UserDetailsDeletedEvent event) {
-        userDetailsDeletionProducer.sendUserDetailsToDelete(KafkaTopics.USER_DETAILS_DELETED_TOPIC, event.authUserId());
+        userDetailsDeletionProducer.sendUserDetailsToDelete(KafkaTopics.USER_DETAILS_DELETED_TOPIC, event);
     }
 }
