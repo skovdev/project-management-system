@@ -6,6 +6,7 @@ import local.pms.authservice.dto.SignUpDto;
 
 import local.pms.authservice.dto.authuser.AuthUserDto;
 import local.pms.authservice.dto.authuser.AuthRoleDto;
+import local.pms.authservice.dto.authuser.UserDetailsDto;
 import local.pms.authservice.dto.authuser.AuthPermissionDto;
 
 import local.pms.authservice.entity.AuthUser;
@@ -98,7 +99,9 @@ public class AuthServiceImpl implements AuthService {
         authUser.setAuthPermissions(List.of(authPermission));
         authUserRepository.save(authUser);
         log.info("The authentication user is saved successfully. AuthUserID: {}", authUser.getId());
-        applicationEventPublisher.publishEvent(new UserDetailsCreatedEvent(signUpDto, authUser.getId()));
+        UserDetailsDto userDetailsDto = fillUserDetailsDto(signUpDto, authUser.getId());
+        UserDetailsCreatedEvent event = new UserDetailsCreatedEvent(userDetailsDto);
+        applicationEventPublisher.publishEvent(event);
     }
 
     private AuthUser buildAuthUser(SignUpDto signUpDto) {
@@ -108,6 +111,13 @@ public class AuthServiceImpl implements AuthService {
         return authUser;
     }
 
+    private AuthRole buildAuthRole(AuthUser authUser) {
+        AuthRole authRole = new AuthRole();
+        authRole.setAuthority(ROLE_USER);
+        authRole.setAuthUser(authUser);
+        return authRole;
+    }
+
     private AuthPermission buildAuthPermission(AuthUser authUser) {
         AuthPermission authPermission = new AuthPermission();
         authPermission.setPermission(READ_ALL);
@@ -115,11 +125,8 @@ public class AuthServiceImpl implements AuthService {
         return authPermission;
     }
 
-    private AuthRole buildAuthRole(AuthUser authUser) {
-        AuthRole authRole = new AuthRole();
-        authRole.setAuthority(ROLE_USER);
-        authRole.setAuthUser(authUser);
-        return authRole;
+    private UserDetailsDto fillUserDetailsDto(SignUpDto signUpDto, UUID authUserId) {
+        return new UserDetailsDto(signUpDto.firstName(), signUpDto.lastName(), signUpDto.email(), authUserId);
     }
 
     @Override
