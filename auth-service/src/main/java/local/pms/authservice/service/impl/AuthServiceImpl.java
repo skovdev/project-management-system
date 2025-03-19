@@ -16,7 +16,8 @@ import local.pms.authservice.entity.AuthPermission;
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 import local.pms.authservice.event.UserDetailsDeletedEvent;
 
-import local.pms.authservice.exception.AuthenticationUserNotFoundException;
+import local.pms.authservice.exception.AuthUserSignUpException;
+import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import local.pms.authservice.mapping.AuthUserMapper;
 
@@ -92,16 +93,27 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void signUp(SignUpDto signUpDto) {
-        AuthUser authUser = buildAuthUser(signUpDto);
-        AuthRole authRole = buildAuthRole(authUser);
-        AuthPermission authPermission = buildAuthPermission(authUser);
-        authUser.setAuthRoles(List.of(authRole));
-        authUser.setAuthPermissions(List.of(authPermission));
-        authUserRepository.save(authUser);
-        log.info("The authentication user is saved successfully. AuthUserID: {}", authUser.getId());
-        UserDetailsDto userDetailsDto = fillUserDetailsDto(signUpDto, authUser.getId());
-        UserDetailsCreatedEvent event = new UserDetailsCreatedEvent(userDetailsDto);
-        applicationEventPublisher.publishEvent(event);
+        try {
+
+            AuthUser authUser = buildAuthUser(signUpDto);
+            AuthRole authRole = buildAuthRole(authUser);
+            AuthPermission authPermission = buildAuthPermission(authUser);
+
+            authUser.setAuthRoles(List.of(authRole));
+            authUser.setAuthPermissions(List.of(authPermission));
+
+            authUserRepository.save(authUser);
+            log.info("The authentication user is saved successfully. AuthUserID: {}", authUser.getId());
+
+            UserDetailsDto userDetailsDto = fillUserDetailsDto(signUpDto, authUser.getId());
+            UserDetailsCreatedEvent event = new UserDetailsCreatedEvent(userDetailsDto);
+
+            applicationEventPublisher.publishEvent(event);
+
+        } catch (RuntimeException e) {
+            log.error("Failed to sign up the authenticated user: {}", signUpDto.username(), e);
+            throw new AuthUserSignUpException("Error occurred during sign-up.");
+        }
     }
 
     private AuthUser buildAuthUser(SignUpDto signUpDto) {
@@ -134,7 +146,7 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         String authenticatedUsername = authentication.getName();
         return findByUsername(authenticatedUsername)
-                .orElseThrow(() -> new AuthenticationUserNotFoundException(authenticatedUsername + " is not found"));
+                .orElseThrow(() -> new AuthUserNotFoundException(authenticatedUsername + " is not found"));
     }
 
 
