@@ -1,6 +1,6 @@
 package local.pms.authservice.exception.handler;
 
-import local.pms.authservice.exception.AuthenticationUserNotFoundException;
+import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AuthenticationUserNotFoundException.class)
-    public ResponseEntity<String> handleAuthenticationUserNotFoundException(AuthenticationUserNotFoundException ex) {
+    @ExceptionHandler(AuthUserNotFoundException.class)
+    public ResponseEntity<String> handleAuthenticationUserNotFoundException(AuthUserNotFoundException ex) {
         log.error("Authentication error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
