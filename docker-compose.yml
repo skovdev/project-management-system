@@ -140,6 +140,21 @@ services:
     networks:
         - project-management-system-network
 
+  app-client:
+    image: app-client-1.0
+    deploy:
+      replicas: 1
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
+    networks:
+      - project-management-system-network
+
 networks:
   project-management-system-network:
     driver: overlay
