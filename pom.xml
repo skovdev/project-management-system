@@ -41,6 +41,7 @@
         <spring.cloud.loadbalancer.version>4.1.0</spring.cloud.loadbalancer.version>
         <spring.cloud.openfeign.version>4.1.0</spring.cloud.openfeign.version>
         <spring.cloud.kafka.version>4.1.0</spring.cloud.kafka.version>
+        <jakarta.servlet.api.version>6.1.0</jakarta.servlet.api.version>
         <jakarta.persistence.api.version>3.1.0</jakarta.persistence.api.version>
         <jakarta.validation.api.version>3.1.0</jakarta.validation.api.version>
         <jjwt.version>0.12.6</jjwt.version>
@@ -133,6 +134,12 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-stream-kafka</artifactId>
                 <version>${spring.cloud.kafka.version}</version>
+            </dependency>
+            <!-- Jakarta Servlet API -->
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta.servlet.api.version}</version>
             </dependency>
             <!-- Jakarta Persistence API -->
             <dependency>
