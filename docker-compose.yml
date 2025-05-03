@@ -40,7 +40,11 @@ services:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
     ports:
-      - "8762:8762"
+      - target: 8762
+        published: 8762
+        protocol: tcp
+        mode: host
+
     depends_on:
       - service-discovery
       - config-server
@@ -145,7 +149,10 @@ services:
     deploy:
       replicas: 1
     ports:
-      - "4200:4200"
+      - target: 4200
+        published: 4200
+        protocol: tcp
+        mode: host
     environment:
       - CHOKIDAR_USEPOLLING=true
     networks:
