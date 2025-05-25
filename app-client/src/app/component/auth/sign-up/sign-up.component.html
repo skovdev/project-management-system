@@ -2,6 +2,7 @@
   <mat-card class="signup-card">
     <mat-card-title>Create Your Account</mat-card-title>
     <mat-card-content>
+
       <form [formGroup]="signUpForm" (ngSubmit)="onSubmit()" class="signup-form">
 
         <mat-form-field appearance="outline" class="full-width">
@@ -65,8 +66,19 @@
           </ng-template>
         </button>
 
-
       </form>
+
+      <div *ngIf="redirecting" class="redirecting-spinner">
+        <mat-spinner diameter="60" color="accent"></mat-spinner>
+        <p>The user successfully signed up. Redirecting to your dashboard</p>
+      </div>
+
+      <div class="switch-auth-text">
+        <span>Already have an account?</span>
+        <a routerLink="/sign-in" class="sign-in-link">Sign in</a>
+      </div>
+
     </mat-card-content>
   </mat-card>
+
 </div>
