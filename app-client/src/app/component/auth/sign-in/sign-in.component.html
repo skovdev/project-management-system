@@ -1,0 +1,53 @@
+<div class="signin-container">
+  <mat-card class="signin-card">
+    <mat-card-title>Welcome Back</mat-card-title>
+    <mat-card-content>
+
+      <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="signin-form">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" />
+          <mat-error *ngIf="signInForm.get('username')?.hasError('required')">
+            Username is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" />
+          <mat-error *ngIf="signInForm.get('password')?.hasError('required')">
+            Password is required
+          </mat-error>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          class="submit-btn"
+          type="submit"
+          [disabled]="signInForm.invalid || isLoading"
+        >
+          <ng-container *ngIf="!isLoading; else loading">
+            Sign In
+          </ng-container>
+          <ng-template #loading>
+            <mat-spinner [diameter]="20" color="accent"></mat-spinner>
+          </ng-template>
+        </button>
+
+      </form>
+
+      <div *ngIf="redirecting" class="redirecting-spinner">
+        <mat-spinner diameter="60" color="accent"></mat-spinner>
+        <p>Login successful. Redirecting to your dashboard...</p>
+      </div>
+
+      <div class="switch-auth-text">
+        <span>Don't have an account?</span>
+        <a routerLink="/sign-up" class="sign-up-link">Sign up</a>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+</div>
