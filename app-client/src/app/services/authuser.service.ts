@@ -14,6 +14,10 @@ export class AuthUserService {
 
   constructor(private http: HttpClient) {}
 
+  signIn(authUser: any): Observable<any> {
+    return this.http.post(this.apiUrl + "/auth/sign-in", authUser, { responseType: 'text' });
+  }
+
   signUp(authUser: any): Observable<any> {
     return this.http.post(this.apiUrl + "/auth/sign-up", authUser, { responseType: 'text' });
   }
