@@ -119,6 +119,20 @@ services:
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar task-service-1.0.jar
     networks:
       - project-management-system-network
+      -
+  ai-service:
+    image: ai-service-1.0
+    deploy:
+      replicas: 3
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - service-discovery
+      - config-server
+    entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar task-service-1.0.jar
+    networks:
+      - project-management-system-network
 
   kafka:
     image: wurstmeister/kafka:latest
