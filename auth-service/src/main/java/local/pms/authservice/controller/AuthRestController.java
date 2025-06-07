@@ -63,7 +63,7 @@ public class AuthRestController {
         Optional<AuthUserDto> authUser = authService.findByUsername(signUpDto.username());
         if (authUser.isPresent() && authUser.get().username().equalsIgnoreCase(signUpDto.username())) {
             log.info("User '{}' with this username already exists in database", authUser.get().username());
-            return ResponseEntity.badRequest().body(authUser.get().username() + " is exists in databases");
+            return ResponseEntity.badRequest().body(authUser.get().username() + " already exists in the database");
         } else {
             authService.signUp(signUpDto);
             log.info("User '{}' successfully registered", signUpDto.username());
