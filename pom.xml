@@ -19,6 +19,7 @@
         <module>user-service</module>
         <module>project-service</module>
         <module>task-service</module>
+        <module>ai-service</module>
     </modules>
 
     <properties>
