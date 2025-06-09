@@ -29,7 +29,7 @@ public class ChatGptController {
 
     @PostMapping("/ask")
     public ResponseEntity<String> askChatGpt(@RequestBody List<Message> messages) {
-        log.info("Received request to ask ChatGPT with messages: {}", messages);
+        log.info("Received request to ask ChatGPT with {} messages", messages.size());
         String response = chatGptService.askChatGpt(messages);
         return ResponseEntity.ok(response);
     }
