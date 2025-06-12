@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import org.springframework.security.core.Authentication;
@@ -50,6 +52,9 @@ public class JwtTokenProvider {
 
     private static final String PRIVATE_KEY = "project-management-system-private-key";
     private static final String PUBLIC_KEY = "project-management-system-public-key";
+
+    @Value("${aws.secretsmanager.secretName.project-management-system-security-private-public-keys}")
+    private String privatePublicKeysSecretName;
 
     private PrivateKey privateKey;
     private PublicKey publicKey;
@@ -112,7 +117,7 @@ public class JwtTokenProvider {
 
     @SuppressWarnings("unchecked")
     private <T extends Key> T loadKey(String key, String algorithm, boolean isPrivate) {
-        String keyContent = cleanKey(awsSecretsManagerService.getKey(key));
+        String keyContent = cleanKey(awsSecretsManagerService.getValueByKeyAndSecretName(key, privatePublicKeysSecretName));
         byte[] decodedKey = Base64.getDecoder().decode(keyContent);
         try {
             KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
