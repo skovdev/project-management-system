@@ -1,6 +1,6 @@
 package local.pms.aiservice.config;
 
-import local.pms.aiservice.service.AWSSecretsManagerService;
+import local.pms.aiservice.service.aws.AwsSecretsManagerService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +27,7 @@ public class RestClientConfig {
     @Value("${project-management-system.openai.chat-gpt.api-url}")
     private String apiUrl;
 
-    private final AWSSecretsManagerService awsSecretsManagerService;
+    private final AwsSecretsManagerService awsSecretsManagerService;
 
     @Bean
     public RestClient restClient() {
