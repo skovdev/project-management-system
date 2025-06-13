@@ -5,7 +5,7 @@ import io.jsonwebtoken.Claims;
 
 import jakarta.annotation.PostConstruct;
 
-import local.pms.aiservice.service.AWSSecretsManagerService;
+import local.pms.aiservice.service.aws.AwsSecretsManagerService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +44,7 @@ public class JwtTokenProvider {
     @Value("${aws.secretsmanager.secretName.project-management-system-security-private-public-keys}")
     private String privatePublicKeysSecretName;
 
-    private final AWSSecretsManagerService awsSecretsManagerService;
+    private final AwsSecretsManagerService awsSecretsManagerService;
 
     private PublicKey publicKey;
 

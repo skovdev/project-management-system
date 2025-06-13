@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum ChatGptModel {
+public enum ChatGptModelVersion {
 
     GPT_4_1("gpt-4.1-2025-04-14"),
     GPT_4_1_MINI("gpt-4.1-mini-2025-04-14");

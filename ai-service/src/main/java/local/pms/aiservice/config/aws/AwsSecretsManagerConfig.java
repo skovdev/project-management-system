@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @Configuration
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AWSSecretsManagerConfig {
+public class AwsSecretsManagerConfig {
 
     @Value("${aws.iam.user.accessKey}")
     String accessKey;

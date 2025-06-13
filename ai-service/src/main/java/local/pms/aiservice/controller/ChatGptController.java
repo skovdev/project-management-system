@@ -2,7 +2,7 @@ package local.pms.aiservice.controller;
 
 import local.pms.aiservice.model.Message;
 
-import local.pms.aiservice.service.ChatGptService;
+import local.pms.aiservice.service.chatgpt.ChatGptService;
 
 import lombok.RequiredArgsConstructor;
 
