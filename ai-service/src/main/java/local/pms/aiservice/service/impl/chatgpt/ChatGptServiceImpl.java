@@ -1,4 +1,4 @@
-package local.pms.aiservice.service.impl;
+package local.pms.aiservice.service.impl.chatgpt;
 
 import local.pms.aiservice.model.Message;
 
@@ -6,9 +6,9 @@ import local.pms.aiservice.model.request.ChatRequest;
 
 import local.pms.aiservice.model.response.ChatResponse;
 
-import local.pms.aiservice.service.ChatGptService;
+import local.pms.aiservice.service.chatgpt.ChatGptService;
 
-import local.pms.aiservice.type.ChatGptModel;
+import local.pms.aiservice.type.ChatGptModelVersion;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -30,14 +31,15 @@ public class ChatGptServiceImpl implements ChatGptService {
     @Override
     public String askChatGpt(List<Message> messages) {
         ChatRequest chatRequest = buildChatRequest(messages);
-        ChatResponse chatResponse = sendRequestToChatGpt(chatRequest);
-        return chatResponse != null && chatResponse.choices() != null && !chatResponse.choices().isEmpty()
-                ? chatResponse.choices().get(0).message().content()
-                : "No response from ChatGPT";
+        return Optional.ofNullable(sendRequestToChatGpt(chatRequest))
+                .map(ChatResponse::choices)
+                .filter(choices -> !choices.isEmpty())
+                .map(choices -> choices.get(0).message().content())
+                .orElse("No response from ChatGPT");
     }
 
     private ChatRequest buildChatRequest(List<Message> messages) {
-        return new ChatRequest(ChatGptModel.GPT_4_1_MINI.getName(), messages);
+        return new ChatRequest(ChatGptModelVersion.GPT_4_1_MINI.getName(), messages);
     }
 
     private ChatResponse sendRequestToChatGpt(ChatRequest chatRequest) {
