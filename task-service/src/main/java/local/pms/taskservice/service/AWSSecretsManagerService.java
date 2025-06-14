@@ -1,5 +1,5 @@
 package local.pms.taskservice.service;
 
 public interface AWSSecretsManagerService {
-    String getKey(String keyName);
+    String getValueByKeyAndSecretName(String keyName, String secretName);
 }

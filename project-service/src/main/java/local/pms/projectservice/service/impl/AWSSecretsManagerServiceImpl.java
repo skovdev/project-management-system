@@ -6,14 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import local.pms.projectservice.service.AWSSecretsManagerService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-import lombok.experimental.FieldDefaults;
-
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.stereotype.Service;
 
@@ -25,27 +20,23 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class AWSSecretsManagerServiceImpl implements AWSSecretsManagerService {
 
-    @Value("${aws.secretsmanager.secretName}")
-    String secretName;
-
-    final SecretsManagerClient secretsManagerClient;
-    final ObjectMapper objectMapper;
+    private final SecretsManagerClient secretsManagerClient;
+    private final ObjectMapper objectMapper;
 
     @Override
-    public String getKey(String keyName) {
-        return getSecrets().getOrDefault(keyName, null);
+    public String getValueByKeyAndSecretName(String key, String secretName) {
+        return takeSecretValueBySecretName(secretName).getOrDefault(key, null);
     }
 
-    private Map<String, String> getSecrets() {
-        String secret = fetchSecretValue();
-        return parseSecretToMap(secret);
+    private Map<String, String> takeSecretValueBySecretName(String secretName) {
+        String secretValue = fetchSecretValueBySecretName(secretName);
+        return parseSecretToMap(secretValue);
     }
 
-    private String fetchSecretValue() {
+    private String fetchSecretValueBySecretName(String secretName) {
         try {
             return secretsManagerClient.getSecretValue(request -> request.secretId(secretName)).secretString();
         } catch (SecretsManagerException e) {
