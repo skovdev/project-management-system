@@ -1,10 +1,10 @@
-package local.pms.projectservice.service.impl;
+package local.pms.projectservice.service.impl.aws;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import local.pms.projectservice.service.AWSSecretsManagerService;
+import local.pms.projectservice.service.aws.AwsSecretsManagerService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AWSSecretsManagerServiceImpl implements AWSSecretsManagerService {
+public class AwsSecretsManagerServiceImpl implements AwsSecretsManagerService {
 
     private final SecretsManagerClient secretsManagerClient;
     private final ObjectMapper objectMapper;
