@@ -5,7 +5,7 @@ import io.jsonwebtoken.Claims;
 
 import jakarta.annotation.PostConstruct;
 
-import local.pms.projectservice.service.AWSSecretsManagerService;
+import local.pms.projectservice.service.aws.AwsSecretsManagerService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,8 +19,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import org.springframework.stereotype.Component;
 
-import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 
 import java.security.spec.X509EncodedKeySpec;
@@ -45,7 +45,7 @@ public class JwtTokenProvider {
     @Value("${aws.secretsmanager.secretName.project-management-system-security-private-public-keys}")
     private String privatePublicKeysSecretName;
 
-    private final AWSSecretsManagerService awsSecretsManagerService;
+    private final AwsSecretsManagerService awsSecretsManagerService;
 
     private PublicKey publicKey;
 
