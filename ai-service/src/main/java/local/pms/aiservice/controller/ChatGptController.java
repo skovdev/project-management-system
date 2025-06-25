@@ -1,5 +1,7 @@
 package local.pms.aiservice.controller;
 
+import local.pms.aiservice.dto.api.response.ApiResponseDto;
+
 import local.pms.aiservice.model.Message;
 
 import local.pms.aiservice.service.chatgpt.ChatGptService;
@@ -7,8 +9,6 @@ import local.pms.aiservice.service.chatgpt.ChatGptService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,9 +28,9 @@ public class ChatGptController {
     private final ChatGptService chatGptService;
 
     @PostMapping("/ask")
-    public ResponseEntity<String> askChatGpt(@RequestBody List<Message> messages) {
+    public ApiResponseDto<String> askChatGpt(@RequestBody List<Message> messages) {
         log.info("Received request to ask ChatGPT with {} messages", messages.size());
-        String response = chatGptService.askChatGpt(messages);
-        return ResponseEntity.ok(response);
+        String chatGptResponse = chatGptService.askChatGpt(messages);
+        return ApiResponseDto.buildSuccessResponse(chatGptResponse);
     }
 }

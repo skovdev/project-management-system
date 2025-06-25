@@ -1,5 +1,7 @@
 package local.pms.aiservice.service.impl.chatgpt;
 
+import local.pms.aiservice.exception.ChatGptException;
+
 import local.pms.aiservice.model.Message;
 
 import local.pms.aiservice.model.request.ChatRequest;
@@ -43,10 +45,16 @@ public class ChatGptServiceImpl implements ChatGptService {
     }
 
     private ChatResponse sendRequestToChatGpt(ChatRequest chatRequest) {
-        return restClient.post()
-                .body(chatRequest)
-                .retrieve()
-                .toEntity(ChatResponse.class)
-                .getBody();
+        try {
+            log.info("Sending request to ChatGPT with model: {}", chatRequest.model());
+            return restClient.post()
+                    .body(chatRequest)
+                    .retrieve()
+                    .toEntity(ChatResponse.class)
+                    .getBody();
+        } catch (Exception e) {
+            log.error("Error while logging request to ChatGPT", e);
+            throw new ChatGptException("Failed to communicate with ChatGPT");
+        }
     }
 }
