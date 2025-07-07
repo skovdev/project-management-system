@@ -10,9 +10,9 @@ import local.pms.projectservice.type.ProjectStatusType;
 
 import lombok.Setter;
 import lombok.Getter;
-import lombok.AccessLevel;
 
-import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
@@ -22,26 +22,30 @@ import java.util.UUID;
 @Setter
 @Getter
 @Table(name = "project_management_system_project")
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@SQLRestriction(value = "deleted = false")
+@SQLDelete(sql = "UPDATE project_management_system_project SET deleted = true WHERE id = ?")
 public class Project extends AbstractBaseModel {
 
     @Column(name = "title", nullable = false)
-    String title;
+    private String title;
 
     @Column(name = "description")
-    String description;
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "project_status", nullable = false)
-    ProjectStatusType projectStatusType;
+    private ProjectStatusType projectStatusType;
 
     @Column(name = "start_date", nullable = false)
-    LocalDateTime startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date", nullable = false)
-    LocalDateTime endDate;
+    private LocalDateTime endDate;
 
     @Column(name = "user_id", nullable = false, unique = true)
-    UUID userId;
+    private UUID userId;
+
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 
 }
