@@ -1,6 +1,6 @@
 package local.pms.aiservice.service.chatgpt;
 
-import local.pms.aiservice.model.Message;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
 
 import java.util.List;
 
@@ -15,15 +15,12 @@ import java.util.List;
 public interface ChatGptService {
 
     /**
-     * Sends a list of messages to ChatGPT and retrieves the response.
-     * <p>
-     * This method builds a ChatRequest object using the provided messages, sends the request
-     * to the ChatGPT service, and processes the response to extract the content of the first choice.
-     * If no response is received or the choices list is empty, a default message is returned.
-     * </p>
-     * @param messages A list of Message objects representing the conversation history.
-     * @return The content of the first choice from the ChatGPT response, or "No response from ChatGPT" if no response is available.
-     */
-    String askChatGpt(List<Message> messages);
+     * Sends a list of messages to the ChatGPT API and retrieves the response.
+     *
+     * @param messages A list of message parameters to be sent to ChatGPT.
+     *                 Each message contains the role and content for the conversation.
+     * @return The response from ChatGPT as a string.
+     * */
+    String askChatGpt(List<ChatCompletionMessageParam> messages);
 
 }
