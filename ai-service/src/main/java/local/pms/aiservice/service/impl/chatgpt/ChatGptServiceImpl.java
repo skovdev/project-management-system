@@ -35,7 +35,7 @@ public class ChatGptServiceImpl implements ChatGptService {
                 .stream()
                 .findFirst()
                 .flatMap(choice -> choice.message().content())
-                .orElse(null);
+                .orElse("No data received from ChatGPT");
     }
 
     private ChatCompletion sendRequestToChatGpt(List<ChatCompletionMessageParam> messages) {
