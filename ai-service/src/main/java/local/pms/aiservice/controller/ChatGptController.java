@@ -1,8 +1,8 @@
 package local.pms.aiservice.controller;
 
-import local.pms.aiservice.dto.api.response.ApiResponseDto;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
 
-import local.pms.aiservice.model.Message;
+import local.pms.aiservice.dto.api.response.ApiResponseDto;
 
 import local.pms.aiservice.service.chatgpt.ChatGptService;
 
@@ -28,7 +28,7 @@ public class ChatGptController {
     private final ChatGptService chatGptService;
 
     @PostMapping("/ask")
-    public ApiResponseDto<String> askChatGpt(@RequestBody List<Message> messages) {
+    public ApiResponseDto<String> askChatGpt(@RequestBody List<ChatCompletionMessageParam> messages) {
         log.info("Received request to ask ChatGPT with {} messages", messages.size());
         String chatGptResponse = chatGptService.askChatGpt(messages);
         return ApiResponseDto.buildSuccessResponse(chatGptResponse);

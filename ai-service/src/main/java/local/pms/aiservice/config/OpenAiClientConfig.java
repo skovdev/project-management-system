@@ -1,5 +1,9 @@
 package local.pms.aiservice.config;
 
+import com.openai.client.OpenAIClient;
+
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+
 import local.pms.aiservice.service.aws.AwsSecretsManagerService;
 
 import lombok.RequiredArgsConstructor;
@@ -11,15 +15,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpHeaders;
-
-import org.springframework.web.client.RestClient;
-
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class RestClientConfig {
+public class OpenAiClientConfig {
 
     private static final String PROJECT_MANAGEMENT_SYSTEM_OPENAI_API_KEY_SECRET_NAME = "project-management-system-openai-api-key";
     private static final String OPENAI_PUBLIC_API_KEY = "openai-public-api-key";
@@ -30,11 +29,9 @@ public class RestClientConfig {
     private final AwsSecretsManagerService awsSecretsManagerService;
 
     @Bean
-    public RestClient restClient() {
-        return RestClient.builder()
-                .baseUrl(apiUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " +  takeOpenAiPublicApiKey())
+    public OpenAIClient openAIClient() {
+        return OpenAIOkHttpClient.builder()
+                .apiKey(takeOpenAiPublicApiKey())
                 .build();
     }
 
