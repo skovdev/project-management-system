@@ -1,16 +1,16 @@
 package local.pms.aiservice.service.impl.chatgpt;
 
+import com.openai.client.OpenAIClient;
+
+import com.openai.models.ChatModel;
+
+import com.openai.models.chat.completions.ChatCompletion;
+import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
+
 import local.pms.aiservice.exception.ChatGptException;
 
-import local.pms.aiservice.model.Message;
-
-import local.pms.aiservice.model.request.ChatRequest;
-
-import local.pms.aiservice.model.response.ChatResponse;
-
 import local.pms.aiservice.service.chatgpt.ChatGptService;
-
-import local.pms.aiservice.type.ChatGptModelVersion;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,42 +18,44 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
-import org.springframework.web.client.RestClient;
+import java.time.LocalDate;
 
 import java.util.List;
-import java.util.Optional;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatGptServiceImpl implements ChatGptService {
 
-    private final RestClient restClient;
+    private final OpenAIClient client;
 
     @Override
-    public String askChatGpt(List<Message> messages) {
-        ChatRequest chatRequest = buildChatRequest(messages);
-        return Optional.ofNullable(sendRequestToChatGpt(chatRequest))
-                .map(ChatResponse::choices)
-                .filter(choices -> !choices.isEmpty())
-                .map(choices -> choices.get(0).message().content())
-                .orElse("No response from ChatGPT");
+    public String askChatGpt(List<ChatCompletionMessageParam> messages) {
+        return sendRequestToChatGpt(messages)
+                .choices()
+                .stream()
+                .findFirst()
+                .flatMap(choice -> choice.message().content())
+                .orElse("No data received from ChatGPT");
     }
 
-    private ChatRequest buildChatRequest(List<Message> messages) {
-        return new ChatRequest(ChatGptModelVersion.GPT_4_1_MINI.getName(), messages);
+    private ChatCompletion sendRequestToChatGpt(List<ChatCompletionMessageParam> messages) {
+        log.info("Sending request to ChatGPT - Time: {}", LocalDate.now());
+        ChatCompletionCreateParams params = buildChatCompletionParams(messages);
+        return executeChatCompletionRequest(params);
     }
 
-    private ChatResponse sendRequestToChatGpt(ChatRequest chatRequest) {
+    private ChatCompletionCreateParams buildChatCompletionParams(List<ChatCompletionMessageParam> messages) {
+        return ChatCompletionCreateParams.builder()
+                .model(ChatModel.GPT_4_1_2025_04_14)
+                .messages(messages)
+                .build();
+    }
+
+    private ChatCompletion executeChatCompletionRequest(ChatCompletionCreateParams params) {
         try {
-            log.info("Sending request to ChatGPT with model: {}", chatRequest.model());
-            return restClient.post()
-                    .body(chatRequest)
-                    .retrieve()
-                    .toEntity(ChatResponse.class)
-                    .getBody();
+            return client.chat().completions().create(params);
         } catch (Exception e) {
-            log.error("Error while logging request to ChatGPT", e);
+            log.error("Error while communicating with ChatGPT", e);
             throw new ChatGptException("Failed to communicate with ChatGPT");
         }
     }
