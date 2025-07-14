@@ -24,7 +24,7 @@
 
     <properties>
         <!-- Java version -->
-        <java.version>20</java.version>
+        <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <!-- Dependency versions -->
@@ -55,8 +55,9 @@
         <mapstruct.version>1.6.2</mapstruct.version>
         <postgresql.version>42.7.4</postgresql.version>
         <aws.sdk.secret.manager.version>2.29.43</aws.sdk.secret.manager.version>
+        <openai.java.version>2.12.0</openai.java.version>
         <!-- Plugin versions -->
-        <spring.boot.maven.plugin.version>3.0.2</spring.boot.maven.plugin.version>
+        <spring.boot.maven.plugin.version>3.5.3</spring.boot.maven.plugin.version>
         <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
         <!-- Source encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -238,6 +239,12 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>sts</artifactId>
                 <version>${aws.sdk.secret.manager.version}</version>
+            </dependency>
+            <!-- OpenAI Java SDK -->
+            <dependency>
+                <groupId>com.openai</groupId>
+                <artifactId>openai-java</artifactId>
+                <version>${openai.java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
