@@ -1,6 +1,6 @@
 package local.pms.projectservice.client.aiservice;
 
-import local.pms.projectservice.client.aiservice.request.Message;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
 
 import org.springframework.cloud.openfeign.FeignClient;
 
@@ -12,5 +12,5 @@ import java.util.List;
 @FeignClient(name = "ai-service", url = "${project-management-system.client.aiservice.url}")
 public interface AiServiceClient {
     @PostMapping("/ask")
-    String generateProjectDescription(@RequestBody List<Message> message);
+    String generateProjectDescription(@RequestBody List<ChatCompletionMessageParam> messages);
 }
