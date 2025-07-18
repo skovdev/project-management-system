@@ -13,9 +13,14 @@ import lombok.AccessLevel;
 
 import lombok.experimental.FieldDefaults;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Entity
 @Setter
 @Getter
+@SQLRestriction("deleted = false")
+@SQLDelete(sql = "UPDATE project_management_system_auth_role SET deleted = true WHERE id = ?")
 @Table(name = "project_management_system_auth_role")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuthRole extends AbstractBaseModel {
@@ -23,8 +28,12 @@ public class AuthRole extends AbstractBaseModel {
     @Column(name = "authority", nullable = false)
     String authority;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @SQLRestriction("deleted = false")
     @JoinColumn(name = "auth_user_id", nullable = false)
     AuthUser authUser;
+
+    @Column(name = "deleted", nullable = false)
+    boolean deleted = false;
 
 }
