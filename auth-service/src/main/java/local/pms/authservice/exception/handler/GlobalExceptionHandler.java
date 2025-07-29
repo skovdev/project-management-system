@@ -1,36 +1,63 @@
 package local.pms.authservice.exception.handler;
 
+import local.pms.authservice.dto.api.response.ApiResponseDto;
+
 import local.pms.authservice.exception.AuthUserNotFoundException;
+import local.pms.authservice.exception.AuthUsernameAlreadyExistsException;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.authentication.BadCredentialsException;
 
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(AuthUsernameAlreadyExistsException.class)
+    public ApiResponseDto<String> handleUsernameAlreadyExistsException(AuthUsernameAlreadyExistsException ex) {
+        return ApiResponseDto.buildErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        ex.getMessage(),
+                        List.of("The username is already taken. Please choose a different username.")
+                );
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(AuthUserNotFoundException.class)
-    public ResponseEntity<String> handleAuthenticationUserNotFoundException(AuthUserNotFoundException ex) {
-        log.error("Authentication error: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    public ApiResponseDto<String> handleAuthenticationUserNotFoundException(AuthUserNotFoundException ex) {
+        return ApiResponseDto.buildErrorResponse(
+                        HttpStatus.NOT_FOUND.value(),
+                        ex.getMessage(),
+                        List.of("The requested user was not found. Please check the user ID and try again.")
+                );
     }
 
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<String> handleBadCredentialsException(BadCredentialsException ex) {
-        log.error("Bad credentials error: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password.");
+    public ApiResponseDto<String> handleBadCredentialsException(BadCredentialsException ex) {
+        return ApiResponseDto.buildErrorResponse(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        ex.getMessage(),
+                        List.of("Please check your credentials and try again.")
+                );
     }
 
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGeneralException(Exception ex) {
-        log.error("An unexpected error occurred: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+    public ApiResponseDto<String> handleGeneralException(Exception ex) {
+        return ApiResponseDto.buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        ex.getMessage(),
+                        List.of("An unexpected error occurred. Please try again later.")
+                );
     }
 }

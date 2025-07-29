@@ -19,6 +19,7 @@ import local.pms.authservice.event.UserDetailsDeletedEvent;
 import local.pms.authservice.exception.AuthUserSignUpException;
 import local.pms.authservice.exception.AuthUserNotFoundException;
 
+import local.pms.authservice.exception.AuthUsernameAlreadyExistsException;
 import local.pms.authservice.mapping.AuthUserMapper;
 
 import local.pms.authservice.repository.AuthUserRepository;
@@ -93,19 +94,23 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void signUp(SignUpDto signUpDto) {
+        isAuthUsernameExists(signUpDto.username());
         try {
 
             AuthUser authUser = buildAuthUser(signUpDto);
             AuthRole authRole = buildAuthRole(authUser);
+
             AuthPermission authPermission = buildAuthPermission(authUser);
 
             authUser.setAuthRoles(List.of(authRole));
             authUser.setAuthPermissions(List.of(authPermission));
 
             authUserRepository.save(authUser);
+
             log.info("The authentication user is saved successfully. AuthUserID: {}", authUser.getId());
 
             UserDetailsDto userDetailsDto = fillUserDetailsDto(signUpDto, authUser.getId());
+
             UserDetailsCreatedEvent event = new UserDetailsCreatedEvent(userDetailsDto);
 
             applicationEventPublisher.publishEvent(event);
@@ -180,8 +185,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void deleteById(UUID id) {
+        Optional<AuthUser> authUser = authUserRepository.findById(id);
+        if (authUser.isEmpty()) {
+            throw new AuthUserNotFoundException("Authentication user with ID '" + id + "' not found");
+        }
         authUserRepository.deleteById(id);
         log.info("The authentication user is saved successfully. AuthUserID: {}", id);
         applicationEventPublisher.publishEvent(new UserDetailsDeletedEvent(id));
+    }
+
+    public void isAuthUsernameExists(String username) {
+        if (authUserRepository.findByUsername(username).isPresent()) {
+            throw new AuthUsernameAlreadyExistsException("Username '" + username + "' already exists");
+        }
     }
 }
