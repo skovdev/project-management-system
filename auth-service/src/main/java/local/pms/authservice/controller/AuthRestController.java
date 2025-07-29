@@ -13,7 +13,11 @@ import jakarta.validation.Valid;
 import local.pms.authservice.dto.SignInDto;
 import local.pms.authservice.dto.SignUpDto;
 
+import local.pms.authservice.dto.api.response.ApiResponseDto;
+
 import local.pms.authservice.dto.authuser.AuthUserDto;
+
+import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import local.pms.authservice.service.AuthService;
 
@@ -25,7 +29,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -39,7 +42,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.Optional;
 
 import static local.pms.authservice.constant.VersionAPI.API_V1;
 
@@ -58,17 +60,10 @@ public class AuthRestController {
             @ApiResponse(responseCode = "400", description = "User with this username already exists in the database")
     })
     @PostMapping(value = "/sign-up", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> signUp(@Parameter(description = "This parameter contains the user's data to register")
+    public ApiResponseDto<?> signUp(@Parameter(description = "This parameter contains the user's data to register")
                                         @Valid @RequestBody SignUpDto signUpDto) {
-        Optional<AuthUserDto> authUser = authService.findByUsername(signUpDto.username());
-        if (authUser.isPresent() && authUser.get().username().equalsIgnoreCase(signUpDto.username())) {
-            log.info("User '{}' with this username already exists in database", authUser.get().username());
-            return ResponseEntity.badRequest().body(authUser.get().username() + " already exists in the database");
-        } else {
-            authService.signUp(signUpDto);
-            log.info("User '{}' successfully registered", signUpDto.username());
-            return ResponseEntity.ok("'" + signUpDto.username() + "' signed up");
-        }
+        authService.signUp(signUpDto);
+        return ApiResponseDto.buildSuccessResponse("User '" + signUpDto.username() + "' successfully registered");
     }
 
     @Operation(summary = "Sign in")
@@ -78,12 +73,12 @@ public class AuthRestController {
             @ApiResponse(responseCode = "401", description = "Invalid username or password")
     })
     @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> signIn(@Parameter(description = "This parameter contains the user's data to authenticate")
+    public ApiResponseDto<Map<String, Object>> signIn(@Parameter(description = "This parameter contains the user's data to authenticate")
                                         @Valid @RequestBody SignInDto signInDto) {
         AuthUserDto authUserDto = authService.authenticate(signInDto.username(), signInDto.password());
         log.info("User { id: {}, username: {} } successfully authenticated", authUserDto.id(), authUserDto.username());
         String token = authService.generateToken(authUserDto);
-        return ResponseEntity.ok(Map.of(
+        return ApiResponseDto.buildSuccessResponse(Map.of(
                 "authUserId", authUserDto.id(),
                 "username", authUserDto.username(),
                 "token", token));
@@ -97,11 +92,11 @@ public class AuthRestController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthUserDto> findByUsername(@Parameter(description = "This parameter contains the username to find")
+    public ApiResponseDto<AuthUserDto> findByUsername(@Parameter(description = "This parameter contains the username to find")
                                                           @PathVariable("username") String username) {
-        return authService.findByUsername(username)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ApiResponseDto.buildSuccessResponse(
+                authService.findByUsername(username)
+                        .orElseThrow(() -> new AuthUserNotFoundException("User with username '" + username + "' not found")));
     }
 
     @Operation(summary = "Delete user by identifier")
@@ -111,16 +106,9 @@ public class AuthRestController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping(value = "/{id}")
-    public ResponseEntity<String> deleteById(@Parameter(description = "This parameter contains the user's id to delete")
+    public ApiResponseDto<String> deleteById(@Parameter(description = "This parameter contains the user's id to delete")
                                @PathVariable("id") UUID id) {
-        Optional<AuthUserDto> authUserDto = authService.findById(id);
-        if (authUserDto.isPresent()) {
-            authService.deleteById(id);
-            log.info("User { id: {}, username: {} } successfully deleted", authUserDto.get().id(), authUserDto.get().username());
-            return ResponseEntity.ok("User { id: " + authUserDto.get().id() + ", username: " + authUserDto.get().username() + " } successfully deleted");
-        } else {
-            log.info("User with id '{}' not found", id);
-            return ResponseEntity.notFound().build();
-        }
+        authService.deleteById(id);
+        return ApiResponseDto.buildSuccessResponse("User with ID '" + id + "' successfully deleted");
     }
 }

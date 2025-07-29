@@ -14,4 +14,5 @@ public interface AuthService {
     AuthUserDto authenticate(String username, String password);
     String generateToken(AuthUserDto authUserDto);
     void deleteById(UUID id);
+    void isAuthUsernameExists(String username);
 }
