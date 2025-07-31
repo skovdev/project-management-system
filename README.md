@@ -14,13 +14,14 @@ It demonstrates authentication, user management, project and task tracking, serv
   - `user-service`: Manages users' personal data and roles.
   - `project-service`: Handles project-related operations.
   - `task-service`: Manages tasks linked to projects.
+  - `ai-service`: Provides AI-powered assistance to enhance project management experiences.
 - **Infrastructure**:
   - `api-gateway`: Entry point for all client requests (via Spring Cloud Gateway).
   - `service-discovery`: Service registry and discovery (Eureka).
   - `config-server`: Centralized configuration server for microservices.
   - `postgresql`: Database for persisting data.
 - **Frontend**:
-  - `app-client`: (work in progress) Client application for interacting with the backend.
+  - `app-client`: Client application for interacting with the backend.
 
 ## Technologies
 
