@@ -199,4 +199,19 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthUsernameAlreadyExistsException("Username '" + username + "' already exists");
         }
     }
+
+    @Override
+    @Transactional
+    public void restoreAuthUserById(UUID id) {
+        authUserRepository.findById(id)
+                .ifPresentOrElse(
+                        authUser -> {
+                            authUser.setDeleted(false);
+                            authUserRepository.save(authUser);
+                            log.info("The authentication user is restored successfully. AuthUserID: {}", id);
+                            }, () -> {
+                            throw new AuthUserNotFoundException("Authentication user with ID '" + id + "' not found");
+                        }
+                        );
+    }
 }
