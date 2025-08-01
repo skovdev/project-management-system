@@ -12,9 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.kafka.annotation.KafkaListener;
 
+import org.springframework.kafka.core.KafkaTemplate;
+
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -24,6 +28,7 @@ public class UserDetailsDeletionConsumer {
     private static final String USER_DEFAULT_GROUP_ID = "user-default-group-id";
 
     private final UserService userService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = KafkaTopics.USER_DETAILS_DELETED_TOPIC, groupId = USER_DEFAULT_GROUP_ID)
     public void receiveUserDataToDelete(UserDetailsDeletedEvent event) {
@@ -33,7 +38,12 @@ public class UserDetailsDeletionConsumer {
             userService.deleteById(event.authUserId());
         } catch (Exception e) {
             log.error("Failed to process deleting the user. AuthUserID: {}", event.authUserId());
-            throw new RuntimeException("Failed to delete the user data", e);
+            handleUserDetailsDeleteFailed(event);
         }
+    }
+
+    private void handleUserDetailsDeleteFailed(UserDetailsDeletedEvent event) {
+        UUID authUserId = event.authUserId();
+        this.kafkaTemplate.send(KafkaTopics.USER_DETAILS_DELETED_FAILED_TOPIC, authUserId);
     }
 }
