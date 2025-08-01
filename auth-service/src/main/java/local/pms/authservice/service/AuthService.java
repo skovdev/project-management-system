@@ -15,4 +15,5 @@ public interface AuthService {
     String generateToken(AuthUserDto authUserDto);
     void deleteById(UUID id);
     void isAuthUsernameExists(String username);
+    void restoreAuthUserById(UUID id);
 }
