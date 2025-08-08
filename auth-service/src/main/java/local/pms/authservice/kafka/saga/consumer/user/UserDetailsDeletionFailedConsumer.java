@@ -1,6 +1,6 @@
 package local.pms.authservice.kafka.saga.consumer.user;
 
-import local.pms.authservice.constant.KafkaTopics;
+import local.pms.authservice.constant.KafkaConstants;
 
 import local.pms.authservice.event.UserDetailsDeletedEvent;
 
@@ -21,11 +21,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsDeletionFailedConsumer {
 
-    public static final String AUTH_SERVER_GROUP_ID = "auth-user-default-group-id";
-
     public final AuthService authService;
 
-    @KafkaListener(topics = KafkaTopics.USER_DETAILS_DELETED_FAILED_TOPIC, groupId = AUTH_SERVER_GROUP_ID)
+    @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC,
+            groupId = KafkaConstants.GroupIds.AUTH_USER_DETAILS_DELETION_GROUP_ID)
     public void onUserDetailsDeletionFailed(UserDetailsDeletedEvent event) {
         UUID authUserId = event.authUserId();
         try {
