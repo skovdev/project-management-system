@@ -1,6 +1,6 @@
 package local.pms.userservice.kafka.saga.consumer;
 
-import local.pms.userservice.constant.KafkaTopics;
+import local.pms.userservice.constant.KafkaConstants;
 
 import local.pms.userservice.dto.UserDto;
 
@@ -31,14 +31,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsCreationConsumer {
 
-    static final String USER_DEFAULT_GROUP_ID = "user-default-group-id";
-
     final UserService userService;
     final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @KafkaListener(topics = KafkaTopics.USER_DETAILS_CREATED_TOPIC, groupId = USER_DEFAULT_GROUP_ID)
+    @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, groupId = KafkaConstants.GroupIds.USER_DETAILS_CREATION_GROUP_ID)
     public void receiveUserDataToCreate(UserDetailsCreatedEvent event) {
-        log.info("Received user data to create. Topic: {} - Datetime: {}", KafkaTopics.USER_DETAILS_CREATED_TOPIC, LocalDateTime.now());
+        log.info("Received user data to create. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, LocalDateTime.now());
         try {
             UserDto userDto = buildUserDto(event);
             log.info("Attempting to save the user details");
@@ -60,6 +58,6 @@ public class UserDetailsCreationConsumer {
 
     private void handleUserDetailsFailed(UserDetailsCreatedEvent event) {
         UUID authUserId = event.userDetailsDto().authUserId();
-        this.kafkaTemplate.send(KafkaTopics.USER_DETAILS_FAILED_TOPIC, authUserId);
+        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC, authUserId);
     }
 }

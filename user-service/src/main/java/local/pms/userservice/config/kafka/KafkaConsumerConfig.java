@@ -34,13 +34,9 @@ public class KafkaConsumerConfig {
     @Value("${project-management-system.kafka.server}")
     String kafkaServer;
 
-    @Value("${project-management-system.kafka.groupId}")
-    String groupId;
-
     public Map<String, Object> consumerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         return props;
