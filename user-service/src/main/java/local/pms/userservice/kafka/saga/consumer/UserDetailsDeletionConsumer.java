@@ -1,6 +1,6 @@
 package local.pms.userservice.kafka.saga.consumer;
 
-import local.pms.userservice.constant.KafkaTopics;
+import local.pms.userservice.constant.KafkaConstants;
 
 import local.pms.userservice.event.UserDetailsDeletedEvent;
 
@@ -25,14 +25,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsDeletionConsumer {
 
-    private static final String USER_DEFAULT_GROUP_ID = "user-default-group-id";
-
     private final UserService userService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @KafkaListener(topics = KafkaTopics.USER_DETAILS_DELETED_TOPIC, groupId = USER_DEFAULT_GROUP_ID)
+    @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_DELETION_TOPIC,
+            groupId = KafkaConstants.GroupIds.USER_DETAILS_DELETION_GROUP_ID)
     public void receiveUserDataToDelete(UserDetailsDeletedEvent event) {
-        log.info("Received user data to delete. Topic: {} - Datetime: {}", KafkaTopics.USER_DETAILS_DELETED_TOPIC, LocalDateTime.now());
+        log.info("Received user data to delete. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_DELETION_TOPIC, LocalDateTime.now());
         try {
             log.info("Attempting to delete the user data");
             userService.deleteById(event.authUserId());
@@ -44,6 +43,6 @@ public class UserDetailsDeletionConsumer {
 
     private void handleUserDetailsDeleteFailed(UserDetailsDeletedEvent event) {
         UUID authUserId = event.authUserId();
-        this.kafkaTemplate.send(KafkaTopics.USER_DETAILS_DELETED_FAILED_TOPIC, authUserId);
+        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC, authUserId);
     }
 }
