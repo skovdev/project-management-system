@@ -1,6 +1,6 @@
 package local.pms.authservice.kafka.saga.consumer.user;
 
-import local.pms.authservice.constant.KafkaTopics;
+import local.pms.authservice.constant.KafkaConstants;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 
@@ -25,12 +25,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsCreationFailedConsumer {
 
-    static final String AUTH_SERVER_GROUP_ID = "auth-user-default-group-id";
-
     final AuthService authService;
 
-    @KafkaListener(topics = KafkaTopics.USER_DETAILS_FAILED_TOPIC, groupId = AUTH_SERVER_GROUP_ID)
-    public void onUserDetailsFailed(UserDetailsCreatedEvent event) {
+    @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC,
+            groupId = KafkaConstants.GroupIds.AUTH_USER_DETAILS_CREATION_GROUP_ID)
+    public void onUserDetailsCreationFailed(UserDetailsCreatedEvent event) {
         UUID authUserId = event.userDetailsDto().authUserId();
         try {
             log.info("User details is failed. Attempting to delete the auth user");

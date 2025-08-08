@@ -1,6 +1,6 @@
 package local.pms.authservice.listener;
 
-import local.pms.authservice.constant.KafkaTopics;
+import local.pms.authservice.constant.KafkaConstants;
 
 import local.pms.authservice.event.UserDetailsDeletedEvent;
 
@@ -21,6 +21,6 @@ public class UserDetailsDeletedListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserDetailsDeletedEvent(UserDetailsDeletedEvent event) {
-        userDetailsDeletionProducer.sendUserDetailsToDelete(KafkaTopics.USER_DETAILS_DELETED_TOPIC, event);
+        userDetailsDeletionProducer.sendUserDetailsToDelete(KafkaConstants.Topics.USER_DETAILS_DELETION_TOPIC, event);
     }
 }

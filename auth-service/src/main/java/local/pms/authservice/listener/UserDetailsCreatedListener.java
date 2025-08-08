@@ -1,6 +1,6 @@
 package local.pms.authservice.listener;
 
-import local.pms.authservice.constant.KafkaTopics;
+import local.pms.authservice.constant.KafkaConstants;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 
@@ -25,6 +25,6 @@ public class UserDetailsCreatedListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserDetailsCreatedEvent(UserDetailsCreatedEvent event) {
-         userDetailsCreationProducer.sendUserDetailsToCreate(KafkaTopics.USER_DETAILS_CREATED_TOPIC, event);
+         userDetailsCreationProducer.sendUserDetailsToCreate(KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, event);
     }
 }
