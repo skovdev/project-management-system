@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class AuthUser extends AbstractBaseModel {
     @OneToMany(mappedBy = "authUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     List<AuthPermission> authPermissions;
 
+    @ColumnDefault(value = "false")
     @Column(name = "deleted", nullable = false)
     boolean deleted = false;
 
