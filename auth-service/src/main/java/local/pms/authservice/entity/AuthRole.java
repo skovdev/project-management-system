@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
@@ -33,6 +34,7 @@ public class AuthRole extends AbstractBaseModel {
     @JoinColumn(name = "auth_user_id", nullable = false)
     AuthUser authUser;
 
+    @ColumnDefault(value = "false")
     @Column(name = "deleted", nullable = false)
     boolean deleted = false;
 
