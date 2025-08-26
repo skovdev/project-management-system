@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.Getter;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
@@ -45,6 +46,7 @@ public class Project extends AbstractBaseModel {
     @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
 
+    @ColumnDefault(value = "false")
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
 
