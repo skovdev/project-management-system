@@ -49,13 +49,13 @@ public class UserRestController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Page<UserDto> findAll(@Parameter(description = "This parameter contains the page number")
+    public Page<UserDto> findAll(@Parameter(name = "page", description = "This parameter contains the page number")
                                  @RequestParam(defaultValue = "0") int page,
-                                 @Parameter(description = "This parameter contains the number of elements per page")
+                                 @Parameter(name = "size", description = "This parameter contains the number of elements per page")
                                  @RequestParam(defaultValue = "10") int size,
-                                 @Parameter(description = "This parameter contains the field name to sort")
+                                 @Parameter(name = "sort", description = "This parameter contains the field name to sort")
                                  @RequestParam(defaultValue = "id") String sortBy,
-                                 @Parameter(description = "This parameter contains the sort order")
+                                 @Parameter(name = "order", description = "This parameter contains the sort order")
                                  @RequestParam(defaultValue = "asc") String order) {
         return userService.findAll(page, size, sortBy, order);
     }
