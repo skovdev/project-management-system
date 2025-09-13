@@ -11,14 +11,14 @@ pipeline {
         }
         stage("Compilation") {
             steps {
-                withMaven(jdk: 'jdk-20', maven: 'apache-maven-3.9.3') {
+                withMaven(jdk: 'java-21-openjdk-amd64', maven: 'apache-maven-3.9.3') {
                     sh "mvn clean install -DskipTests"
                 }
             }
         }
         stage("Tests") {
             steps {
-                withMaven(jdk: 'jdk-20', maven: 'apache-maven-3.9.3') {
+                withMaven(jdk: 'java-21-openjdk-amd64', maven: 'apache-maven-3.9.3') {
                     sh "mvn test"
                 }
             }
