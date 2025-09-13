@@ -27,6 +27,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.stereotype.Component;
 
+import org.springframework.util.AntPathMatcher;
+
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -38,6 +40,9 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class JwtVerificationTokenFilter extends OncePerRequestFilter {
+
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final List<String> PUBLIC_PATHS = List.of("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html");
 
     final JwtTokenProvider jwtTokenProvider;
     final TokenService tokenService;
@@ -64,6 +69,12 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             handleErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Authentication failed due to an internal error. Please try again.");
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return PUBLIC_PATHS.stream().anyMatch(publicPath -> PATH_MATCHER.match(publicPath, path));
     }
 
     private boolean isAuthMissing(HttpServletRequest request) {
