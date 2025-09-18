@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,9 +20,6 @@ public class OpenAiClientConfig {
 
     private static final String PROJECT_MANAGEMENT_SYSTEM_OPENAI_API_KEY_SECRET_NAME = "project-management-system-openai-api-key";
     private static final String OPENAI_PUBLIC_API_KEY = "openai-public-api-key";
-
-    @Value("${project-management-system.openai.chat-gpt.api-url}")
-    private String apiUrl;
 
     private final AwsSecretsManagerService awsSecretsManagerService;
 
