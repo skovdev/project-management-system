@@ -1,6 +1,6 @@
 package local.pms.aiservice.config;
 
-import local.pms.aiservice.config.jwt.JwtVerificationTokenFilter;
+import local.pms.aiservice.filter.JwtVerificationTokenFilter;
 
 import lombok.RequiredArgsConstructor;
 
