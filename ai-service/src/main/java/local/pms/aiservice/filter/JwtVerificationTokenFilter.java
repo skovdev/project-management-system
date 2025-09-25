@@ -1,4 +1,4 @@
-package local.pms.aiservice.config.jwt;
+package local.pms.aiservice.filter;
 
 import io.jsonwebtoken.MalformedJwtException;
 
@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import local.pms.aiservice.config.jwt.JwtTokenProvider;
 import local.pms.aiservice.service.TokenService;
 
 import lombok.RequiredArgsConstructor;
