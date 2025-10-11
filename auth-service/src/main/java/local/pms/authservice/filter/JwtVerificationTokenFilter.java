@@ -1,10 +1,12 @@
-package local.pms.authservice.config.jwt;
+package local.pms.authservice.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import local.pms.authservice.config.jwt.JwtTokenProvider;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
