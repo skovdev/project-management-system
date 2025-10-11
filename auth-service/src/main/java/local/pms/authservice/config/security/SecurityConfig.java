@@ -1,6 +1,6 @@
 package local.pms.authservice.config.security;
 
-import local.pms.authservice.config.jwt.JwtVerificationTokenFilter;
+import local.pms.authservice.filter.JwtVerificationTokenFilter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
