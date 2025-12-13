@@ -26,22 +26,17 @@
           color="primary"
           class="submit-btn"
           type="submit"
-          [disabled]="signInForm.invalid || isLoading"
+          [disabled]="signInForm.invalid"
         >
-          <ng-container *ngIf="!isLoading; else loading">
+          <ng-container>
             Sign In
           </ng-container>
-          <ng-template #loading>
+          <ng-template>
             <mat-spinner [diameter]="20" color="accent"></mat-spinner>
           </ng-template>
         </button>
 
       </form>
-
-      <div *ngIf="redirecting" class="redirecting-spinner">
-        <mat-spinner diameter="60" color="accent"></mat-spinner>
-        <p>Login successful. Redirecting to your dashboard...</p>
-      </div>
 
       <div class="switch-auth-text">
         <span>Don't have an account?</span>
