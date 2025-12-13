@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 
 import { NgIf } from '@angular/common';
 
-import { Router, RouterLink } from '@angular/router';
+import {NavigationEnd, Router, RouterLink} from '@angular/router';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -14,7 +14,9 @@ import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { AuthUserService } from '../../../services/authuser.service';
+import { AuthUserService } from '../../../services/auth-user.service';
+import { AuthTokenService } from '../../../services/auth-token.service';
+import {filter, take} from "rxjs";
 
 @Component({
   selector: 'app-sign-in',
@@ -39,13 +41,12 @@ import { AuthUserService } from '../../../services/authuser.service';
 export class SignInComponent {
 
   signInForm!: FormGroup;
-  isLoading = false;
-  redirecting = false;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private authUserService: AuthUserService,
+    private authTokenService: AuthTokenService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -58,25 +59,25 @@ export class SignInComponent {
 
   onSubmit(): void {
     if (this.signInForm.valid) {
-      this.isLoading = true;
-      const formValues = this.signInForm.value;
-      this.authUserService.signIn(formValues).subscribe({
+      const formData = this.signInForm.value;
+
+      this.authUserService.signIn(formData).subscribe({
         next: (response) => {
-          this.isLoading = true;
-          this.redirecting = true;
-          setTimeout(() => {
-            void this.router.navigate(['/dashboard']);
-          }, 2000);
+          void this.router.navigate(['/dashboard']);
         },
         error: (error) => {
-          this.isLoading = false;
-          this.snackBar.open('Sign-in failed. Please check your credentials.', 'Close', {
-            duration: 3000,
-            verticalPosition: 'top',
-            horizontalPosition: 'center',
-          });
-        },
+          console.error('Sign-in error:', error);
+          this.showErrorMessage('Sign-in failed. Please check your credentials and try again.');
+        }
       });
     }
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      verticalPosition: 'top',
+      horizontalPosition: 'center'
+    });
   }
 }

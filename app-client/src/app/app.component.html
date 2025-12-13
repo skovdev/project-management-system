@@ -1,1 +1,10 @@
+<div *ngIf="isLoading" class="global-spinner">
+  <mat-progress-spinner
+    diameter="60"
+    mode="indeterminate"
+    color="accent">
+  </mat-progress-spinner>
+  <p>Loading...</p>
+</div>
+
 <router-outlet></router-outlet>
