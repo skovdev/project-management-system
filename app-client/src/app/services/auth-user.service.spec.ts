@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { AuthuserService } from './authuser.service';
+import { AuthuserService } from './auth-user.service';
 
 describe('AuthuserService', () => {
   let service: AuthuserService;

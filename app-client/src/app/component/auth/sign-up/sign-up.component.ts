@@ -13,7 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 
-import { AuthUserService } from '../../../services/authuser.service';
+import { AuthUserService } from '../../../services/auth-user.service';
 
 @Component({
   selector: 'app-sign-up',
@@ -39,8 +39,6 @@ import { AuthUserService } from '../../../services/authuser.service';
 export class SignUpComponent {
 
   signUpForm!: FormGroup;
-  isLoading = false;
-  redirecting = false;
 
   constructor(
     private fb: FormBuilder,
@@ -61,26 +59,23 @@ export class SignUpComponent {
 
   onSubmit() {
     if (this.signUpForm.valid) {
-      this.isLoading = true;
       const formValues = this.signUpForm.value;
-
       this.authUserService.signUp(formValues).subscribe({
         next: (response) => {
-          this.isLoading = true;
-          this.redirecting = true;
-          setTimeout(() => {
-            void this.router.navigate(['/dashboard']);
-          }, 2000);
+          void this.router.navigate(['/dashboard']);
         },
         error: () => {
-          this.isLoading = false;
-          this.snackBar.open('The user with this username already exists.', 'Close', {
-            duration: 3000,
-            verticalPosition: 'top',
-            horizontalPosition: 'center',
-          });
+          this.showErrorMessage('The user with this username already exists.');
         }
       });
     }
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      verticalPosition: 'top',
+      horizontalPosition: 'center'
+    });
   }
 }
