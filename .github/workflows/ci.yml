@@ -1,4 +1,4 @@
-name: Java CI (PR)
+name: ProjectManagementSystem GitHub Actions CI Workflow
 
 on:
   pull_request:
