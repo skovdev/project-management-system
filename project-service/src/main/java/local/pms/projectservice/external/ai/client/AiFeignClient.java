@@ -1,4 +1,4 @@
-package local.pms.projectservice.client.aiservice;
+package local.pms.projectservice.external.ai.client;
 
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.List;
 
 @FeignClient(name = "ai-service", url = "${project-management-system.client.aiservice.url}")
-public interface AiServiceClient {
+public interface AiFeignClient {
     @PostMapping("/ask")
     String generateProjectDescription(@RequestBody List<ChatCompletionMessageParam> messages);
 }
