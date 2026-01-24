@@ -1,13 +1,5 @@
 package local.pms.projectservice.service.impl;
 
-import com.openai.models.chat.completions.ChatCompletionMessageParam;
-import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
-import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
-
-import local.pms.projectservice.client.aiservice.AiServiceClient;
-
-import local.pms.projectservice.client.aiservice.promt.PromptMessage;
-
 import local.pms.projectservice.dto.ProjectDto;
 
 import local.pms.projectservice.entity.Project;
@@ -15,6 +7,8 @@ import local.pms.projectservice.entity.Project;
 import local.pms.projectservice.exception.ProjectNotFoundException;
 import local.pms.projectservice.exception.InvalidProjectInputException;
 import local.pms.projectservice.exception.DescriptionGenerationException;
+
+import local.pms.projectservice.external.ai.provider.AiExternalProvider;
 
 import local.pms.projectservice.mapping.ProjectMapping;
 
@@ -35,9 +29,8 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -48,7 +41,7 @@ public class ProjectServiceImpl implements ProjectService {
     final ProjectMapping projectMapping = ProjectMapping.INSTANCE;
 
     final ProjectRepository projectRepository;
-    final AiServiceClient aiServiceClient;
+    final AiExternalProvider aiExternalProvider;
 
     @Override
     public Page<ProjectDto> findAll(int page, int size, String sortBy, String order) {
@@ -69,27 +62,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
         try {
             log.info("Generating project description for title: {}", projectTitle);
-            return aiServiceClient.generateProjectDescription(fillChatGptMessages(projectTitle));
+            return aiExternalProvider.generateProjectDescription(projectTitle);
         } catch (Exception e) {
             log.error("Failed to generate project description for project title '{}': {}", projectTitle, e.getMessage());
             throw new DescriptionGenerationException("An error occurred while generating project description", e);
         }
     }
 
-    private List<ChatCompletionMessageParam> fillChatGptMessages(String projectTitle) {
-        return List.of(
-                ChatCompletionMessageParam.ofSystem(
-                        ChatCompletionSystemMessageParam.builder()
-                                .content(PromptMessage.SYSTEM_PROMPT_PROJECT_DESCRIPTION)
-                                .build()
-                ),
-                ChatCompletionMessageParam.ofUser(
-                        ChatCompletionUserMessageParam.builder()
-                                .content("Generate a project description for the following title: " + projectTitle)
-                                .build()
-                )
-        );
-    }
 
     private PageRequest pageRequest(int page, int size, String sortBy, String order) {
         return PageRequest.of(page, size, sorting(sortBy, order));
