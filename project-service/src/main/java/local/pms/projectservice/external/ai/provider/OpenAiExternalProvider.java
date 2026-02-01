@@ -19,11 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OpenAiExternalProvider implements AiExternalProvider {
+
+    private static final String FALLBACK_MESSAGE_TEMPLATE = "Project description generation is temporarily unavailable. Reference ID: %s";
 
     private final AiFeignClient aiFeignClient;
 
@@ -49,8 +52,9 @@ public class OpenAiExternalProvider implements AiExternalProvider {
         );
     }
 
-     private String fallbackProjectDescription(String projectTitle, Throwable t) {
-        log.error("AI call failed for project title='{}'.", projectTitle);
-        return "Project description generation is temporarily unavailable. Please try again later.";
-     }
+    private String fallbackProjectDescription(String projectTitle, Throwable t) {
+        String correlationId = UUID.randomUUID().toString();
+        log.error("AI call failed for projectTitle='{}', correlationId='{}'.", projectTitle, correlationId, t);
+        return String.format(FALLBACK_MESSAGE_TEMPLATE, correlationId);
+    }
 }
