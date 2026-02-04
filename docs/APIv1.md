@@ -12,13 +12,13 @@
 
 ## Projects
 
+- **Find all my projects**  
+  `GET /api/v1/projects`
+
 - **Create a new project**  
   `POST /api/v1/projects`
 
-- **Get all my projects**  
-  `GET /api/v1/projects`
-
-- **Get project details**  
+- **Find project details by project identifier**  
   `GET /api/v1/projects/{projectId}`
 
 ## Tasks
