@@ -43,7 +43,7 @@ public class Project extends AbstractBaseModel {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false)
     private UUID userId;
 
     @ColumnDefault(value = "false")
