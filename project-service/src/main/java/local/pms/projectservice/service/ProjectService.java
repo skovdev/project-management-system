@@ -3,11 +3,13 @@ package local.pms.projectservice.service;
 import local.pms.projectservice.dto.ProjectDto;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectService {
-    Page<ProjectDto> findAll(int page, int size, String sortBy, String order);
+    ProjectDto create(ProjectDto projectDto);
+    ProjectDto findById(UUID projectId);
+    Page<ProjectDto> findAll(Pageable pageable);
     String generateProjectDescription(UUID projectId, String projectTitle);
 }
