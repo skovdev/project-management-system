@@ -16,18 +16,17 @@ import local.pms.projectservice.repository.ProjectRepository;
 
 import local.pms.projectservice.service.ProjectService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
+
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 import java.util.Optional;
@@ -35,21 +34,46 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProjectServiceImpl implements ProjectService {
 
-    final ProjectMapping projectMapping = ProjectMapping.INSTANCE;
+    private final ProjectMapping projectMapping = ProjectMapping.INSTANCE;
 
-    final ProjectRepository projectRepository;
-    final AiExternalProvider aiExternalProvider;
+    private final ProjectRepository projectRepository;
+    private final AiExternalProvider aiExternalProvider;
 
     @Override
-    public Page<ProjectDto> findAll(int page, int size, String sortBy, String order) {
-        return projectRepository.findAll(pageRequest(page, size, sortBy, order))
+    @Transactional(readOnly = true)
+    public Page<ProjectDto> findAll(Pageable pageable) {
+        return projectRepository.findAll(pageable)
                 .map(projectMapping::toDto);
     }
 
     @Override
+    @Transactional
+    public ProjectDto create(ProjectDto projectDto) {
+        if (projectDto == null) {
+            log.error("ProjectDto is null, cannot create project.");
+            throw new InvalidProjectInputException("Project data cannot be null. Please provide valid project information");
+        }
+        Project project = projectMapping.toEntity(projectDto);
+        Project savedProject = projectRepository.save(project);
+        log.info("Project created with ID: {}", savedProject.getId());
+        return projectMapping.toDto(savedProject);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProjectDto findById(UUID projectId) {
+        Optional<Project> project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            log.error("Project with ID {} not found.", projectId);
+            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
+        }
+        return projectMapping.toDto(project.get());
+    }
+
+    @Override
+    @Transactional
     public String generateProjectDescription(UUID projectId, String projectTitle) {
         Optional<Project> project = projectRepository.findById(projectId);
         if (project.isEmpty()) {
@@ -67,15 +91,5 @@ public class ProjectServiceImpl implements ProjectService {
             log.error("Failed to generate project description for project title '{}': {}", projectTitle, e.getMessage());
             throw new DescriptionGenerationException("An error occurred while generating project description", e);
         }
-    }
-
-
-    private PageRequest pageRequest(int page, int size, String sortBy, String order) {
-        return PageRequest.of(page, size, sorting(sortBy, order));
-    }
-
-    private Sort sorting(String sortBy, String order) {
-        return Sort.by(Sort.Order.by(sortBy)
-                .with(Sort.Direction.fromString(order)));
     }
 }
