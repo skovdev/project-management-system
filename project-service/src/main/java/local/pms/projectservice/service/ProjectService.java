@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface ProjectService {
     ProjectDto create(ProjectDto projectDto);
-    ProjectDto findById(UUID projectId);
     Page<ProjectDto> findAll(Pageable pageable);
+    ProjectDto findById(UUID projectId);
     String generateProjectDescription(UUID projectId, String projectTitle);
 }
