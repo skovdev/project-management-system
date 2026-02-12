@@ -18,7 +18,6 @@ import local.pms.projectservice.service.ProjectService;
 
 import lombok.RequiredArgsConstructor;
 
-
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
@@ -42,13 +41,6 @@ public class ProjectServiceImpl implements ProjectService {
     private final AiExternalProvider aiExternalProvider;
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<ProjectDto> findAll(Pageable pageable) {
-        return projectRepository.findAll(pageable)
-                .map(projectMapping::toDto);
-    }
-
-    @Override
     @Transactional
     public ProjectDto create(ProjectDto projectDto) {
         if (projectDto == null) {
@@ -59,6 +51,13 @@ public class ProjectServiceImpl implements ProjectService {
         Project savedProject = projectRepository.save(project);
         log.info("Project created with ID: {}", savedProject.getId());
         return projectMapping.toDto(savedProject);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProjectDto> findAll(Pageable pageable) {
+        return projectRepository.findAll(pageable)
+                .map(projectMapping::toDto);
     }
 
     @Override

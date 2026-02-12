@@ -5,9 +5,13 @@ import jakarta.validation.constraints.NotBlank;
 
 import local.pms.projectservice.type.ProjectStatusType;
 
+import java.time.LocalDateTime;
+
+import java.util.UUID;
+
 public record ProjectDto (
         @NotBlank(message = "The id field is required")
-        String id,
+        UUID id,
         @NotBlank(message = "The title field is required")
         @Size(min = 3, max = 255, message = "The title field must be between 3 and 255 characters")
         String title,
@@ -18,9 +22,9 @@ public record ProjectDto (
         ProjectStatusType projectStatusType,
 
         @NotBlank(message = "The startDate field is required")
-        String startDate,
+        LocalDateTime startDate,
         @NotBlank(message = "The endDate field is required")
-        String endDate,
+        LocalDateTime endDate,
         @NotBlank(message = "The userId field is required")
-        String userId
+        UUID userId
 ) {}

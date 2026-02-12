@@ -47,20 +47,6 @@ public class ProjectRestController {
 
     private final ProjectService projectService;
 
-    @Operation(
-            summary = "Find all projects",
-            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "List of projects", content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
-            }),
-    })
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Page<ProjectDto> findAll(@ParameterObject Pageable pageable) {
-        return projectService.findAll(pageable);
-    }
-
     @Operation(summary = "Create a new project")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Project created successfully", content = {
@@ -77,7 +63,21 @@ public class ProjectRestController {
         return ApiResponseDto.buildSuccessResponse(projectService.create(projectDto));
     }
 
-    @Operation(summary = "Find project details by project identifier")
+    @Operation(
+            summary = "Find all projects",
+            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of projects", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+            }),
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public Page<ProjectDto> findAll(@ParameterObject Pageable pageable) {
+        return projectService.findAll(pageable);
+    }
+
+    @Operation(summary = "Find a project by project identifier")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project details retrieved successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
