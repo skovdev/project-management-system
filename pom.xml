@@ -42,7 +42,7 @@
         <spring.cloud.loadbalancer.version>4.1.0</spring.cloud.loadbalancer.version>
         <spring.cloud.openfeign.version>4.1.0</spring.cloud.openfeign.version>
         <spring.cloud.kafka.version>4.1.0</spring.cloud.kafka.version>
-        <spring.ai.starter.model.openai.version>2.0.0-M2</spring.ai.starter.model.openai.version>
+        <spring.ai.starter.model.openai.version>1.1.0</spring.ai.starter.model.openai.version>
         <jakarta.servlet.api.version>6.1.0</jakarta.servlet.api.version>
         <jakarta.persistence.api.version>3.1.0</jakarta.persistence.api.version>
         <jakarta.validation.api.version>3.1.0</jakarta.validation.api.version>
