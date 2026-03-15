@@ -15,10 +15,10 @@
 - **Create a new project**  
   `POST /api/v1/projects`
 
-- **Find all my projects**  
+- **Find all projects**  
   `GET /api/v1/projects`
 
-- **Find project details by project identifier**  
+- **Find a project by project identifier**  
   `GET /api/v1/projects/{projectId}`
 
 ## Tasks
@@ -29,11 +29,11 @@
 - **Find all tasks in a project**  
   `GET /api/v1/projects/{projectId}/tasks`
 
-- **Find task details**  
+- **Find a task by task identifier**  
   `GET /api/v1/tasks/{taskId}`
 
-- **Update task details**  
+- **Update a task by task identifier**  
   `PUT /api/v1/tasks/{taskId}`
 
-- **Delete a task**  
+- **Delete a task by task identifier**  
   `DELETE /api/v1/tasks/{taskId}`
