@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     networks:
       - project-management-system-network
 
@@ -21,7 +21,7 @@ services:
     ports:
       - "8761:8761"
     networks:
-        - project-management-system-network
+      - project-management-system-network
 
   config-server:
     image: config-server-1.0
@@ -44,10 +44,6 @@ services:
         published: 8762
         protocol: tcp
         mode: host
-
-    depends_on:
-      - service-discovery
-      - config-server
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar api-gateway-1.0.jar
     networks:
       - project-management-system-network
@@ -59,12 +55,6 @@ services:
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      - service-discovery
-      - config-server
-      - api-gateway
-      - postgresql
-      - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar auth-service-1.0.jar
     networks:
       - project-management-system-network
@@ -76,12 +66,6 @@ services:
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      - service-discovery
-      - config-server
-      - api-gateway
-      - postgresql
-      - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar user-service-1.0.jar
     networks:
       - project-management-system-network
@@ -93,12 +77,6 @@ services:
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      - service-discovery
-      - config-server
-      - api-gateway
-      - postgresql
-      - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar project-service-1.0.jar
     networks:
       - project-management-system-network
@@ -110,15 +88,10 @@ services:
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      - service-discovery
-      - config-server
-      - api-gateway
-      - postgresql
-      - kafka
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar task-service-1.0.jar
     networks:
       - project-management-system-network
+
   ai-service:
     image: ai-service-1.0
     deploy:
@@ -126,48 +99,30 @@ services:
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      - service-discovery
-      - config-server
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar ai-service-1.0.jar
     networks:
       - project-management-system-network
 
   kafka:
-    image: wurstmeister/kafka:latest
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka
     deploy:
       replicas: 1
     ports:
       - "9092:9092"
     environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    depends_on:
-      - zookeeper
-    networks:
-        - project-management-system-network
-
-  zookeeper:
-    image: wurstmeister/zookeeper:latest
-    deploy:
-      replicas: 1
-    ports:
-      - "2181:2181"
-    networks:
-        - project-management-system-network
-
-  app-client:
-    image: app-client-1.0
-    deploy:
-      replicas: 1
-    ports:
-      - target: 4200
-        published: 4200
-        protocol: tcp
-        mode: host
-    environment:
-      - CHOKIDAR_USEPOLLING=true
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - project-management-system-network
 
@@ -176,4 +131,4 @@ networks:
     driver: overlay
 
 volumes:
-  pg_data:
+  pgdata:
