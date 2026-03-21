@@ -1,0 +1,334 @@
+{
+  "info": {
+    "name": "Project Management System - API Gateway",
+    "description": "API collection for the Project Management System microservices accessed through the API Gateway (port 8762).\n\n**Base URL:** `http://localhost:8762`\n\n**Auth Flow:**\n1. Call `Auth / Sign In` to get a JWT token.\n2. The test script auto-saves the token to the `bearerToken` collection variable.\n3. All secured requests automatically use `Bearer {{bearerToken}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8762",
+      "type": "string"
+    },
+    {
+      "key": "bearerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "admin123",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth Service",
+      "description": "Authentication endpoints routed to AUTH-SERVICE via /api/v1/auth/**",
+      "item": [
+        {
+          "name": "Sign Up",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"new.user\",\n  \"password\": \"password123\",\n  \"email\": \"new.user@pms.local\",\n  \"firstName\": \"New\",\n  \"lastName\": \"User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-up",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-up"]
+            },
+            "description": "Register a new user. Public endpoint — no token required.\n\n**Roles:** Public\n\nOn success, a Kafka message is published to `user-details-creation` for user-service to create a user profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Sign In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data) {",
+                  "    pm.collectionVariables.set('bearerToken', jsonData.data);",
+                  "    console.log('Token saved to bearerToken collection variable.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-in"]
+            },
+            "description": "Authenticate a user and receive a JWT token. Public endpoint — no token required.\n\n**Roles:** Public\n\nThe test script automatically saves the returned JWT to `bearerToken` so subsequent requests are authenticated.\n\n**Response `data` field:** JWT token string (valid for 1 hour)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auth User by Username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/john.doe",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "john.doe"]
+            },
+            "description": "Retrieve an auth user record by username.\n\n**Roles:** ADMIN only"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Auth User by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/a0000000-0000-0000-0000-000000000002",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "a0000000-0000-0000-0000-000000000002"]
+            },
+            "description": "Delete an auth user by their UUID.\n\n**Roles:** ADMIN only\n\nOn success, a Kafka message is published to `user-details-deletion` so user-service removes the associated profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Service",
+      "description": "User profile endpoints routed to USER-SERVICE via /api/v1/users/**",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users?page=0&size=10&sortBy=id&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based, default: 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Page size (default: 10)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "id",
+                  "description": "Sort field (default: id)"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "Sort direction: asc or desc (default: asc)"
+                }
+              ]
+            },
+            "description": "Retrieve a paginated list of all user profiles.\n\n**Roles:** ADMIN only\n\n**Response `data` field:** Page of `UserDto` objects:\n- `id` (UUID)\n- `firstName` (String)\n- `lastName` (String)\n- `email` (String)\n- `authUserId` (UUID)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Project Service",
+      "description": "Project management endpoints routed to PROJECT-SERVICE via /api/v1/projects/**",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Web Portal\",\n  \"description\": \"A customer-facing web portal for self-service account management.\",\n  \"projectStatusType\": \"PLANNING\",\n  \"startDate\": \"2026-04-01T09:00:00\",\n  \"endDate\": \"2026-09-30T18:00:00\",\n  \"userId\": \"b0000000-0000-0000-0000-000000000002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects"]
+            },
+            "description": "Create a new project.\n\n**Roles:** ADMIN or USER\n\n**Request body fields:**\n- `title` (String, required)\n- `description` (String)\n- `projectStatusType` (Enum): `PLANNING` | `IN_PROGRESS` | `COMPLETED` | `ON_HOLD` | `CANCELLED`\n- `startDate` (LocalDateTime, ISO-8601)\n- `endDate` (LocalDateTime, ISO-8601)\n- `userId` (UUID) — ID of the owning user from user-service"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects?page=0&size=10&sortBy=id&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based, default: 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Page size (default: 10)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "id",
+                  "description": "Sort field (default: id)"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "Sort direction: asc or desc (default: asc)"
+                }
+              ]
+            },
+            "description": "Retrieve a paginated list of all projects.\n\n**Roles:** ADMIN only\n\n**Response `data` field:** Page of `ProjectDto` objects:\n- `id` (UUID)\n- `title` (String)\n- `description` (String)\n- `projectStatusType` (Enum)\n- `startDate` (LocalDateTime)\n- `endDate` (LocalDateTime)\n- `userId` (UUID)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/c0000000-0000-0000-0000-000000000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", "c0000000-0000-0000-0000-000000000001"]
+            },
+            "description": "Retrieve a single project by its UUID.\n\n**Roles:** ADMIN or USER\n\n**Seed project IDs:**\n- `c0000000-0000-0000-0000-000000000001` — E-Commerce Platform Redesign (IN_PROGRESS)\n- `c0000000-0000-0000-0000-000000000002` — Mobile Banking Application (PLANNING)\n- `c0000000-0000-0000-0000-000000000003` — HR Management System v2 (COMPLETED)\n- `c0000000-0000-0000-0000-000000000004` — Data Analytics Dashboard (ON_HOLD)\n- `c0000000-0000-0000-0000-000000000005` — Legacy CRM Migration (CANCELLED)"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Project Description (AI)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/c0000000-0000-0000-0000-000000000001/description",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", "c0000000-0000-0000-0000-000000000001", "description"]
+            },
+            "description": "Generate an AI-powered description for the given project using ChatGPT.\n\n**Roles:** ADMIN or USER\n\nCalls AI-SERVICE internally via Feign client (`/api/v1/chat-gpt/ask`).\n\n**Circuit Breaker:** Resilience4j — 50% failure threshold over 20 calls; 30s wait before retry.\n\n**Retry:** 2 attempts with exponential backoff."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Task Service",
+      "description": "Task management endpoints routed to TASK-SERVICE via /api/v1/task/**",
+      "item": [
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks?page=0&size=10&sortBy=id&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based, default: 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Page size (default: 10)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "id",
+                  "description": "Sort field (default: id)"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "Sort direction: asc or desc (default: asc)"
+                }
+              ]
+            },
+            "description": "Retrieve a paginated list of all tasks.\n\n**Roles:** ROLE_ADMIN only\n\n**Response `data` field:** Page of `TaskDto` objects:\n- `id` (String)\n- `title` (String)\n- `description` (String)\n- `taskStatusType` (Enum): `TODO` | `IN_PROGRESS` | `DONE` | `ON_HOLD` | `CANCELLED`\n- `taskPriorityType` (Enum): `LOW` | `MEDIUM` | `HIGH` | `CRITICAL` | `BLOCKER`\n- `active` (boolean)\n- `projectId` (String)\n- `userId` (String)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
