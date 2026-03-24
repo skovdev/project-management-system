@@ -42,7 +42,6 @@
         <spring.cloud.loadbalancer.version>4.1.0</spring.cloud.loadbalancer.version>
         <spring.cloud.openfeign.version>4.1.0</spring.cloud.openfeign.version>
         <spring.cloud.kafka.version>4.1.0</spring.cloud.kafka.version>
-        <spring.ai.starter.model.openai.version>1.1.0</spring.ai.starter.model.openai.version>
         <jakarta.servlet.api.version>6.1.0</jakarta.servlet.api.version>
         <jakarta.persistence.api.version>3.1.0</jakarta.persistence.api.version>
         <jakarta.validation.api.version>3.1.0</jakarta.validation.api.version>
@@ -138,12 +137,6 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-stream-kafka</artifactId>
                 <version>${spring.cloud.kafka.version}</version>
-            </dependency>
-            <!-- Spring AI -->
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-starter-model-openai</artifactId>
-                <version>${spring.ai.starter.model.openai.version}</version>
             </dependency>
             <!-- Jakarta Servlet API -->
             <dependency>
@@ -274,6 +267,15 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
