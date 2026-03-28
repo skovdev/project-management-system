@@ -28,7 +28,7 @@ public class ApiGatewayDockerConfig {
                         .uri("lb://USER-SERVICE"))
                 .route("project-service", r -> r.path("/api/v1/projects/**")
                         .uri("lb://PROJECT-SERVICE"))
-                .route("task-service", r -> r.path("/api/v1/task/**")
+                .route("task-service", r -> r.path("/api/v1/tasks/**")
                         .uri("lb://TASK-SERVICE"))
                 .build();
     }
