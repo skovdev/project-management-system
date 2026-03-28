@@ -1,2 +1,6 @@
 ### IntelliJ IDEA ###
 /.idea
+/.claude
+
+### Maven ###
+target/
