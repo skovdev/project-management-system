@@ -4,13 +4,12 @@ services:
     deploy:
         replicas: 1
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    command: ["postgres", "-c", "max_connections=170"]
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command: postgres -c max_connections=170 -c superuser_reserved_connections=5
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql
     networks:
       - project-management-system-network
 
@@ -51,10 +50,30 @@ services:
   auth-service:
     image: auth-service-1.0
     deploy:
-      replicas: 3
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+      SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
+    ports:
+      - target: 5006
+        published: 5006
+        protocol: tcp
+        mode: host
+    volumes:
+      - ./auth-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar auth-service-1.0.jar
     networks:
       - project-management-system-network
@@ -63,9 +82,24 @@ services:
     image: user-service-1.0
     deploy:
       replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+      SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    volumes:
+      - ./user-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar user-service-1.0.jar
     networks:
       - project-management-system-network
@@ -74,9 +108,24 @@ services:
     image: project-service-1.0
     deploy:
       replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+      SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    volumes:
+      - ./project-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar project-service-1.0.jar
     networks:
       - project-management-system-network
@@ -85,9 +134,24 @@ services:
     image: task-service-1.0
     deploy:
       replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+      SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    volumes:
+      - ./task-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar task-service-1.0.jar
     networks:
       - project-management-system-network
@@ -129,6 +193,3 @@ services:
 networks:
   project-management-system-network:
     driver: overlay
-
-volumes:
-  pgdata:
