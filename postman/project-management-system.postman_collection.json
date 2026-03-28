@@ -293,6 +293,34 @@
       "description": "Task management endpoints routed to TASK-SERVICE via /api/v1/task/**",
       "item": [
         {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement Login Page\",\n  \"description\": \"Design and implement the user login page with validation.\",\n  \"taskStatusType\": \"TODO\",\n  \"taskPriorityType\": \"HIGH\",\n  \"active\": true,\n  \"projectId\": \"c0000000-0000-0000-0000-000000000001\",\n  \"userId\": \"b0000000-0000-0000-0000-000000000002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"]
+            },
+            "description": "Create a new task.\n\n**Roles:** ADMIN or USER\n\n**Request body fields:**\n- `title` (String, required)\n- `description` (String)\n- `taskStatusType` (Enum): `TODO` | `IN_PROGRESS` | `DONE` | `ON_HOLD` | `CANCELLED`\n- `taskPriorityType` (Enum): `LOW` | `MEDIUM` | `HIGH` | `CRITICAL` | `BLOCKER`\n- `active` (boolean)\n- `projectId` (UUID) — ID of the associated project from project-service\n- `userId` (UUID) — ID of the owning user from user-service"
+          },
+          "response": []
+        },
+        {
           "name": "Get All Tasks",
           "request": {
             "method": "GET",
