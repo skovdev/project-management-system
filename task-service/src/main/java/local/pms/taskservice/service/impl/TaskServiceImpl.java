@@ -2,6 +2,10 @@ package local.pms.taskservice.service.impl;
 
 import local.pms.taskservice.dto.TaskDto;
 
+import local.pms.taskservice.entity.Task;
+
+import local.pms.taskservice.exception.InvalidTaskInputException;
+
 import local.pms.taskservice.mapping.TaskMapping;
 
 import local.pms.taskservice.repository.TaskRepository;
@@ -15,11 +19,12 @@ import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
+
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -32,17 +37,21 @@ public class TaskServiceImpl implements TaskService {
     final TaskRepository taskRepository;
 
     @Override
-    public Page<TaskDto> findAll(int page, int size, String sortBy, String order) {
-        return taskRepository.findAll(pageRequest(page, size, sortBy, order))
+    @Transactional
+    public TaskDto create(TaskDto taskDto) {
+        if (taskDto == null) {
+            log.error("TaskDto is null, cannot create task.");
+            throw new InvalidTaskInputException("Task data cannot be null. Please provide valid task information");
+        }
+        Task task = taskMapping.toEntity(taskDto);
+        Task savedTask = taskRepository.save(task);
+        log.info("Task created with ID: {}", savedTask.getId());
+        return taskMapping.toDto(savedTask);
+    }
+
+    @Override
+    public Page<TaskDto> findAll(Pageable pageable) {
+        return taskRepository.findAll(pageable)
                 .map(taskMapping::toDto);
-    }
-
-    private PageRequest pageRequest(int page, int size, String sortBy, String order) {
-        return PageRequest.of(page, size, sorting(sortBy, order));
-    }
-
-    private Sort sorting(String sortBy, String order) {
-        return Sort.by(Sort.Order.by(sortBy)
-                .with(Sort.Direction.fromString(order)));
     }
 }

@@ -1,9 +1,9 @@
 package local.pms.userservice.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,14 +19,16 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.experimental.FieldDefaults;
 
+import org.springdoc.core.annotations.ParameterObject;
+
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -41,22 +43,17 @@ public class UserRestController {
 
     final UserService userService;
 
-    @Operation(summary = "Find all users")
+    @Operation(
+            summary = "Find all users",
+            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of users", content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = UserDto.class))
             })
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Page<UserDto> findAll(@Parameter(name = "page", description = "This parameter contains the page number")
-                                 @RequestParam(defaultValue = "0") int page,
-                                 @Parameter(name = "size", description = "This parameter contains the number of elements per page")
-                                 @RequestParam(defaultValue = "10") int size,
-                                 @Parameter(name = "sort", description = "This parameter contains the field name to sort")
-                                 @RequestParam(defaultValue = "id") String sortBy,
-                                 @Parameter(name = "order", description = "This parameter contains the sort order")
-                                 @RequestParam(defaultValue = "asc") String order) {
-        return userService.findAll(page, size, sortBy, order);
+    public Page<UserDto> findAll(@ParameterObject Pageable pageable) {
+        return userService.findAll(pageable);
     }
 }

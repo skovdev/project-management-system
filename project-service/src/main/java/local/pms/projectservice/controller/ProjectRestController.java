@@ -71,7 +71,7 @@ public class ProjectRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
             }),
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<ProjectDto> findAll(@ParameterObject Pageable pageable) {
         return projectService.findAll(pageable);
