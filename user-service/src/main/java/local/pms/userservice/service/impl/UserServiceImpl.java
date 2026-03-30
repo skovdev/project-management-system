@@ -2,7 +2,11 @@ package local.pms.userservice.service.impl;
 
 import local.pms.userservice.dto.UserDto;
 
+import local.pms.userservice.entity.User;
+
 import local.pms.userservice.mapping.UserMapper;
+
+import local.pms.userservice.exception.UserNotFoundException;
 
 import local.pms.userservice.repository.UserRepository;
 
@@ -14,9 +18,8 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.experimental.FieldDefaults;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -35,18 +38,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserDto> findAll(int page, int size, String sortBy, String order) {
-        return userRepository.findAll(pageRequest(page, size, sortBy, order))
+    public Page<UserDto> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable)
                 .map(userMapper::toDto);
-    }
-
-    private PageRequest pageRequest(int page, int size, String sortBy, String order) {
-        return PageRequest.of(page, size, sorting(sortBy, order));
-    }
-
-    private Sort sorting(String sortBy, String order) {
-        return Sort.by(Sort.Order.by(sortBy)
-                .with(Sort.Direction.fromString(order)));
     }
 
     @Override
@@ -57,7 +51,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void deleteById(UUID id) {
-        userRepository.deleteById(id);
+    public void deleteByAuthUserId(UUID authUserId) {
+        User user = userRepository.findByAuthUserId(authUserId)
+                .orElseThrow(() -> new UserNotFoundException("User with authUserId '" + authUserId + "' not found"));
+        userRepository.delete(user);
     }
 }

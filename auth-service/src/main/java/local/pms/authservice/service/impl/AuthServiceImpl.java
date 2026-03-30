@@ -190,7 +190,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthUserNotFoundException("Authentication user with ID '" + id + "' not found");
         }
         authUserRepository.deleteById(id);
-        log.info("The authentication user is saved successfully. AuthUserID: {}", id);
+        log.info("The authentication user is deleted successfully. AuthUserID: {}", id);
         applicationEventPublisher.publishEvent(new UserDetailsDeletedEvent(id));
     }
 

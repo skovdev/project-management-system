@@ -32,11 +32,13 @@ public class UserDetailsDeletionConsumer {
             groupId = KafkaConstants.GroupIds.USER_DETAILS_DELETION_GROUP_ID)
     public void receiveUserDataToDelete(UserDetailsDeletedEvent event) {
         log.info("Received user data to delete. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_DELETION_TOPIC, LocalDateTime.now());
+        UUID authUserId = event.authUserId();
         try {
             log.info("Attempting to delete the user data");
-            userService.deleteById(event.authUserId());
+            userService.deleteByAuthUserId(authUserId);
+            log.info("User data deleted successfully. AuthUserID: {}", authUserId);
         } catch (Exception e) {
-            log.error("Failed to process deleting the user. AuthUserID: {}", event.authUserId());
+            log.error("Failed to process deleting the user. AuthUserID: {}", authUserId);
             handleUserDetailsDeleteFailed(event);
         }
     }

@@ -42,10 +42,10 @@ public class Task extends AbstractBaseModel {
     @Column(name = "active", nullable = false)
     private boolean active;
 
-    @Column(name = "project_id", nullable = false, unique = true)
+    @Column(name = "project_id", nullable = false)
     private UUID projectId;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false)
     private UUID userId;
 
     @Column(name = "deleted", nullable = false)

@@ -10,6 +10,8 @@ import lombok.Getter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.util.UUID;
+
 @Entity
 @Setter
 @Getter
@@ -28,7 +30,7 @@ public class User extends AbstractBaseModel {
     private String email;
 
     @Column(name = "auth_user_id", nullable = false, unique = true)
-    private String authUserId;
+    private UUID authUserId;
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;

@@ -90,7 +90,7 @@ public class AuthRestController {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<AuthUserDto> findByUsername(@Parameter(description = "This parameter contains the username to find")
                                                           @PathVariable("username") String username) {
@@ -104,7 +104,7 @@ public class AuthRestController {
             @ApiResponse(responseCode = "200", description = "User successfully deleted"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{id}")
     public ApiResponseDto<String> deleteById(@Parameter(description = "This parameter contains the user's id to delete")
                                @PathVariable("id") UUID id) {
