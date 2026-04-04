@@ -30,11 +30,16 @@ import org.springframework.http.MediaType;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 import static local.pms.taskservice.constant.VersionAPI.API_V1;
 
@@ -49,8 +54,8 @@ public class TaskRestController {
 
     @Operation(summary = "Create a new task")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Task created successfully", content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+            @ApiResponse(responseCode = "200", description = "Task created successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TaskDto.class))
             }),
             @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
             @ApiResponse(responseCode = "500", description = "Error occurred while creating task"),
@@ -75,5 +80,52 @@ public class TaskRestController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<TaskDto> findAll(@ParameterObject Pageable pageable) {
         return taskService.findAll(pageable);
+    }
+
+    @Operation(summary = "Find a task by task identifier")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task details retrieved successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TaskDto.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @GetMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<TaskDto> findById(@Parameter(description = "Task identifier to retrieve details")
+                                            @PathVariable(name = "taskId") UUID taskId) {
+        return ApiResponseDto.buildSuccessResponse(taskService.findById(taskId));
+    }
+
+    @Operation(summary = "Update an existing task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task updated successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TaskDto.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PutMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<TaskDto> update(@Parameter(description = "Task identifier to update")
+                                          @PathVariable(name = "taskId") UUID taskId,
+                                          @Parameter(description = "Updated task data")
+                                          @RequestBody TaskDto taskDto) {
+        return ApiResponseDto.buildSuccessResponse(taskService.update(taskId, taskDto));
+    }
+
+    @Operation(summary = "Delete a task by task identifier")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<Void> delete(@Parameter(description = "Task identifier to delete")
+                                       @PathVariable(name = "taskId") UUID taskId) {
+        taskService.delete(taskId);
+        return ApiResponseDto.buildSuccessResponse(null);
     }
 }
