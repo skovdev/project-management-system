@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface UserService {
-    Page<UserDto> findAll(Pageable pageable);
     void save(UserDto userDto);
+    Page<UserDto> findAll(Pageable pageable);
+    UserDto findById(UUID id);
+    UserDto update(UUID id, UserDto userDto);
+    void delete(UUID id);
     void deleteByAuthUserId(UUID authUserId);
 }

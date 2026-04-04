@@ -28,6 +28,7 @@ import java.security.spec.InvalidKeySpecException;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.Base64;
 import java.util.Collections;
 
@@ -52,6 +53,10 @@ public class JwtTokenProvider {
     @PostConstruct
     public void init() {
         publicKey = loadPublicKey();
+    }
+
+    public UUID extractAuthUserId(String token) {
+        return UUID.fromString(extractClaims(token).get("authUserId", String.class));
     }
 
     public boolean isTokenExpired(String token) {
