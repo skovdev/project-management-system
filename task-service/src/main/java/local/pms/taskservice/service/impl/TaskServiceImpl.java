@@ -1,20 +1,21 @@
 package local.pms.taskservice.service.impl;
 
+import local.pms.taskservice.config.jwt.JwtTokenProvider;
+
 import local.pms.taskservice.dto.TaskDto;
 
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
+import local.pms.taskservice.exception.TaskAccessDeniedException;
 
 import local.pms.taskservice.mapping.TaskMapping;
 
 import local.pms.taskservice.repository.TaskRepository;
 
 import local.pms.taskservice.service.TaskService;
+import local.pms.taskservice.service.TokenService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-
-import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,12 +31,13 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TaskServiceImpl implements TaskService {
 
-    final TaskMapping taskMapping = TaskMapping.INSTANCE;
+    private final TaskMapping taskMapping = TaskMapping.INSTANCE;
 
-    final TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
+    private final TokenService tokenService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional
@@ -45,6 +47,7 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidTaskInputException("Task data cannot be null. Please provide valid task information");
         }
         var task = taskMapping.toEntity(taskDto);
+        task.setUserId(extractAuthUserId());
         var savedTask = taskRepository.save(task);
         log.info("Task created with ID: {}", savedTask.getId());
         return taskMapping.toDto(savedTask);
@@ -53,16 +56,16 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public Page<TaskDto> findAll(Pageable pageable) {
-        return taskRepository.findAll(pageable)
+        return taskRepository.findAllByUserId(extractAuthUserId(), pageable)
                 .map(taskMapping::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TaskDto findById(UUID taskId) {
-        var task = taskRepository.findById(taskId);
+        var task = taskRepository.findByIdAndUserId(taskId, extractAuthUserId());
         if (task.isEmpty()) {
-            log.error("Task with ID {} not found.", taskId);
+            log.error("Task with ID {} not found or access denied.", taskId);
             throw new TaskNotFoundException("Task with ID " + taskId + " not found. Please provide a valid task ID");
         }
         return taskMapping.toDto(task.get());
@@ -75,10 +78,15 @@ public class TaskServiceImpl implements TaskService {
             log.error("TaskDto is null, cannot update task.");
             throw new InvalidTaskInputException("Task data cannot be null. Please provide valid task information");
         }
+        UUID authUserId = extractAuthUserId();
         var existingTask = taskRepository.findById(taskId);
         if (existingTask.isEmpty()) {
             log.error("Task with ID {} not found, cannot update.", taskId);
             throw new TaskNotFoundException("Task with ID " + taskId + " not found. Please provide a valid task ID");
+        }
+        if (!existingTask.get().getUserId().equals(authUserId)) {
+            log.error("User {} attempted to update task {} owned by another user.", authUserId, taskId);
+            throw new TaskAccessDeniedException("Access denied: you do not own task with ID " + taskId);
         }
         var taskToUpdate = existingTask.get();
         taskToUpdate.setTitle(taskDto.title());
@@ -86,8 +94,11 @@ public class TaskServiceImpl implements TaskService {
         taskToUpdate.setTaskStatusType(taskDto.taskStatusType());
         taskToUpdate.setTaskPriorityType(taskDto.taskPriorityType());
         taskToUpdate.setActive(taskDto.active());
+        if (taskDto.projectId() == null || taskDto.projectId().isBlank()) {
+            log.error("TaskDto projectId is null or blank, cannot update task.");
+            throw new InvalidTaskInputException("Project ID cannot be null or blank. Please provide a valid project ID");
+        }
         taskToUpdate.setProjectId(UUID.fromString(taskDto.projectId()));
-        taskToUpdate.setUserId(UUID.fromString(taskDto.userId()));
         var updatedTask = taskRepository.save(taskToUpdate);
         log.info("Task with ID {} updated successfully.", taskId);
         return taskMapping.toDto(updatedTask);
@@ -103,5 +114,13 @@ public class TaskServiceImpl implements TaskService {
         }
         taskRepository.deleteById(taskId);
         log.info("Task with ID {} deleted successfully.", taskId);
+    }
+
+    private UUID extractAuthUserId() {
+        if (tokenService.getToken() == null || tokenService.getToken().isBlank()) {
+            log.error("JWT token is missing or blank, cannot extract authenticated user ID.");
+            throw new TaskAccessDeniedException("Access denied: missing or invalid authentication token");
+        }
+        return jwtTokenProvider.extractAuthUserId(tokenService.getToken());
     }
 }

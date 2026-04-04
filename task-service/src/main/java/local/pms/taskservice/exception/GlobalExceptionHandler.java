@@ -12,9 +12,28 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+/**
+ * Global exception handler for the task-service providing consistent error responses.
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handles {@link TaskAccessDeniedException} and returns a 403 error response.
+     *
+     * @param ex the exception thrown when a user attempts to access another user's task
+     * @return error response with FORBIDDEN status
+     */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(TaskAccessDeniedException.class)
+    public ApiResponseDto<Void> handleTaskAccessDeniedException(TaskAccessDeniedException ex) {
+        log.error("Task access denied: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                List.of("TASK_ACCESS_DENIED"));
+    }
 
     /**
      * Handles {@link TaskNotFoundException} and returns a 404 error response.

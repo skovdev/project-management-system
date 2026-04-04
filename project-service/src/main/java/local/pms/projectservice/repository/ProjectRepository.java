@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
+import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
-    Page<Project> findAll(Pageable pageable);
+    Page<Project> findAllByUserId(UUID userId, Pageable pageable);
+    Optional<Project> findByIdAndUserId(UUID id, UUID userId);
 }

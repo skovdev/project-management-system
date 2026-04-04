@@ -28,6 +28,7 @@ import java.security.spec.InvalidKeySpecException;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.Base64;
 import java.util.Collections;
 
@@ -54,14 +55,42 @@ public class JwtTokenProvider {
         publicKey = loadPublicKey();
     }
 
+    /**
+     * Checks whether the given JWT token has expired.
+     *
+     * @param token the JWT token string
+     * @return {@code true} if the token is expired, {@code false} otherwise
+     */
     public boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
+    /**
+     * Extracts the username from the JWT token.
+     *
+     * @param token the JWT token string
+     * @return the username claim value
+     */
     public String extractUsername(String token) {
         return extractClaims(token).get("username", String.class);
     }
 
+    /**
+     * Extracts the authenticated user's ID from the JWT token.
+     *
+     * @param token the JWT token string
+     * @return the authenticated user's UUID
+     */
+    public UUID extractAuthUserId(String token) {
+        return UUID.fromString(extractClaims(token).get("authUserId", String.class));
+    }
+
+    /**
+     * Extracts all granted authorities (roles and permissions) from the JWT token.
+     *
+     * @param token the JWT token string
+     * @return a combined list of role and permission authorities
+     */
     public List<GrantedAuthority> extractAuthorities(String token) {
         return Stream.concat(
                         extractRoles(token).stream(),
@@ -69,6 +98,12 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Extracts role-based granted authorities from the JWT token.
+     *
+     * @param token the JWT token string
+     * @return a list of role authorities prefixed with {@code ROLE_}
+     */
     @SuppressWarnings("unchecked")
     public List<GrantedAuthority> extractRoles(String token) {
         List<String> roles = extractClaims(token).get("roles", List.class);
@@ -81,6 +116,12 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Extracts permission-based granted authorities from the JWT token.
+     *
+     * @param token the JWT token string
+     * @return a list of permission authorities
+     */
     @SuppressWarnings("unchecked")
     public List<GrantedAuthority> extractPermissions(String token) {
         List<String> permissions = extractClaims(token).get("permissions", List.class);

@@ -10,8 +10,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    Page<Task> findAll(Pageable pageable);
+    Page<Task> findAllByUserId(UUID userId, Pageable pageable);
+    Optional<Task> findByIdAndUserId(UUID id, UUID userId);
 }

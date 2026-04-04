@@ -3,6 +3,7 @@ package local.pms.projectservice.exception.handler;
 import local.pms.projectservice.dto.api.response.ApiResponseDto;
 
 import local.pms.projectservice.exception.ProjectNotFoundException;
+import local.pms.projectservice.exception.ProjectAccessDeniedException;
 import local.pms.projectservice.exception.InvalidProjectInputException;
 import local.pms.projectservice.exception.DescriptionGenerationException;
 
@@ -22,6 +23,24 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handles {@link ProjectAccessDeniedException} and returns a 403 error response.
+     *
+     * @param ex the exception thrown when a user attempts to access another user's project
+     * @return error response with FORBIDDEN status
+     */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(ProjectAccessDeniedException.class)
+    public ApiResponseDto<Void> handleProjectAccessDeniedException(ProjectAccessDeniedException ex) {
+        log.error("Project access denied: {}", ex.getMessage());
+        return ApiResponseDto
+                .buildErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        ex.getMessage(),
+                        List.of("PROJECT_ACCESS_DENIED")
+                );
+    }
 
     /**
      * Handles {@link ProjectNotFoundException} and returns a 404 error response.
