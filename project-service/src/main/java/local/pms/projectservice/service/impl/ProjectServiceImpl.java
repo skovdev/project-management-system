@@ -2,8 +2,6 @@ package local.pms.projectservice.service.impl;
 
 import local.pms.projectservice.dto.ProjectDto;
 
-import local.pms.projectservice.entity.Project;
-
 import local.pms.projectservice.exception.ProjectNotFoundException;
 import local.pms.projectservice.exception.InvalidProjectInputException;
 import local.pms.projectservice.exception.DescriptionGenerationException;
@@ -28,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -47,8 +44,8 @@ public class ProjectServiceImpl implements ProjectService {
             log.error("ProjectDto is null, cannot create project.");
             throw new InvalidProjectInputException("Project data cannot be null. Please provide valid project information");
         }
-        Project project = projectMapping.toEntity(projectDto);
-        Project savedProject = projectRepository.save(project);
+        var project = projectMapping.toEntity(projectDto);
+        var savedProject = projectRepository.save(project);
         log.info("Project created with ID: {}", savedProject.getId());
         return projectMapping.toDto(savedProject);
     }
@@ -63,7 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public ProjectDto findById(UUID projectId) {
-        Optional<Project> project = projectRepository.findById(projectId);
+        var project = projectRepository.findById(projectId);
         if (project.isEmpty()) {
             log.error("Project with ID {} not found.", projectId);
             throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
@@ -73,8 +70,44 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
+    public ProjectDto update(UUID projectId, ProjectDto projectDto) {
+        if (projectDto == null) {
+            log.error("ProjectDto is null, cannot update project.");
+            throw new InvalidProjectInputException("Project data cannot be null. Please provide valid project information");
+        }
+        var existingProject = projectRepository.findById(projectId);
+        if (existingProject.isEmpty()) {
+            log.error("Project with ID {} not found, cannot update.", projectId);
+            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
+        }
+        var projectToUpdate = existingProject.get();
+        projectToUpdate.setTitle(projectDto.title());
+        projectToUpdate.setDescription(projectDto.description());
+        projectToUpdate.setProjectStatusType(projectDto.projectStatusType());
+        projectToUpdate.setStartDate(projectDto.startDate());
+        projectToUpdate.setEndDate(projectDto.endDate());
+        projectToUpdate.setUserId(projectDto.userId());
+        var updatedProject = projectRepository.save(projectToUpdate);
+        log.info("Project with ID {} updated successfully.", projectId);
+        return projectMapping.toDto(updatedProject);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID projectId) {
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            log.error("Project with ID {} not found, cannot delete.", projectId);
+            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
+        }
+        projectRepository.deleteById(projectId);
+        log.info("Project with ID {} deleted successfully.", projectId);
+    }
+
+    @Override
+    @Transactional
     public String generateProjectDescription(UUID projectId, String projectTitle) {
-        Optional<Project> project = projectRepository.findById(projectId);
+        var project = projectRepository.findById(projectId);
         if (project.isEmpty()) {
             log.error("Project with ID {} not found, cannot generate description.", projectId);
             throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
