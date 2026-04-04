@@ -116,6 +116,14 @@ public class TaskServiceImpl implements TaskService {
         log.info("Task with ID {} deleted successfully.", taskId);
     }
 
+    @Override
+    @Transactional
+    public void deleteAllByProjectId(UUID projectId) {
+        log.info("Deleting all tasks for projectId: {}", projectId);
+        taskRepository.deleteAllByProjectId(projectId);
+        log.info("All tasks deleted for projectId: {}", projectId);
+    }
+
     private UUID extractAuthUserId() {
         if (tokenService.getToken() == null || tokenService.getToken().isBlank()) {
             log.error("JWT token is missing or blank, cannot extract authenticated user ID.");

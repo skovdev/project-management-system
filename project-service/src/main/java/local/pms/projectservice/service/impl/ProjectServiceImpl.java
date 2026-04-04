@@ -2,7 +2,13 @@ package local.pms.projectservice.service.impl;
 
 import local.pms.projectservice.config.jwt.JwtTokenProvider;
 
+import local.pms.projectservice.constant.KafkaConstants;
+
 import local.pms.projectservice.dto.ProjectDto;
+
+import local.pms.projectservice.event.ProjectDeletedEvent;
+
+import local.pms.projectservice.kafka.producer.ProjectDeletedProducer;
 
 import local.pms.projectservice.exception.ProjectNotFoundException;
 import local.pms.projectservice.exception.ProjectAccessDeniedException;
@@ -42,6 +48,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final AiExternalProvider aiExternalProvider;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ProjectDeletedProducer projectDeletedProducer;
 
     @Override
     @Transactional
@@ -113,6 +120,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         projectRepository.deleteById(projectId);
         log.info("Project with ID {} deleted successfully.", projectId);
+        projectDeletedProducer.sendProjectDeletedEvent(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, new ProjectDeletedEvent(projectId));
     }
 
     @Override

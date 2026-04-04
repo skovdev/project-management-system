@@ -134,6 +134,11 @@
             <groupId>com.openai</groupId>
             <artifactId>openai-java</artifactId>
         </dependency>
+        <!-- Spring Cloud Kafka -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
         <!-- Resilience4j Spring Boot 3 -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>

@@ -51,4 +51,12 @@ public interface TaskService {
      * @param taskId the unique task identifier
      */
     void delete(UUID taskId);
+
+    /**
+     * Deletes all tasks belonging to the specified project.
+     * Invoked as part of the cascade delete flow when a project is removed.
+     *
+     * @param projectId the UUID of the deleted project
+     */
+    void deleteAllByProjectId(UUID projectId);
 }
