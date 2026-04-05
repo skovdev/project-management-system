@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -23,6 +25,27 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handles {@link MethodArgumentNotValidException} thrown when {@code @Valid} fails on a request body.
+     * Collects all field-level constraint violations and returns them as a 400 error response.
+     *
+     * @param ex the exception containing binding result with field errors
+     * @return error response with BAD_REQUEST status and a list of field violation messages
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ApiResponseDto<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .toList();
+        log.warn("Validation failed: {}", fieldErrors);
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation failed for " + fieldErrors.size() + " field(s)",
+                fieldErrors
+        );
+    }
 
     /**
      * Handles {@link ProjectAccessDeniedException} and returns a 403 error response.
@@ -105,7 +128,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public ApiResponseDto<Void> handleGenericException(Exception ex) {
-        log.error("An unexpected error occurred: {}", ex.getMessage());
+        log.error("An unexpected error occurred", ex);
         return ApiResponseDto
                 .buildErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),

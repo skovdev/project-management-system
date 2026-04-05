@@ -30,6 +30,8 @@ import org.springframework.http.MediaType;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,7 +66,7 @@ public class TaskRestController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<TaskDto> create(@Parameter(description = "Task data to create a new task")
-                                          @RequestBody TaskDto taskDto) {
+                                          @Valid @RequestBody TaskDto taskDto) {
         return ApiResponseDto.buildSuccessResponse(taskService.create(taskDto));
     }
 
@@ -111,7 +113,7 @@ public class TaskRestController {
     public ApiResponseDto<TaskDto> update(@Parameter(description = "Task identifier to update")
                                           @PathVariable(name = "taskId") UUID taskId,
                                           @Parameter(description = "Updated task data")
-                                          @RequestBody TaskDto taskDto) {
+                                          @Valid @RequestBody TaskDto taskDto) {
         return ApiResponseDto.buildSuccessResponse(taskService.update(taskId, taskDto));
     }
 

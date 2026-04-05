@@ -28,6 +28,8 @@ import org.springframework.http.MediaType;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,7 +64,7 @@ public class ProjectRestController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<ProjectDto> create(@Parameter(description = "Project data to create a new project")
-                                             @RequestBody ProjectDto projectDto) {
+                                             @Valid @RequestBody ProjectDto projectDto) {
         return ApiResponseDto.buildSuccessResponse(projectService.create(projectDto));
     }
 
@@ -109,7 +111,7 @@ public class ProjectRestController {
     public ApiResponseDto<ProjectDto> update(@Parameter(description = "Project identifier to update")
                                              @PathVariable(name = "projectId") UUID projectId,
                                              @Parameter(description = "Updated project data")
-                                             @RequestBody ProjectDto projectDto) {
+                                             @Valid @RequestBody ProjectDto projectDto) {
         return ApiResponseDto.buildSuccessResponse(projectService.update(projectId, projectDto));
     }
 
