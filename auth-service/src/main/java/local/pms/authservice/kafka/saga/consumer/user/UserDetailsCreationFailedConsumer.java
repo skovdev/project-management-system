@@ -4,12 +4,11 @@ import local.pms.authservice.constant.KafkaConstants;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 
+import local.pms.authservice.exception.AuthUserDeletionException;
+
 import local.pms.authservice.service.AuthService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-
-import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,22 +20,21 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class UserDetailsCreationFailedConsumer {
 
-    final AuthService authService;
+    private final AuthService authService;
 
     @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC,
             groupId = KafkaConstants.GroupIds.AUTH_USER_DETAILS_CREATION_GROUP_ID)
     public void onUserDetailsCreationFailed(UserDetailsCreatedEvent event) {
         UUID authUserId = event.userDetailsDto().authUserId();
         try {
-            log.info("User details is failed. Attempting to delete the auth user");
+            log.info("User details creation failed for authUserId: {}. Attempting to rollback by deleting the auth user.", authUserId);
             authService.deleteById(authUserId);
         } catch (Exception e) {
-            log.error("Failed to process deleting the user. AuthUserID: {}", authUserId, e);
-            throw new RuntimeException("Failed to delete the auth user", e);
+            log.error("Failed to delete the auth user during Saga compensation. AuthUserID: {}", authUserId, e);
+            throw new AuthUserDeletionException("Failed to delete the auth user during Saga compensation", e);
         }
     }
 }

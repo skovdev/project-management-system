@@ -8,10 +8,7 @@ import local.pms.userservice.event.UserDetailsCreatedEvent;
 
 import local.pms.userservice.service.UserService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-
-import lombok.experimental.FieldDefaults;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,22 +20,19 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-import java.util.UUID;
-
 @Slf4j
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class UserDetailsCreationConsumer {
 
-    final UserService userService;
-    final KafkaTemplate<String, Object> kafkaTemplate;
+    private final UserService userService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, groupId = KafkaConstants.GroupIds.USER_DETAILS_CREATION_GROUP_ID)
     public void receiveUserDataToCreate(UserDetailsCreatedEvent event) {
         log.info("Received user data to create. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, LocalDateTime.now());
         try {
-            UserDto userDto = buildUserDto(event);
+            var userDto = buildUserDto(event);
             log.info("Attempting to save the user details");
             userService.save(userDto);
         } catch (Exception e) {
@@ -55,9 +49,8 @@ public class UserDetailsCreationConsumer {
                 event.userDetailsDto().authUserId());
     }
 
-
     private void handleUserDetailsFailed(UserDetailsCreatedEvent event) {
-        UUID authUserId = event.userDetailsDto().authUserId();
-        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC, authUserId);
+        log.warn("Publishing compensation event to rollback auth user creation. AuthUserID: {}", event.userDetailsDto().authUserId());
+        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC, event);
     }
 }

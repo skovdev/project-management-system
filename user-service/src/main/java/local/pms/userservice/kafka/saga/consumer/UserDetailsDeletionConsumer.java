@@ -38,13 +38,13 @@ public class UserDetailsDeletionConsumer {
             userService.deleteByAuthUserId(authUserId);
             log.info("User data deleted successfully. AuthUserID: {}", authUserId);
         } catch (Exception e) {
-            log.error("Failed to process deleting the user. AuthUserID: {}", authUserId);
+            log.error("Failed to process deleting the user. AuthUserID: {}", authUserId, e);
             handleUserDetailsDeleteFailed(event);
         }
     }
 
     private void handleUserDetailsDeleteFailed(UserDetailsDeletedEvent event) {
-        UUID authUserId = event.authUserId();
-        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC, authUserId);
+        log.warn("Publishing compensation event to rollback auth user deletion. AuthUserID: {}", event.authUserId());
+        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC, event);
     }
 }
