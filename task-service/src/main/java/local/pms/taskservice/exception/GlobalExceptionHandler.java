@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 
+import org.springframework.security.access.AccessDeniedException;
+
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -88,6 +90,25 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(),
                 List.of("INVALID_TASK_INPUT"));
+    }
+
+    /**
+     * Handles Spring Security {@link AccessDeniedException} thrown by {@code @PreAuthorize}
+     * method-level security and returns a 403 error response.
+     *
+     * @param ex the access denied exception
+     * @return error response with FORBIDDEN status
+     */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ApiResponseDto<Void> handleAccessDeniedException(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ApiResponseDto
+                .buildErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        "Access denied",
+                        List.of("ACCESS_DENIED")
+                );
     }
 
     /**
