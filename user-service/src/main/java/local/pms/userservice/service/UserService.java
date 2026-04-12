@@ -14,4 +14,6 @@ public interface UserService {
     UserDto update(UUID id, UserDto userDto);
     void delete(UUID id);
     void deleteByAuthUserId(UUID authUserId);
+    boolean existsByAuthUserId(UUID authUserId);
+    boolean existsByAuthUserIdIncludingDeleted(UUID authUserId);
 }

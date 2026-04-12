@@ -5,7 +5,6 @@ import local.pms.authservice.dto.authuser.UserDetailsDto;
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 
 import local.pms.authservice.exception.AuthUserDeletionException;
-import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import local.pms.authservice.service.AuthService;
 
@@ -23,9 +22,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doNothing;
 
 @ExtendWith(MockitoExtension.class)
 class UserDetailsCreationFailedConsumerTest {
@@ -37,10 +38,11 @@ class UserDetailsCreationFailedConsumerTest {
     private UserDetailsCreationFailedConsumer consumer;
 
     @Test
-    @DisplayName("onUserDetailsCreationFailed calls deleteById with the authUserId from event")
+    @DisplayName("onUserDetailsCreationFailed calls deleteById when auth user is still active")
     void should_callDeleteById_when_userDetailsCreationFailed() {
         var authUserId = UUID.randomUUID();
         var event = buildEvent(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(false);
         doNothing().when(authService).deleteById(authUserId);
 
         consumer.onUserDetailsCreationFailed(event);
@@ -49,12 +51,24 @@ class UserDetailsCreationFailedConsumerTest {
     }
 
     @Test
+    @DisplayName("onUserDetailsCreationFailed skips deleteById when auth user is already deleted (idempotency guard)")
+    void should_skip_when_authUserAlreadyDeleted() {
+        var authUserId = UUID.randomUUID();
+        var event = buildEvent(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(true);
+
+        consumer.onUserDetailsCreationFailed(event);
+
+        verify(authService, never()).deleteById(authUserId);
+    }
+
+    @Test
     @DisplayName("onUserDetailsCreationFailed wraps service failure in AuthUserDeletionException")
     void should_throwAuthUserDeletionException_when_deleteByIdFails() {
         var authUserId = UUID.randomUUID();
         var event = buildEvent(authUserId);
-        doThrow(new AuthUserNotFoundException("not found"))
-                .when(authService).deleteById(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(false);
+        doThrow(new RuntimeException("DB error")).when(authService).deleteById(authUserId);
 
         assertThatThrownBy(() -> consumer.onUserDetailsCreationFailed(event))
                 .isInstanceOf(AuthUserDeletionException.class)

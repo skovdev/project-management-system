@@ -23,11 +23,14 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.UUID;
 
+import java.util.concurrent.CompletableFuture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
@@ -46,10 +49,11 @@ class UserDetailsCreationConsumerTest {
     private UserDetailsCreationConsumer consumer;
 
     @Test
-    @DisplayName("receiveUserDataToCreate calls userService.save with mapped UserDto")
+    @DisplayName("receiveUserDataToCreate calls userService.save with mapped UserDto when user does not exist")
     void should_callSave_when_receiveUserDataToCreate() {
         var authUserId = UUID.randomUUID();
         var event = buildEvent(authUserId);
+        when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(false);
         doNothing().when(userService).save(any());
 
         consumer.receiveUserDataToCreate(event);
@@ -62,11 +66,28 @@ class UserDetailsCreationConsumerTest {
     }
 
     @Test
+    @DisplayName("receiveUserDataToCreate skips processing when user already exists (idempotency guard)")
+    void should_skip_when_userAlreadyExists() {
+        var authUserId = UUID.randomUUID();
+        var event = buildEvent(authUserId);
+        when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(true);
+
+        consumer.receiveUserDataToCreate(event);
+
+        verify(userService, never()).save(any());
+        verify(kafkaTemplate, never()).send(any(), any());
+    }
+
+    @Test
     @DisplayName("receiveUserDataToCreate publishes compensation event when save fails")
+    @SuppressWarnings("unchecked")
     void should_publishCompensationEvent_when_saveFails() {
         var authUserId = UUID.randomUUID();
         var event = buildEvent(authUserId);
+        when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(false);
         doThrow(new RuntimeException("DB error")).when(userService).save(any());
+        when(kafkaTemplate.send(eq(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC), eq(event)))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         consumer.receiveUserDataToCreate(event);
 
@@ -78,7 +99,9 @@ class UserDetailsCreationConsumerTest {
     @Test
     @DisplayName("receiveUserDataToCreate does not publish compensation when save succeeds")
     void should_notPublishCompensationEvent_when_saveSucceeds() {
-        var event = buildEvent(UUID.randomUUID());
+        var authUserId = UUID.randomUUID();
+        var event = buildEvent(authUserId);
+        when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(false);
         doNothing().when(userService).save(any());
 
         consumer.receiveUserDataToCreate(event);

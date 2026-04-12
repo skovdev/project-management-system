@@ -29,6 +29,12 @@ public class UserDetailsDeletionFailedConsumer {
             groupId = KafkaConstants.GroupIds.AUTH_USER_DETAILS_DELETION_GROUP_ID)
     public void onUserDetailsDeletionFailed(UserDetailsDeletedEvent event) {
         UUID authUserId = event.authUserId();
+
+        if (!authService.isDeletedById(authUserId)) {
+            log.warn("Idempotency check: auth user with id {} is already active or does not exist. Skipping duplicate compensation.", authUserId);
+            return;
+        }
+
         try {
             log.info("User details deletion failed for authUserId: {}. Attempting to rollback by restoring the auth user.", authUserId);
             authService.restoreAuthUserById(authUserId);

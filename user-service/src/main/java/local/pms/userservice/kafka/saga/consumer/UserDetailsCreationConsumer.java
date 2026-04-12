@@ -20,6 +20,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+import java.util.UUID;
+
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,7 +34,14 @@ public class UserDetailsCreationConsumer {
 
     @KafkaListener(topics = KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, groupId = KafkaConstants.GroupIds.USER_DETAILS_CREATION_GROUP_ID)
     public void receiveUserDataToCreate(UserDetailsCreatedEvent event) {
+        UUID authUserId = event.userDetailsDto().authUserId();
         log.info("Received user data to create. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_CREATION_TOPIC, LocalDateTime.now());
+
+        if (userService.existsByAuthUserIdIncludingDeleted(authUserId)) {
+            log.warn("Idempotency check: user with authUserId {} already exists. Skipping duplicate message.", authUserId);
+            return;
+        }
+
         try {
             var userDto = buildUserDto(event);
             log.info("Attempting to save the user details");
@@ -50,7 +61,14 @@ public class UserDetailsCreationConsumer {
     }
 
     private void handleUserDetailsFailed(UserDetailsCreatedEvent event) {
-        log.warn("Publishing compensation event to rollback auth user creation. AuthUserID: {}", event.userDetailsDto().authUserId());
-        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC, event);
+        UUID authUserId = event.userDetailsDto().authUserId();
+        log.warn("Publishing compensation event to rollback auth user creation. AuthUserID: {}", authUserId);
+        try {
+            kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC, event)
+                    .get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to send compensation event for authUserId {}. Rethrowing for DLQ handling.", authUserId, e);
+            throw new RuntimeException("Compensation event send failed for authUserId: " + authUserId, e);
+        }
     }
 }

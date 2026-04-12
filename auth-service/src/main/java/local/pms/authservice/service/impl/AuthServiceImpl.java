@@ -20,6 +20,7 @@ import local.pms.authservice.exception.AuthUserSignUpException;
 import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import local.pms.authservice.exception.AuthUsernameAlreadyExistsException;
+
 import local.pms.authservice.mapping.AuthUserMapper;
 
 import local.pms.authservice.repository.AuthUserRepository;
@@ -203,15 +204,24 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void restoreAuthUserById(UUID id) {
-        authUserRepository.findById(id)
+        // Uses native query to find soft-deleted users that @SQLRestriction would otherwise hide
+        authUserRepository.findByIdIncludingDeleted(id)
                 .ifPresentOrElse(
                         authUser -> {
                             authUser.setDeleted(false);
                             authUserRepository.save(authUser);
                             log.info("The authentication user is restored successfully. AuthUserID: {}", id);
-                            }, () -> {
+                        }, () -> {
                             throw new AuthUserNotFoundException("Authentication user with ID '" + id + "' not found");
                         }
-                        );
+                );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isDeletedById(UUID id) {
+        return authUserRepository.findByIdIncludingDeleted(id)
+                .map(AuthUser::isDeleted)
+                .orElse(false);
     }
 }

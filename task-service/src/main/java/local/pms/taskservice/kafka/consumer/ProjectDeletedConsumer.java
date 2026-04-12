@@ -28,12 +28,10 @@ public class ProjectDeletedConsumer {
     public void onProjectDeleted(ProjectDeletedEvent event) {
         log.info("Received project-deleted event. Topic: {} - Datetime: {}",
                 KafkaConstants.Topics.PROJECT_DELETED_TOPIC, LocalDateTime.now());
-        try {
-            log.info("Deleting all tasks for projectId: {}", event.projectId());
-            taskService.deleteAllByProjectId(event.projectId());
-            log.info("All tasks deleted successfully for projectId: {}", event.projectId());
-        } catch (Exception e) {
-            log.error("Failed to delete tasks for projectId: {}. Error: {}", event.projectId(), e.getMessage());
-        }
+        // deleteAllByProjectId is idempotent: re-processing is a no-op because soft-deleted tasks
+        // are excluded by @SQLRestriction, so a second call simply deletes zero rows.
+        log.info("Deleting all tasks for projectId: {}", event.projectId());
+        taskService.deleteAllByProjectId(event.projectId());
+        log.info("All tasks deleted successfully for projectId: {}", event.projectId());
     }
 }

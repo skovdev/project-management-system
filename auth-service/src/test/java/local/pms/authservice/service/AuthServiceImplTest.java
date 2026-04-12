@@ -247,12 +247,12 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("restoreAuthUserById sets deleted=false and saves user")
+    @DisplayName("restoreAuthUserById sets deleted=false and saves user (uses native query to find soft-deleted user)")
     void should_restoreUser_when_userExistsForRestore() {
         var id = UUID.randomUUID();
         var authUser = buildAuthUser(id, "alice");
         authUser.setDeleted(true);
-        when(authUserRepository.findById(id)).thenReturn(Optional.of(authUser));
+        when(authUserRepository.findByIdIncludingDeleted(id)).thenReturn(Optional.of(authUser));
 
         authService.restoreAuthUserById(id);
 
@@ -264,7 +264,7 @@ class AuthServiceImplTest {
     @DisplayName("restoreAuthUserById throws AuthUserNotFoundException when user not found")
     void should_throwAuthUserNotFoundException_when_userNotFoundForRestore() {
         var id = UUID.randomUUID();
-        when(authUserRepository.findById(id)).thenReturn(Optional.empty());
+        when(authUserRepository.findByIdIncludingDeleted(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.restoreAuthUserById(id))
                 .isInstanceOf(AuthUserNotFoundException.class)

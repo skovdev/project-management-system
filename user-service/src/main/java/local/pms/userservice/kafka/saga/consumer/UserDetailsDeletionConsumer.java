@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 
 import java.util.UUID;
 
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -33,6 +35,12 @@ public class UserDetailsDeletionConsumer {
     public void receiveUserDataToDelete(UserDetailsDeletedEvent event) {
         log.info("Received user data to delete. Topic: {} - Datetime: {}", KafkaConstants.Topics.USER_DETAILS_DELETION_TOPIC, LocalDateTime.now());
         UUID authUserId = event.authUserId();
+
+        if (!userService.existsByAuthUserId(authUserId)) {
+            log.warn("Idempotency check: user with authUserId {} is already deleted or does not exist. Skipping duplicate message.", authUserId);
+            return;
+        }
+
         try {
             log.info("Attempting to delete the user data");
             userService.deleteByAuthUserId(authUserId);
@@ -45,6 +53,12 @@ public class UserDetailsDeletionConsumer {
 
     private void handleUserDetailsDeleteFailed(UserDetailsDeletedEvent event) {
         log.warn("Publishing compensation event to rollback auth user deletion. AuthUserID: {}", event.authUserId());
-        this.kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC, event);
+        try {
+            kafkaTemplate.send(KafkaConstants.Topics.USER_DETAILS_DELETION_FAILED_TOPIC, event)
+                    .get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to send compensation event for authUserId {}. Rethrowing for DLQ handling.", event.authUserId(), e);
+            throw new RuntimeException("Compensation event send failed for authUserId: " + event.authUserId(), e);
+        }
     }
 }

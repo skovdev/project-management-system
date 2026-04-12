@@ -92,6 +92,18 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByAuthUserId(UUID authUserId) {
+        return userRepository.existsByAuthUserId(authUserId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByAuthUserIdIncludingDeleted(UUID authUserId) {
+        return userRepository.existsByAuthUserIdIncludingDeleted(authUserId);
+    }
+
     private void checkOwnership(User user) {
         String token = tokenService.getToken();
         UUID tokenAuthUserId = jwtTokenProvider.extractAuthUserId(token);

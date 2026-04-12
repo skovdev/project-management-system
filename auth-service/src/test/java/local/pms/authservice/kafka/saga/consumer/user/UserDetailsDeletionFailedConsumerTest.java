@@ -21,6 +21,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doNothing;
@@ -35,10 +37,11 @@ class UserDetailsDeletionFailedConsumerTest {
     private UserDetailsDeletionFailedConsumer consumer;
 
     @Test
-    @DisplayName("onUserDetailsDeletionFailed calls restoreAuthUserById with the authUserId from event")
+    @DisplayName("onUserDetailsDeletionFailed calls restoreAuthUserById when auth user is deleted")
     void should_callRestoreAuthUserById_when_userDetailsDeletionFailed() {
         var authUserId = UUID.randomUUID();
         var event = new UserDetailsDeletedEvent(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(true);
         doNothing().when(authService).restoreAuthUserById(authUserId);
 
         consumer.onUserDetailsDeletionFailed(event);
@@ -47,10 +50,23 @@ class UserDetailsDeletionFailedConsumerTest {
     }
 
     @Test
+    @DisplayName("onUserDetailsDeletionFailed skips restore when auth user is already active (idempotency guard)")
+    void should_skip_when_authUserAlreadyActive() {
+        var authUserId = UUID.randomUUID();
+        var event = new UserDetailsDeletedEvent(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(false);
+
+        consumer.onUserDetailsDeletionFailed(event);
+
+        verify(authService, never()).restoreAuthUserById(authUserId);
+    }
+
+    @Test
     @DisplayName("onUserDetailsDeletionFailed wraps service failure in AuthUserRestoreException")
     void should_throwAuthUserRestoreException_when_restoreFails() {
         var authUserId = UUID.randomUUID();
         var event = new UserDetailsDeletedEvent(authUserId);
+        when(authService.isDeletedById(authUserId)).thenReturn(true);
         doThrow(new AuthUserNotFoundException("not found"))
                 .when(authService).restoreAuthUserById(authUserId);
 

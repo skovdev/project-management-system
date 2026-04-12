@@ -29,6 +29,12 @@ public class UserDetailsCreationFailedConsumer {
             groupId = KafkaConstants.GroupIds.AUTH_USER_DETAILS_CREATION_GROUP_ID)
     public void onUserDetailsCreationFailed(UserDetailsCreatedEvent event) {
         UUID authUserId = event.userDetailsDto().authUserId();
+
+        if (authService.isDeletedById(authUserId)) {
+            log.warn("Idempotency check: auth user with id {} is already deleted. Skipping duplicate compensation.", authUserId);
+            return;
+        }
+
         try {
             log.info("User details creation failed for authUserId: {}. Attempting to rollback by deleting the auth user.", authUserId);
             authService.deleteById(authUserId);

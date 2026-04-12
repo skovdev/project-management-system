@@ -16,4 +16,5 @@ public interface AuthService {
     void deleteById(UUID id);
     void isAuthUsernameExists(String username);
     void restoreAuthUserById(UUID id);
+    boolean isDeletedById(UUID id);
 }

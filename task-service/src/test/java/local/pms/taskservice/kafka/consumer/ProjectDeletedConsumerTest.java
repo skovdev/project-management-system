@@ -16,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 
@@ -40,14 +42,16 @@ class ProjectDeletedConsumerTest {
     }
 
     @Test
-    @DisplayName("onProjectDeleted swallows exception and does not rethrow")
-    void should_swallowException_when_deleteAllByProjectIdFails() {
+    @DisplayName("onProjectDeleted rethrows exception so DefaultErrorHandler can route to DLT")
+    void should_rethrowException_when_deleteAllByProjectIdFails() {
         var projectId = UUID.randomUUID();
         var event = new ProjectDeletedEvent(projectId);
 
         doThrow(new RuntimeException("DB error")).when(taskService).deleteAllByProjectId(projectId);
 
-        consumer.onProjectDeleted(event);
+        assertThatThrownBy(() -> consumer.onProjectDeleted(event))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB error");
 
         verify(taskService).deleteAllByProjectId(projectId);
     }
