@@ -1,0 +1,39 @@
+<mat-sidenav-container class="shell-container">
+
+  <mat-sidenav mode="side" opened class="shell-sidenav">
+    <div class="sidenav-brand">PMS</div>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
+        <mat-icon>dashboard</mat-icon>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/projects" routerLinkActive="active-link">
+        <mat-icon>folder</mat-icon>
+        <span class="nav-label">Projects</span>
+      </a>
+      <a mat-list-item routerLink="/tasks" routerLinkActive="active-link">
+        <mat-icon>task_alt</mat-icon>
+        <span class="nav-label">Tasks</span>
+      </a>
+      <a mat-list-item routerLink="/profile" routerLinkActive="active-link">
+        <mat-icon>person</mat-icon>
+        <span class="nav-label">Profile</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="shell-toolbar">
+      <span class="toolbar-title">Project Management System</span>
+      <span class="toolbar-spacer"></span>
+      <span class="toolbar-username">{{ username }}</span>
+      <button mat-icon-button (click)="logout()" title="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+    <div class="shell-content">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

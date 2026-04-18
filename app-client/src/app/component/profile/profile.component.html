@@ -1,0 +1,51 @@
+<div class="profile-page">
+  <h1>Profile</h1>
+
+  <div *ngIf="loading" class="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <mat-card *ngIf="!loading" class="profile-card">
+    <mat-card-content>
+      <div class="username-row">
+        <span class="username-label">Username</span>
+        <span class="username-value">{{ username }}</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="profile-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="firstName" />
+          <mat-error *ngIf="form.get('firstName')?.hasError('required')">First name is required</mat-error>
+          <mat-error *ngIf="form.get('firstName')?.hasError('minlength')">Min 3 characters</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="lastName" />
+          <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
+          <mat-error *ngIf="form.get('lastName')?.hasError('minlength')">Min 3 characters</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" />
+          <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email format</mat-error>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="form.invalid || saving || !currentUser">
+            <mat-spinner *ngIf="saving" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+            Save Changes
+          </button>
+        </div>
+      </form>
+
+      <p *ngIf="!currentUser" class="no-profile">
+        Profile data not found.
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>

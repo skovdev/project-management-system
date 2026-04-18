@@ -1,24 +1,21 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from "@angular/common/http";
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
+import { ApiResponse } from '../models/api-response.model';
+import { SignInDto, SignUpDto, SignInResponse } from '../models/auth.model';
 
-import { environment } from "../environments/environment";
-
-import { Observable } from "rxjs";
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthUserService {
-
   private apiUrl = environment.apiGatewayUrl;
 
   constructor(private http: HttpClient) {}
 
-  signIn(authUser: any): Observable<any> {
-    return this.http.post(this.apiUrl + "/auth/sign-in", authUser, { responseType: 'text' });
+  signIn(dto: SignInDto): Observable<ApiResponse<SignInResponse>> {
+    return this.http.post<ApiResponse<SignInResponse>>(this.apiUrl + '/auth/sign-in', dto);
   }
 
-  signUp(authUser: any): Observable<any> {
-    return this.http.post(this.apiUrl + "/auth/sign-up", authUser, { responseType: 'text' });
+  signUp(dto: SignUpDto): Observable<ApiResponse<string>> {
+    return this.http.post<ApiResponse<string>>(this.apiUrl + '/auth/sign-up', dto);
   }
 }

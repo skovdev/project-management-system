@@ -13,6 +13,18 @@ services:
     networks:
       - project-management-system-network
 
+  app-client:
+    image: app-client-1.0
+    deploy:
+      replicas: 1
+    ports:
+      - target: 4200
+        published: 4200
+        protocol: tcp
+        mode: host
+    networks:
+      - project-management-system-network
+
   service-discovery:
     image: service-discovery-1.0
     deploy:

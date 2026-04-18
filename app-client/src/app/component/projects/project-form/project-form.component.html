@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Project' : 'New Project' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="title" />
+      <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required</mat-error>
+      <mat-error *ngIf="form.get('title')?.hasError('minlength')">Min 3 characters</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="4"></textarea>
+      <mat-error *ngIf="form.get('description')?.hasError('required')">Description is required</mat-error>
+    </mat-form-field>
+
+    <button mat-stroked-button type="button" class="ai-btn"
+            (click)="generateDescription()" [disabled]="generating" *ngIf="isEdit">
+      <mat-spinner *ngIf="generating" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+      {{ generating ? 'Generating...' : '✨ Generate with AI' }}
+    </button>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="projectStatusType">
+        <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Start Date &amp; Time</mat-label>
+        <input matInput type="datetime-local" formControlName="startDate" />
+        <mat-error *ngIf="form.get('startDate')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>End Date &amp; Time</mat-label>
+        <input matInput type="datetime-local" formControlName="endDate" />
+        <mat-error *ngIf="form.get('endDate')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()"
+          [disabled]="form.invalid || loading">
+    <mat-spinner *ngIf="loading" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+    {{ isEdit ? 'Update' : 'Create' }}
+  </button>
+</mat-dialog-actions>

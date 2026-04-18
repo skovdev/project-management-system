@@ -1,0 +1,63 @@
+.profile-page {
+  max-width: 520px;
+}
+
+.profile-page h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 24px;
+  color: #1e2a3a;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+}
+
+.profile-card {
+  padding: 8px;
+}
+
+.username-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+
+.username-label {
+  font-size: 13px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.username-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e2a3a;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  margin-top: 8px;
+}
+
+.no-profile {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 16px 0;
+}

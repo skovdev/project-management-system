@@ -1,14 +1,61 @@
-<div class="dashboard-header">
-  <div class="header-content">
-    <span class="header-title">My Dashboard</span>
-  </div>
-</div>
+<div class="dashboard">
+  <h1 class="page-title">Dashboard</h1>
 
-<div class="dashboard-container">
-  <mat-card class="dashboard-card">
-    <mat-card-title>Welcome to Your Dashboard</mat-card-title>
-    <mat-card-content>
-      <p>This is your personal space. You can customize this page later.</p>
-    </mat-card-content>
-  </mat-card>
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="stats-row">
+      <mat-card class="stat-card" (click)="navigateTo('/projects')">
+        <mat-card-content>
+          <div class="stat-number">{{ totalProjects }}</div>
+          <div class="stat-label">Total Projects</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card" (click)="navigateTo('/tasks')">
+        <mat-card-content>
+          <div class="stat-number">{{ totalTasks }}</div>
+          <div class="stat-label">Total Tasks</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="recent-section">
+      <h2>Recent Projects</h2>
+      <ng-container *ngIf="recentProjects.length > 0; else noProjects">
+        <mat-card *ngFor="let p of recentProjects" class="recent-card">
+          <mat-card-content>
+            <span class="item-title">{{ p.title }}</span>
+            <span class="status-badge status-{{ p.projectStatusType | lowercase }}">
+              {{ p.projectStatusType }}
+            </span>
+          </mat-card-content>
+        </mat-card>
+      </ng-container>
+      <ng-template #noProjects>
+        <p class="empty-text">No projects yet.
+          <a (click)="navigateTo('/projects')" class="link">Create one</a>
+        </p>
+      </ng-template>
+    </div>
+
+    <div class="recent-section">
+      <h2>Recent Tasks</h2>
+      <ng-container *ngIf="recentTasks.length > 0; else noTasks">
+        <mat-card *ngFor="let t of recentTasks" class="recent-card">
+          <mat-card-content>
+            <span class="item-title">{{ t.title }}</span>
+            <span class="priority-badge priority-{{ t.taskPriorityType | lowercase }}">{{ t.taskPriorityType }}</span>
+            <span class="status-badge status-{{ t.taskStatusType | lowercase }}">{{ t.taskStatusType }}</span>
+          </mat-card-content>
+        </mat-card>
+      </ng-container>
+      <ng-template #noTasks>
+        <p class="empty-text">No tasks yet.
+          <a (click)="navigateTo('/tasks')" class="link">Create one</a>
+        </p>
+      </ng-template>
+    </div>
+  </ng-container>
 </div>

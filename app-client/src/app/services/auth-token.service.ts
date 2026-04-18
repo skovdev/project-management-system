@@ -1,18 +1,15 @@
 import { Injectable } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthTokenService {
-
   private readonly TOKEN_KEY = 'project_management_system_id_token';
+  private readonly USER_ID_KEY = 'project_management_system_user_id';
+  private readonly USERNAME_KEY = 'project_management_system_username';
 
-  constructor() {}
-
-  getAuthTokenData(): any {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    if (!token) return null;
-    return this.decodeJwt(token);
+  setAuthData(token: string, authUserId: string, username: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_ID_KEY, authUserId);
+    localStorage.setItem(this.USERNAME_KEY, username);
   }
 
   setAuthToken(token: string): void {
@@ -23,17 +20,27 @@ export class AuthTokenService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
+  getAuthUserId(): string | null {
+    return localStorage.getItem(this.USER_ID_KEY);
   }
 
-  private decodeJwt(token: string): any {
+  getUsername(): string | null {
+    return localStorage.getItem(this.USERNAME_KEY);
+  }
+
+  logout(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_ID_KEY);
+    localStorage.removeItem(this.USERNAME_KEY);
+  }
+
+  getAuthTokenData(): any {
+    const token = this.getAuthToken();
+    if (!token) return null;
     try {
       const payload = token.split('.')[1];
-      const decoded = atob(payload);
-      return JSON.parse(decoded);
-    } catch (e) {
-      console.error('Invalid token', e);
+      return JSON.parse(atob(payload));
+    } catch {
       return null;
     }
   }

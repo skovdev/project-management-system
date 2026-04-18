@@ -1,76 +1,88 @@
-.dashboard-header {
-  width: 100%;
-  background: #1976d2;
-  color: white;
-  padding: 16px 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+.dashboard {
+  max-width: 960px;
 }
 
-.header-content {
-  max-width: 1500px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header-title {
-  font-size: 22px;
-  font-weight: 600;
-}
-
-/* Optional button style */
-.logout-btn {
-  color: white;
-  font-weight: 500;
-}
-
-.dashboard-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  background: linear-gradient(135deg, #eaeaea, #ffffff);
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.dashboard-card {
-  width: 100%;
-  max-width: 720px;
-  padding: 32px 24px;
-  border-radius: 16px;
-  background: white;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-}
-
-mat-card-title {
-  text-align: center;
+.page-title {
   font-size: 28px;
   font-weight: 600;
-  color: #1976d2;
-  margin-bottom: 20px;
+  margin: 0 0 28px;
+  color: #1e2a3a;
 }
 
-mat-card-content {
-  font-size: 16px;
-  color: #333;
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.stat-card {
+  flex: 1;
+  cursor: pointer;
   text-align: center;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
-@media (max-width: 600px) {
-  .dashboard-card {
-    padding: 24px 16px;
-  }
+.stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
 
-  mat-card-title {
-    font-size: 22px;
-  }
+.stat-number {
+  font-size: 52px;
+  font-weight: 700;
+  color: #1976d2;
+  line-height: 1.1;
+}
 
-  .header-title {
-    font-size: 18px;
-  }
+.stat-label {
+  font-size: 15px;
+  color: #666;
+  margin-top: 6px;
+}
+
+.recent-section {
+  margin-bottom: 32px;
+}
+
+.recent-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: #333;
+}
+
+.recent-card {
+  margin-bottom: 8px;
+}
+
+.recent-card mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px !important;
+  min-height: 0;
+}
+
+.item-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.empty-text {
+  color: #999;
+  font-style: italic;
+  margin: 0;
+}
+
+.link {
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
 }
