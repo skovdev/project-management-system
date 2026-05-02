@@ -29,8 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+
+import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -65,17 +66,51 @@ class ChatGptControllerTest {
     }
 
     @Test
-    @DisplayName("POST /chat-gpt/ask with valid token returns 200 with AI response")
-    void should_return200_when_askWithValidToken() throws Exception {
+    @DisplayName("POST /chat-gpt/ask with valid messages returns 200 with AI response")
+    void should_return200_when_askWithValidMessages() throws Exception {
         when(chatGptService.askChatGpt(any())).thenReturn("Generated project description");
 
         mockMvc.perform(post(BASE_URL + "/ask")
                         .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[]"))
+                        .content("""
+                                {
+                                  "messages": [
+                                    {"role": "user", "content": "Describe this project"}
+                                  ]
+                                }
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data").value("Generated project description"));
+    }
+
+    @Test
+    @DisplayName("POST /chat-gpt/ask with empty messages list returns 400 with VALIDATION_ERROR code")
+    void should_return400_when_messagesListIsEmpty() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/ask")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messages": []}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("POST /chat-gpt/ask with null messages returns 400 with VALIDATION_ERROR code")
+    void should_return400_when_messagesIsNull() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/ask")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messages": null}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
     }
 
     @Test
@@ -83,7 +118,13 @@ class ChatGptControllerTest {
     void should_return401_when_askWithoutToken() throws Exception {
         mockMvc.perform(post(BASE_URL + "/ask")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[]"))
+                        .content("""
+                                {
+                                  "messages": [
+                                    {"role": "user", "content": "Hello"}
+                                  ]
+                                }
+                                """))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -96,7 +137,14 @@ class ChatGptControllerTest {
         mockMvc.perform(post(BASE_URL + "/ask")
                         .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[]"))
-                .andExpect(status().isInternalServerError());
+                        .content("""
+                                {
+                                  "messages": [
+                                    {"role": "user", "content": "Hello"}
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("AI_SERVICE_ERROR"));
     }
 }

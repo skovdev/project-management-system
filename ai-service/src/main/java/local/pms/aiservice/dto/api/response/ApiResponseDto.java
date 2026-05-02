@@ -1,38 +1,44 @@
 package local.pms.aiservice.dto.api.response;
 
-import lombok.Builder;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
+
 import java.util.List;
 
-@Data
-@Builder
-public class ApiResponseDto<T> {
+@Schema(description = "Standard API response envelope for all endpoints")
+public record ApiResponseDto<T>(
 
-    private Instant timestamp;
-    private int status;
-    private String message;
-    private T data;
-    private List<String> errors;
+        @Schema(description = "UTC timestamp of the response") Instant timestamp,
+        @Schema(description = "HTTP status code", example = "200") int status,
+        @Schema(description = "Human-readable result summary", example = "Request was successful") String message,
+        @Schema(description = "Response payload; null on error") T data,
+        @Schema(description = "Validation or error details; null on success") List<String> errors,
+        @Schema(description = "Machine-readable error code for client branching; null on success", example = "VALIDATION_ERROR") String errorCode
+
+) {
 
     public static <T> ApiResponseDto<T> buildSuccessResponse(T data) {
-        return ApiResponseDto.<T>builder()
-                .timestamp(Instant.now())
-                .status(HttpStatus.OK.value())
-                .message("Request was successful")
-                .data(data)
-                .build();
+        return new ApiResponseDto<>(
+                Instant.now(),
+                HttpStatus.OK.value(),
+                "Request was successful",
+                data,
+                null,
+                null
+        );
     }
 
-    public static <T> ApiResponseDto<T> buildErrorResponse(int status, String message, List<String> errors) {
-        return ApiResponseDto.<T>builder()
-                .timestamp(Instant.now())
-                .status(status)
-                .message(message)
-                .errors(errors)
-                .build();
+    public static <T> ApiResponseDto<T> buildErrorResponse(int status, String message, List<String> errors, String errorCode) {
+        return new ApiResponseDto<>(
+                Instant.now(),
+                status,
+                message,
+                null,
+                errors,
+                errorCode
+        );
     }
-
 }
