@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { MatToolbar } from '@angular/material/toolbar';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
-import { MatNavList, MatListItem } from '@angular/material/list';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Subscription } from 'rxjs';
 import { AuthTokenService } from '../../../services/auth-token.service';
 
 @Component({
@@ -12,20 +12,49 @@ import { AuthTokenService } from '../../../services/auth-token.service';
   standalone: true,
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
-    MatToolbar, MatSidenavContainer, MatSidenav, MatSidenavContent,
-    MatNavList, MatListItem, MatIcon, MatIconButton
+    MatSidenavContainer, MatSidenav, MatSidenavContent,
+    MatIcon, MatIconButton
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css'
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit, OnDestroy {
   username = '';
+  initials = '';
+  sidenavOpened = true;
+  sidenavMode: 'side' | 'over' = 'side';
+  isMobile = false;
+  private sub!: Subscription;
 
   constructor(
     private authTokenService: AuthTokenService,
-    private router: Router
+    private router: Router,
+    private breakpointObserver: BreakpointObserver
   ) {
     this.username = authTokenService.getUsername() ?? '';
+    this.initials = this.username ? this.username.charAt(0).toUpperCase() : 'U';
+  }
+
+  ngOnInit(): void {
+    this.sub = this.breakpointObserver
+      .observe([Breakpoints.Handset])
+      .subscribe(result => {
+        this.isMobile = result.matches;
+        this.sidenavMode = result.matches ? 'over' : 'side';
+        this.sidenavOpened = !result.matches;
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  toggleSidenav(): void {
+    this.sidenavOpened = !this.sidenavOpened;
+  }
+
+  closeSidenavOnMobile(): void {
+    if (this.isMobile) this.sidenavOpened = false;
   }
 
   logout(): void {

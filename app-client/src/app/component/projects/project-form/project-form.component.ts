@@ -8,16 +8,20 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ProjectService } from '../../../services/project.service';
 import { ProjectDto, PROJECT_STATUSES } from '../../../models/project.model';
 
 @Component({
   selector: 'app-project-form',
   standalone: true,
+  providers: [provideNativeDateAdapter()],
   imports: [
     CommonModule, ReactiveFormsModule,
     MatDialogModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatButtonModule, MatProgressSpinnerModule
+    MatSelectModule, MatButtonModule, MatProgressSpinnerModule,
+    MatDatepickerModule
   ],
   templateUrl: './project-form.component.html',
   styles: [`
@@ -51,8 +55,10 @@ export class ProjectFormComponent implements OnInit {
       title: [p?.title ?? '', [Validators.required, Validators.minLength(3)]],
       description: [p?.description ?? '', [Validators.required, Validators.minLength(3)]],
       projectStatusType: [p?.projectStatusType ?? 'PLANNING', Validators.required],
-      startDate: [p ? this.toInputDate(p.startDate) : '', Validators.required],
-      endDate: [p ? this.toInputDate(p.endDate) : '', Validators.required]
+      startDatePart: [p ? this.parseDate(p.startDate) : null, Validators.required],
+      startTimePart: [p ? this.parseTime(p.startDate) : '', Validators.required],
+      endDatePart: [p ? this.parseDate(p.endDate) : null, Validators.required],
+      endTimePart: [p ? this.parseTime(p.endDate) : '', Validators.required]
     });
   }
 
@@ -65,7 +71,14 @@ export class ProjectFormComponent implements OnInit {
     this.generating = true;
     this.projectService.generateDescription(this.data.project.id, title).subscribe({
       next: (res) => {
-        this.form.get('description')?.setValue(res.data);
+        let description: string = res.data;
+        try {
+          const inner = JSON.parse(description);
+          if (inner?.timestamp && typeof inner.data === 'string') {
+            description = inner.data;
+          }
+        } catch { /* res.data is already the plain description text */ }
+        this.form.get('description')?.setValue(description);
         this.generating = false;
       },
       error: () => {
@@ -78,11 +91,13 @@ export class ProjectFormComponent implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) return;
     this.loading = true;
-    const value = this.form.value;
+    const v = this.form.value;
     const dto: ProjectDto = {
-      ...value,
-      startDate: this.toApiDate(value.startDate),
-      endDate: this.toApiDate(value.endDate)
+      title: v.title,
+      description: v.description,
+      projectStatusType: v.projectStatusType,
+      startDate: this.combineDateTime(v.startDatePart, v.startTimePart),
+      endDate: this.combineDateTime(v.endDatePart, v.endTimePart)
     };
 
     const request = this.isEdit
@@ -102,11 +117,23 @@ export class ProjectFormComponent implements OnInit {
     this.dialogRef.close(null);
   }
 
-  private toInputDate(dateStr: string): string {
-    return dateStr ? dateStr.substring(0, 16) : '';
+  private parseDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
-  private toApiDate(inputDate: string): string {
-    return inputDate ? inputDate + ':00' : '';
+  private parseTime(dateStr: string): string {
+    if (!dateStr) return '';
+    const timePart = dateStr.split('T')[1];
+    return timePart ? timePart.substring(0, 5) : '';
+  }
+
+  private combineDateTime(date: Date | null, time: string): string {
+    if (!date || !time) return '';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}T${time}:00`;
   }
 }

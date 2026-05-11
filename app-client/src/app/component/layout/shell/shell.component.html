@@ -1,39 +1,68 @@
 <mat-sidenav-container class="shell-container">
 
-  <mat-sidenav mode="side" opened class="shell-sidenav">
-    <div class="sidenav-brand">PMS</div>
-    <mat-nav-list>
-      <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
-        <mat-icon>dashboard</mat-icon>
+  <mat-sidenav
+    [mode]="sidenavMode"
+    [opened]="sidenavOpened"
+    class="shell-sidenav"
+    (closedStart)="sidenavOpened = false">
+
+    <!-- Brand -->
+    <div class="sidenav-brand">
+      <div class="brand-icon">
+        <mat-icon>rocket_launch</mat-icon>
+      </div>
+      <span class="brand-name">PMS</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidenav-nav" aria-label="Main navigation">
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Dashboard">
+        <mat-icon class="nav-icon">dashboard</mat-icon>
         <span class="nav-label">Dashboard</span>
       </a>
-      <a mat-list-item routerLink="/projects" routerLinkActive="active-link">
-        <mat-icon>folder</mat-icon>
+      <a class="nav-item" routerLink="/projects" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Projects">
+        <mat-icon class="nav-icon">folder_open</mat-icon>
         <span class="nav-label">Projects</span>
       </a>
-      <a mat-list-item routerLink="/tasks" routerLinkActive="active-link">
-        <mat-icon>task_alt</mat-icon>
+      <a class="nav-item" routerLink="/tasks" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Tasks">
+        <mat-icon class="nav-icon">task_alt</mat-icon>
         <span class="nav-label">Tasks</span>
       </a>
-      <a mat-list-item routerLink="/profile" routerLinkActive="active-link">
-        <mat-icon>person</mat-icon>
+      <a class="nav-item" routerLink="/profile" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Profile">
+        <mat-icon class="nav-icon">person_outline</mat-icon>
         <span class="nav-label">Profile</span>
       </a>
-    </mat-nav-list>
+    </nav>
+
+    <!-- User footer -->
+    <div class="sidenav-footer">
+      <div class="user-avatar" aria-hidden="true">{{ initials }}</div>
+      <div class="footer-user-info">
+        <span class="footer-username">{{ username }}</span>
+        <span class="footer-role">Member</span>
+      </div>
+      <button mat-icon-button (click)="logout()" class="logout-btn" title="Logout" aria-label="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
   </mat-sidenav>
 
   <mat-sidenav-content>
-    <mat-toolbar color="primary" class="shell-toolbar">
-      <span class="toolbar-title">Project Management System</span>
-      <span class="toolbar-spacer"></span>
-      <span class="toolbar-username">{{ username }}</span>
-      <button mat-icon-button (click)="logout()" title="Logout">
-        <mat-icon>logout</mat-icon>
+    <header class="shell-header">
+      <button mat-icon-button class="menu-toggle" (click)="toggleSidenav()" aria-label="Toggle navigation">
+        <mat-icon>menu</mat-icon>
       </button>
-    </mat-toolbar>
-    <div class="shell-content">
+      <span class="header-app-name">Project Management System</span>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="shell-content">
       <router-outlet></router-outlet>
-    </div>
+    </main>
   </mat-sidenav-content>
 
 </mat-sidenav-container>

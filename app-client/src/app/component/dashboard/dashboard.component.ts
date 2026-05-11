@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { ProjectService } from '../../services/project.service';
 import { TaskService } from '../../services/task.service';
 import { ProjectDto } from '../../models/project.model';
@@ -12,7 +12,7 @@ import { TaskDto } from '../../models/task.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCard, MatCardContent, MatProgressSpinner],
+  imports: [CommonModule, MatProgressSpinner, MatIcon],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

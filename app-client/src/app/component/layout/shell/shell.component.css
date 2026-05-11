@@ -2,70 +2,196 @@
   height: 100vh;
 }
 
+/* ── Sidebar ────────────────────────────────────────────── */
 .shell-sidenav {
-  width: 220px;
-  background: #1e2a3a;
+  width: 240px;
+  background: var(--color-sidebar);
+  border-right: none !important;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidenav-brand {
-  padding: 20px 16px;
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 18px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-icon mat-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  color: #fff;
+}
+
+.brand-name {
+  font-size: 16px;
   font-weight: 700;
-  color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
   letter-spacing: 2px;
 }
 
-.nav-label {
-  margin-left: 12px;
+/* ── Navigation ─────────────────────────────────────────── */
+.sidenav-nav {
+  flex: 1;
+  padding: 12px 10px;
+  overflow-y: auto;
 }
 
-mat-nav-list a {
-  color: rgba(255, 255, 255, 0.8);
-  margin: 4px 8px;
-  border-radius: 6px;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  transition: background var(--transition), color var(--transition);
 }
 
-mat-nav-list a mat-icon {
-  color: rgba(255, 255, 255, 0.6);
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.88);
 }
 
-mat-nav-list a:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
+.nav-item:hover .nav-icon {
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.active-link {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: white !important;
+.nav-item--active {
+  background: rgba(99, 102, 241, 0.18) !important;
+  color: #a5b4fc !important;
 }
 
-.active-link mat-icon {
-  color: white !important;
+.nav-item--active .nav-icon {
+  color: #a5b4fc !important;
 }
 
-.shell-toolbar {
+.nav-icon {
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+  color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+  transition: color var(--transition);
+}
+
+/* ── User footer ────────────────────────────────────────── */
+.sidenav-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.footer-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.footer-username {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-role {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 1px;
+}
+
+.logout-btn {
+  color: rgba(255, 255, 255, 0.38) !important;
+  transition: color var(--transition) !important;
+  flex-shrink: 0;
+}
+
+.logout-btn:hover {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.shell-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 58px;
+  padding: 0 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.toolbar-title {
-  font-size: 18px;
-  font-weight: 500;
+.menu-toggle {
+  color: var(--color-text-secondary) !important;
+  flex-shrink: 0;
 }
 
-.toolbar-spacer {
+.header-app-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.header-spacer {
   flex: 1;
 }
 
-.toolbar-username {
-  margin-right: 8px;
-  font-size: 14px;
-  opacity: 0.9;
+/* ── Main content ───────────────────────────────────────── */
+.shell-content {
+  padding: 28px 32px;
+  background: var(--color-bg);
+  min-height: calc(100vh - 58px);
 }
 
-.shell-content {
-  padding: 24px;
+@media (max-width: 768px) {
+  .shell-content {
+    padding: 16px;
+  }
+
+  .header-app-name {
+    display: none;
+  }
 }

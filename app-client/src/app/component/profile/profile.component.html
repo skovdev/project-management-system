@@ -1,51 +1,67 @@
 <div class="profile-page">
-  <h1>Profile</h1>
 
-  <div *ngIf="loading" class="loading">
+  <div class="page-header-block">
+    <h1 class="page-title">Profile</h1>
+    <p class="page-subtitle">Manage your personal information</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
     <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
   </div>
 
   <mat-card *ngIf="!loading" class="profile-card">
     <mat-card-content>
-      <div class="username-row">
-        <span class="username-label">Username</span>
-        <span class="username-value">{{ username }}</span>
+
+      <!-- Avatar & identity -->
+      <div class="profile-identity">
+        <div class="profile-avatar">{{ username | slice:0:1 | uppercase }}</div>
+        <div class="profile-identity-text">
+          <span class="identity-username">{{ username }}</span>
+          <span class="identity-label">Account username</span>
+        </div>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="profile-form">
+      <div class="profile-divider"></div>
+
+      <!-- Edit form -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="profile-form" *ngIf="currentUser">
+
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>First Name</mat-label>
-          <input matInput formControlName="firstName" />
+          <input matInput formControlName="firstName" autocomplete="given-name" />
           <mat-error *ngIf="form.get('firstName')?.hasError('required')">First name is required</mat-error>
           <mat-error *ngIf="form.get('firstName')?.hasError('minlength')">Min 3 characters</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Last Name</mat-label>
-          <input matInput formControlName="lastName" />
+          <input matInput formControlName="lastName" autocomplete="family-name" />
           <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
           <mat-error *ngIf="form.get('lastName')?.hasError('minlength')">Min 3 characters</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
-          <input matInput formControlName="email" />
+          <input matInput formControlName="email" autocomplete="email" />
           <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
           <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email format</mat-error>
         </mat-form-field>
 
         <div class="form-actions">
           <button mat-raised-button color="primary" type="submit"
-                  [disabled]="form.invalid || saving || !currentUser">
+                  [disabled]="form.invalid || saving">
             <mat-spinner *ngIf="saving" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
             Save Changes
           </button>
         </div>
+
       </form>
 
       <p *ngIf="!currentUser" class="no-profile">
         Profile data not found.
       </p>
+
     </mat-card-content>
   </mat-card>
+
 </div>

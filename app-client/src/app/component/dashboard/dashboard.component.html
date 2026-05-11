@@ -1,61 +1,109 @@
 <div class="dashboard">
-  <h1 class="page-title">Dashboard</h1>
 
-  <div *ngIf="loading" class="loading-container">
-    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+  <div class="page-header-block">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Here's an overview of your workspace.</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
   </div>
 
   <ng-container *ngIf="!loading">
+
+    <!-- Stats row -->
     <div class="stats-row">
-      <mat-card class="stat-card" (click)="navigateTo('/projects')">
-        <mat-card-content>
+      <div class="stat-card" (click)="navigateTo('/projects')"
+           role="button" tabindex="0"
+           (keydown.enter)="navigateTo('/projects')"
+           aria-label="Navigate to Projects">
+        <div class="stat-icon stat-icon--blue">
+          <mat-icon>folder_open</mat-icon>
+        </div>
+        <div class="stat-body">
           <div class="stat-number">{{ totalProjects }}</div>
           <div class="stat-label">Total Projects</div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="stat-card" (click)="navigateTo('/tasks')">
-        <mat-card-content>
+        </div>
+        <mat-icon class="stat-arrow">chevron_right</mat-icon>
+      </div>
+
+      <div class="stat-card" (click)="navigateTo('/tasks')"
+           role="button" tabindex="0"
+           (keydown.enter)="navigateTo('/tasks')"
+           aria-label="Navigate to Tasks">
+        <div class="stat-icon stat-icon--purple">
+          <mat-icon>task_alt</mat-icon>
+        </div>
+        <div class="stat-body">
           <div class="stat-number">{{ totalTasks }}</div>
           <div class="stat-label">Total Tasks</div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+        <mat-icon class="stat-arrow">chevron_right</mat-icon>
+      </div>
     </div>
 
-    <div class="recent-section">
-      <h2>Recent Projects</h2>
-      <ng-container *ngIf="recentProjects.length > 0; else noProjects">
-        <mat-card *ngFor="let p of recentProjects" class="recent-card">
-          <mat-card-content>
-            <span class="item-title">{{ p.title }}</span>
+    <!-- Recent sections -->
+    <div class="content-grid">
+
+      <section class="recent-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Recent Projects</h2>
+          <button class="panel-link" (click)="navigateTo('/projects')">View all</button>
+        </div>
+
+        <ng-container *ngIf="recentProjects.length > 0; else noProjects">
+          <div *ngFor="let p of recentProjects" class="list-row">
+            <div class="row-icon row-icon--blue">
+              <mat-icon>folder</mat-icon>
+            </div>
+            <span class="row-title">{{ p.title }}</span>
             <span class="status-badge status-{{ p.projectStatusType | lowercase }}">
               {{ p.projectStatusType }}
             </span>
-          </mat-card-content>
-        </mat-card>
-      </ng-container>
-      <ng-template #noProjects>
-        <p class="empty-text">No projects yet.
-          <a (click)="navigateTo('/projects')" class="link">Create one</a>
-        </p>
-      </ng-template>
-    </div>
+          </div>
+        </ng-container>
 
-    <div class="recent-section">
-      <h2>Recent Tasks</h2>
-      <ng-container *ngIf="recentTasks.length > 0; else noTasks">
-        <mat-card *ngFor="let t of recentTasks" class="recent-card">
-          <mat-card-content>
-            <span class="item-title">{{ t.title }}</span>
-            <span class="priority-badge priority-{{ t.taskPriorityType | lowercase }}">{{ t.taskPriorityType }}</span>
-            <span class="status-badge status-{{ t.taskStatusType | lowercase }}">{{ t.taskStatusType }}</span>
-          </mat-card-content>
-        </mat-card>
-      </ng-container>
-      <ng-template #noTasks>
-        <p class="empty-text">No tasks yet.
-          <a (click)="navigateTo('/tasks')" class="link">Create one</a>
-        </p>
-      </ng-template>
+        <ng-template #noProjects>
+          <div class="panel-empty">
+            <mat-icon>folder_open</mat-icon>
+            <p>No projects yet</p>
+            <button class="panel-empty-cta" (click)="navigateTo('/projects')">Create one</button>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="recent-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Recent Tasks</h2>
+          <button class="panel-link" (click)="navigateTo('/tasks')">View all</button>
+        </div>
+
+        <ng-container *ngIf="recentTasks.length > 0; else noTasks">
+          <div *ngFor="let t of recentTasks" class="list-row">
+            <div class="row-icon row-icon--purple">
+              <mat-icon>task_alt</mat-icon>
+            </div>
+            <span class="row-title">{{ t.title }}</span>
+            <div class="row-badges">
+              <span class="priority-badge priority-{{ t.taskPriorityType | lowercase }}">
+                {{ t.taskPriorityType }}
+              </span>
+              <span class="status-badge status-{{ t.taskStatusType | lowercase }}">
+                {{ t.taskStatusType }}
+              </span>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noTasks>
+          <div class="panel-empty">
+            <mat-icon>task_alt</mat-icon>
+            <p>No tasks yet</p>
+            <button class="panel-empty-cta" (click)="navigateTo('/tasks')">Create one</button>
+          </div>
+        </ng-template>
+      </section>
+
     </div>
   </ng-container>
 </div>

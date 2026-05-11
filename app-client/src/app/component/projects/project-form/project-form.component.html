@@ -31,15 +31,33 @@
 
     <div class="form-row">
       <mat-form-field appearance="outline">
-        <mat-label>Start Date &amp; Time</mat-label>
-        <input matInput type="datetime-local" formControlName="startDate" />
-        <mat-error *ngIf="form.get('startDate')?.hasError('required')">Required</mat-error>
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDatePart" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-error *ngIf="form.get('startDatePart')?.hasError('required')">Required</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>End Date &amp; Time</mat-label>
-        <input matInput type="datetime-local" formControlName="endDate" />
-        <mat-error *ngIf="form.get('endDate')?.hasError('required')">Required</mat-error>
+        <mat-label>Start Time</mat-label>
+        <input matInput type="time" formControlName="startTimePart" />
+        <mat-error *ngIf="form.get('startTimePart')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDatePart" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        <mat-error *ngIf="form.get('endDatePart')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>End Time</mat-label>
+        <input matInput type="time" formControlName="endTimePart" />
+        <mat-error *ngIf="form.get('endTimePart')?.hasError('required')">Required</mat-error>
       </mat-form-field>
     </div>
 
