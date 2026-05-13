@@ -8,6 +8,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import io.github.resilience4j.retry.annotation.Retry;
 
+import local.pms.projectservice.dto.api.response.ApiResponseDto;
+
+import local.pms.projectservice.exception.DescriptionGenerationException;
+
 import local.pms.projectservice.external.ai.client.AiFeignClient;
 
 import local.pms.projectservice.external.ai.client.promt.PromptMessage;
@@ -34,7 +38,27 @@ public class OpenAiExternalProvider implements AiExternalProvider {
     @CircuitBreaker(name = "projectDescriptionAiGeneration", fallbackMethod = "fallbackProjectDescription")
     @Retry(name = "projectDescriptionAiGeneration", fallbackMethod = "fallbackProjectDescription")
     public String generateProjectDescription(String projectTitle) {
-        return aiFeignClient.generateProjectDescription(fillChatGptMessages(projectTitle));
+        ApiResponseDto<String> response = aiFeignClient.generateProjectDescription(fillChatGptMessages(projectTitle));
+        if (response == null) {
+            log.warn("AI service returned a null response for projectTitle='{}'", projectTitle);
+            throw new DescriptionGenerationException(
+                    "AI service returned a null response for projectTitle='" + projectTitle + "'"
+            );
+        }
+        if (response.getErrors() != null && !response.getErrors().isEmpty()) {
+            log.warn("AI service returned errors for projectTitle='{}': {}", projectTitle, response.getErrors());
+            throw new DescriptionGenerationException(
+                    "AI service returned errors for projectTitle='" + projectTitle + "': " + response.getErrors()
+            );
+        }
+        String description = response.getData();
+        if (description == null || description.isBlank()) {
+            log.warn("AI service returned an empty description for projectTitle='{}'", projectTitle);
+            throw new DescriptionGenerationException(
+                    "AI service returned an empty description for projectTitle='" + projectTitle + "'"
+            );
+        }
+        return description;
     }
 
     private List<ChatCompletionMessageParam> fillChatGptMessages(String projectTitle) {
