@@ -78,10 +78,10 @@ services:
       SPRING_SQL_INIT_MODE: always
       SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
       SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
-      - target: 5006
-        published: 5006
+      - target: 5005
+        published: 5005
         protocol: tcp
         mode: host
     volumes:
@@ -109,7 +109,7 @@ services:
       SPRING_SQL_INIT_MODE: always
       SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
       SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
     volumes:
       - ./user-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar user-service-1.0.jar
@@ -119,7 +119,7 @@ services:
   project-service:
     image: project-service-1.0
     deploy:
-      replicas: 3
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 10s
@@ -135,7 +135,12 @@ services:
       SPRING_SQL_INIT_MODE: always
       SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
       SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007"
+    ports:
+      - target: 5007
+        published: 5007
+        protocol: tcp
+        mode: host
     volumes:
       - ./project-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar project-service-1.0.jar
@@ -161,7 +166,7 @@ services:
       SPRING_SQL_INIT_MODE: always
       SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
       SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008"
     volumes:
       - ./task-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar task-service-1.0.jar
