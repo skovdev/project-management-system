@@ -13,6 +13,7 @@ import local.pms.projectservice.dto.api.response.ApiResponseDto;
 import local.pms.projectservice.exception.DescriptionGenerationException;
 
 import local.pms.projectservice.external.ai.client.AiFeignClient;
+import local.pms.projectservice.external.ai.client.AiChatRequestDto;
 
 import local.pms.projectservice.external.ai.client.promt.PromptMessage;
 
@@ -38,7 +39,7 @@ public class OpenAiExternalProvider implements AiExternalProvider {
     @CircuitBreaker(name = "projectDescriptionAiGeneration", fallbackMethod = "fallbackProjectDescription")
     @Retry(name = "projectDescriptionAiGeneration", fallbackMethod = "fallbackProjectDescription")
     public String generateProjectDescription(String projectTitle) {
-        ApiResponseDto<String> response = aiFeignClient.generateProjectDescription(fillChatGptMessages(projectTitle));
+        ApiResponseDto<String> response = aiFeignClient.generateProjectDescription(new AiChatRequestDto(fillChatGptMessages(projectTitle)));
         if (response == null) {
             log.warn("AI service returned a null response for projectTitle='{}'", projectTitle);
             throw new DescriptionGenerationException(
