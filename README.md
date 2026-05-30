@@ -4,21 +4,22 @@ A pet project for self-education, simulating a real-world project management pla
 
 ## Overview
 
-The **Project Management System** is a microservices-based application built with Java 21, Spring Boot 3, Spring Cloud, Kafka, and PostgreSQL. It demonstrates JWT authentication, user management, project and task tracking, AI-assisted features, service discovery, centralized configuration, synchronous (OpenFeign) and asynchronous (Kafka Saga) inter-service communication, and fault tolerance via Resilience4j.
+The **Project Management System** is a microservices-based application built with Java 21, Spring Boot 3, Spring Cloud, Kafka, and PostgreSQL. It demonstrates JWT authentication, user management, project and task tracking, AI-assisted features, in-app notifications, service discovery, centralized configuration, synchronous (OpenFeign) and asynchronous (Kafka Saga) inter-service communication, and fault tolerance via Resilience4j.
 
 ## Architecture
 
 ```
-app-client (Angular)
+app-client (Angular, :4200)
        │
        ▼
   api-gateway  ──── JWT validation ──► downstream services
        │
-       ├── auth-service      (authentication, token issuance)
-       ├── user-service       (user profile management)
-       ├── project-service    (project CRUD)
-       ├── task-service       (task CRUD, linked to projects)
-       └── ai-service         (AI-powered project assistance)
+       ├── auth-service          (authentication, token issuance)
+       ├── user-service          (user profile management)
+       ├── project-service       (project CRUD)
+       ├── task-service          (task CRUD, linked to projects)
+       ├── notification-service  (in-app notifications via Kafka events)
+       └── ai-service            (AI-powered project assistance)
 
 Infrastructure:
   service-discovery  (Eureka)
@@ -31,6 +32,7 @@ Infrastructure:
 
 | Service | Responsibility | Port |
 |---|---|---|
+| `app-client` | Angular frontend | 4200 |
 | `api-gateway` | Entry point, JWT enforcement, load balancing | 8762 |
 | `service-discovery` | Eureka service registry | 8761 |
 | `config-server` | Centralized configuration | 8888 |
@@ -38,6 +40,7 @@ Infrastructure:
 | `user-service` | User profile data and roles | — |
 | `project-service` | Project management | — |
 | `task-service` | Task management within projects | — |
+| `notification-service` | In-app notifications (Kafka consumer) | — |
 | `ai-service` | AI-powered assistance (OpenAI) | — |
 | `postgresql` | Persistence | 5432 |
 | `kafka` | Async messaging (KRaft mode) | 9092 |
@@ -98,6 +101,18 @@ All endpoints are routed through `api-gateway` at port `8762`. JWT is required f
 | `PUT` | `/api/v1/users/{id}` | Update user profile |
 | `DELETE` | `/api/v1/users/{id}` | Delete user account |
 
+### Notifications
+
+Notifications are created automatically by Kafka events (user registered, project created, task created).
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/notifications` | List all notifications (paginated) |
+| `GET` | `/api/v1/notifications/unread` | Get up to 5 most recent unread notifications |
+| `GET` | `/api/v1/notifications/{notificationId}` | Get notification by ID |
+| `PUT` | `/api/v1/notifications/{notificationId}/read` | Mark a notification as read |
+| `DELETE` | `/api/v1/notifications/{notificationId}` | Delete a notification |
+
 ## Build & Run
 
 ### Prerequisites
@@ -112,10 +127,16 @@ All endpoints are routed through `api-gateway` at port `8762`. JWT is required f
 bash build-all-docker-images.sh
 ```
 
-### Run the system
+### Run the system (Docker Compose)
 
 ```bash
 docker-compose up
+```
+
+### Deploy as a Docker Swarm stack
+
+```bash
+bash docker_swarm_deploy.sh
 ```
 
 ### Build all modules (without Docker)
@@ -139,6 +160,7 @@ project-management-system/
 ├── user-service/
 ├── project-service/
 ├── task-service/
+├── notification-service/
 ├── ai-service/
 ├── service-discovery/
 ├── config-server/
@@ -148,6 +170,7 @@ project-management-system/
 ├── docs/                # API docs and scenarios
 ├── postman/             # Postman collection
 ├── docker-compose.yml
+├── docker_swarm_deploy.sh
 └── build-all-docker-images.sh
 ```
 
