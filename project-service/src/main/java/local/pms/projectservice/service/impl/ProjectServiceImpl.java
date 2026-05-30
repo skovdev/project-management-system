@@ -6,8 +6,10 @@ import local.pms.projectservice.constant.KafkaConstants;
 
 import local.pms.projectservice.dto.ProjectDto;
 
+import local.pms.projectservice.event.ProjectCreatedEvent;
 import local.pms.projectservice.event.ProjectDeletedEvent;
 
+import local.pms.projectservice.kafka.producer.ProjectCreatedProducer;
 import local.pms.projectservice.kafka.producer.ProjectDeletedProducer;
 
 import local.pms.projectservice.exception.ProjectNotFoundException;
@@ -48,6 +50,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final AiExternalProvider aiExternalProvider;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ProjectCreatedProducer projectCreatedProducer;
     private final ProjectDeletedProducer projectDeletedProducer;
 
     @Override
@@ -61,6 +64,9 @@ public class ProjectServiceImpl implements ProjectService {
         project.setUserId(extractAuthUserId());
         var savedProject = projectRepository.save(project);
         log.info("Project created with ID: {}", savedProject.getId());
+        projectCreatedProducer.sendProjectCreatedEvent(
+                KafkaConstants.Topics.PROJECT_CREATED_TOPIC,
+                new ProjectCreatedEvent(savedProject.getId(), savedProject.getUserId(), savedProject.getTitle()));
         return projectMapping.toDto(savedProject);
     }
 

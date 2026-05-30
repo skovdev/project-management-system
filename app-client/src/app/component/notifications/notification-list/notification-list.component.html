@@ -1,0 +1,89 @@
+<div class="notification-list">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1>Notifications</h1>
+      <p class="page-subtitle">Your activity feed and system alerts</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <mat-card *ngIf="notifications.length > 0" class="table-card">
+      <table mat-table [dataSource]="notifications" class="notifications-table">
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let n">
+            <span class="type-badge type-{{ n.type | lowercase }}">{{ n.type }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Title</th>
+          <td mat-cell *matCellDef="let n" class="cell-title" [class.cell-title--unread]="!n.read">
+            {{ n.title }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="message">
+          <th mat-header-cell *matHeaderCellDef>Message</th>
+          <td mat-cell *matCellDef="let n" class="cell-message">{{ n.message }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let n" class="cell-date">
+            {{ n.createdAt | date:'dd MMM yyyy, HH:mm' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let n">
+            <span class="read-badge" [class.read-badge--unread]="!n.read">
+              <mat-icon>{{ n.read ? 'mark_email_read' : 'mark_email_unread' }}</mat-icon>
+              {{ n.read ? 'Read' : 'Unread' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let n" class="cell-actions">
+            <button mat-icon-button color="primary" [disabled]="n.read"
+                    (click)="markAsRead(n)" title="Mark as read" aria-label="Mark as read">
+              <mat-icon>done</mat-icon>
+            </button>
+            <button mat-icon-button color="warn"
+                    (click)="deleteNotification(n.id)" title="Delete" aria-label="Delete notification">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row--unread]="!row.read"></tr>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5, 10, 20]"
+        (page)="onPageChange($event)"
+        aria-label="Select notification page">
+      </mat-paginator>
+    </mat-card>
+
+    <div *ngIf="notifications.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">notifications_none</mat-icon>
+      <h3 class="empty-title">No notifications</h3>
+      <p class="empty-desc">You're all caught up. New alerts will appear here.</p>
+    </div>
+
+  </ng-container>
+</div>

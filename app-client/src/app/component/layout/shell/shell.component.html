@@ -31,6 +31,11 @@
         <mat-icon class="nav-icon">task_alt</mat-icon>
         <span class="nav-label">Tasks</span>
       </a>
+      <a class="nav-item" routerLink="/notifications" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Notifications">
+        <mat-icon class="nav-icon">notifications_none</mat-icon>
+        <span class="nav-label">Notifications</span>
+      </a>
       <a class="nav-item" routerLink="/profile" routerLinkActive="nav-item--active"
          (click)="closeSidenavOnMobile()" aria-label="Profile">
         <mat-icon class="nav-icon">person_outline</mat-icon>
@@ -58,6 +63,42 @@
       </button>
       <span class="header-app-name">Project Management System</span>
       <span class="header-spacer"></span>
+
+      <!-- Notification bell -->
+      <button mat-icon-button class="notif-btn"
+              [matBadge]="unreadCount"
+              [matBadgeHidden]="unreadCount === 0"
+              matBadgeColor="warn"
+              matBadgeSize="small"
+              [matMenuTriggerFor]="notifMenu"
+              aria-label="Open notifications">
+        <mat-icon>notifications_none</mat-icon>
+      </button>
+
+      <mat-menu #notifMenu="matMenu" class="notif-menu" xPosition="before">
+        <div class="notif-menu-header" (click)="$event.stopPropagation()">
+          <span class="notif-menu-title">Notifications</span>
+          <a class="notif-menu-viewall" routerLink="/notifications">View all</a>
+        </div>
+
+        <ng-container *ngIf="unreadNotifications.length > 0; else noNotif">
+          <button mat-menu-item *ngFor="let n of unreadNotifications" class="notif-menu-item"
+                  (click)="onNotifClick(n)">
+            <div class="notif-item-content">
+              <span class="notif-item-title">{{ n.title }}</span>
+              <span class="notif-item-msg">{{ n.message }}</span>
+              <span class="notif-item-date">{{ n.createdAt | date:'dd MMM, HH:mm' }}</span>
+            </div>
+          </button>
+        </ng-container>
+
+        <ng-template #noNotif>
+          <div class="notif-empty" (click)="$event.stopPropagation()">
+            <mat-icon>notifications_none</mat-icon>
+            <span>No new notifications</span>
+          </div>
+        </ng-template>
+      </mat-menu>
     </header>
 
     <main class="shell-content">

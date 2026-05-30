@@ -30,6 +30,8 @@ public class ApiGatewayDockerConfig {
                         .uri("lb://PROJECT-SERVICE"))
                 .route("task-service", r -> r.path("/api/v1/tasks/**")
                         .uri("lb://TASK-SERVICE"))
+                .route("notification-service", r -> r.path("/api/v1/notifications/**")
+                        .uri("lb://NOTIFICATION-SERVICE"))
                 .build();
     }
 

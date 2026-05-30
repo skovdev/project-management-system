@@ -2,11 +2,17 @@ package local.pms.taskservice.service.impl;
 
 import local.pms.taskservice.config.jwt.JwtTokenProvider;
 
+import local.pms.taskservice.constant.KafkaConstants;
+
 import local.pms.taskservice.dto.TaskDto;
+
+import local.pms.taskservice.event.TaskCreatedEvent;
 
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
+
+import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
 
 import local.pms.taskservice.mapping.TaskMapping;
 
@@ -38,6 +44,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TaskCreatedProducer taskCreatedProducer;
 
     @Override
     @Transactional
@@ -50,6 +57,9 @@ public class TaskServiceImpl implements TaskService {
         task.setUserId(extractAuthUserId());
         var savedTask = taskRepository.save(task);
         log.info("Task created with ID: {}", savedTask.getId());
+        taskCreatedProducer.sendTaskCreatedEvent(
+                KafkaConstants.Topics.TASK_CREATED_TOPIC,
+                new TaskCreatedEvent(savedTask.getId(), savedTask.getUserId(), savedTask.getTitle()));
         return taskMapping.toDto(savedTask);
     }
 

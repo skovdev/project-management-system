@@ -32,6 +32,8 @@ public class ApiGatewayLocalConfig {
                         .uri(serviceHosts().get("project-service")))
                 .route("task-service", r -> r.path("/api/v1/task/**")
                         .uri(serviceHosts().get("task-service")))
+                .route("notification-service", r -> r.path("/api/v1/notifications/**")
+                        .uri(serviceHosts().get("notification-service")))
                 .build();
     }
 
