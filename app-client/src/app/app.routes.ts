@@ -5,6 +5,7 @@ import { ShellComponent } from './component/layout/shell/shell.component';
 import { DashboardComponent } from './component/dashboard/dashboard.component';
 import { ProjectListComponent } from './component/projects/project-list/project-list.component';
 import { TaskListComponent } from './component/tasks/task-list/task-list.component';
+import { TaskDetailComponent } from './component/tasks/task-detail/task-detail.component';
 import { ProfileComponent } from './component/profile/profile.component';
 import { NotificationListComponent } from './component/notifications/notification-list/notification-list.component';
 import { authGuard } from './guards/auth.guard';
@@ -20,6 +21,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'projects', component: ProjectListComponent },
       { path: 'tasks', component: TaskListComponent },
+      { path: 'tasks/:id', component: TaskDetailComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'notifications', component: NotificationListComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

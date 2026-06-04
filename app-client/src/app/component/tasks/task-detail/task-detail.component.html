@@ -1,0 +1,93 @@
+<div class="task-detail">
+
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()" title="Back to tasks" aria-label="Back to tasks">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="page-header-text">
+      <h1>Task Details</h1>
+      <p class="page-subtitle">Full information about the task</p>
+    </div>
+    <button *ngIf="task" mat-raised-button color="primary" (click)="openEditDialog()">
+      <mat-icon>edit</mat-icon> Edit Task
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <h3>Task not found</h3>
+    <p>The task you are looking for does not exist or has been deleted.</p>
+    <button mat-raised-button color="primary" (click)="goBack()">Back to Tasks</button>
+  </div>
+
+  <mat-card *ngIf="task && !loading" class="detail-card">
+    <mat-card-content>
+
+      <div class="detail-title-row">
+        <h2 class="detail-title">{{ task.title }}</h2>
+        <div class="badge-row">
+          <span class="status-badge status-{{ task.taskStatusType | lowercase }}">
+            {{ task.taskStatusType }}
+          </span>
+          <span class="priority-badge priority-{{ task.taskPriorityType | lowercase }}">
+            {{ task.taskPriorityType }}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-divider"></div>
+
+      <div class="detail-section">
+        <span class="detail-label">Description</span>
+        <p class="detail-value description-value">{{ task.description }}</p>
+      </div>
+
+      <div class="detail-grid">
+
+        <div class="detail-item">
+          <span class="detail-label">Status</span>
+          <span class="status-badge status-{{ task.taskStatusType | lowercase }}">
+            {{ task.taskStatusType }}
+          </span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Priority</span>
+          <span class="priority-badge priority-{{ task.taskPriorityType | lowercase }}">
+            {{ task.taskPriorityType }}
+          </span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Active</span>
+          <span class="active-badge" [class.active-badge--yes]="task.active">
+            <mat-icon>{{ task.active ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            {{ task.active ? 'Yes' : 'No' }}
+          </span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Task ID</span>
+          <span class="detail-value id-value">{{ task.id }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Project ID</span>
+          <span class="detail-value id-value">{{ task.projectId }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Assigned User ID</span>
+          <span class="detail-value id-value">{{ task.userId || '—' }}</span>
+        </div>
+
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>
