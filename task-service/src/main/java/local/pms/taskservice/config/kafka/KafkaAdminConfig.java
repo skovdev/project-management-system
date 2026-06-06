@@ -37,7 +37,8 @@ public class KafkaAdminConfig {
     @Bean
     public List<NewTopic> dltTopics() {
         return List.of(
-                new NewTopic("project-deleted.DLT", partitions, replicationFactor)
+                new NewTopic("project-deleted.DLT", partitions, replicationFactor),
+                new NewTopic("comment-created.DLT", partitions, replicationFactor)
         );
     }
 }

@@ -10,6 +10,8 @@ import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
 
+import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
+
 import local.pms.taskservice.repository.TaskRepository;
 
 import local.pms.taskservice.service.impl.TaskServiceImpl;
@@ -42,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doNothing;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceImplTest {
@@ -55,6 +58,9 @@ class TaskServiceImplTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private TaskCreatedProducer taskCreatedProducer;
+
     @InjectMocks
     private TaskServiceImpl taskService;
 
@@ -67,6 +73,7 @@ class TaskServiceImplTest {
 
         stubToken(userId);
         when(taskRepository.save(any(Task.class))).thenReturn(saved);
+        doNothing().when(taskCreatedProducer).sendTaskCreatedEvent(any(), any());
 
         var result = taskService.create(dto);
 

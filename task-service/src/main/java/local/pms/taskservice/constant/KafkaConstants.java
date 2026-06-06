@@ -14,5 +14,6 @@ public final class KafkaConstants {
     public static final class Topics {
         public static final String TASK_CREATED_TOPIC = "task-created";
         public static final String PROJECT_DELETED_TOPIC = "project-deleted";
+        public static final String COMMENT_CREATED_TOPIC = "comment-created";
     }
 }
