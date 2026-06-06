@@ -90,4 +90,109 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Comments Section -->
+  <div *ngIf="task && !loading" class="comments-section">
+
+    <div class="comments-header">
+      <h3>Comments</h3>
+      <span class="comments-count" *ngIf="commentsTotalElements > 0">{{ commentsTotalElements }}</span>
+    </div>
+
+    <!-- New comment form -->
+    <mat-card class="new-comment-card">
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="comment-field">
+          <mat-label>Write a comment...</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="newCommentContent"
+            rows="3"
+            maxlength="2000"
+            placeholder="Share your thoughts on this task...">
+          </textarea>
+          <mat-hint align="end">{{ newCommentContent.length }} / 2000</mat-hint>
+        </mat-form-field>
+        <div class="comment-submit-row">
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!newCommentContent.trim() || submittingComment"
+            (click)="submitComment()">
+            <mat-icon>send</mat-icon> Post Comment
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Loading -->
+    <div *ngIf="commentsLoading" class="comments-loading">
+      <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+    </div>
+
+    <!-- Empty state -->
+    <p *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
+      No comments yet. Be the first to comment!
+    </p>
+
+    <!-- Comment list -->
+    <div *ngIf="!commentsLoading && comments.length > 0" class="comment-list">
+      <div *ngFor="let comment of comments" class="comment-item">
+
+        <div class="comment-header">
+          <div class="comment-author">
+            <div class="comment-avatar">{{ shortId(comment.authorId)[0].toUpperCase() }}</div>
+            <div class="comment-meta">
+              <span class="comment-author-id">{{ shortId(comment.authorId) }}…</span>
+              <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
+            </div>
+            <span *ngIf="comment.updatedAt !== comment.createdAt" class="comment-edited">(edited)</span>
+          </div>
+          <div class="comment-actions" *ngIf="isOwnComment(comment) && editingCommentId !== comment.id">
+            <button mat-icon-button title="Edit comment" (click)="startEdit(comment)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button title="Delete comment" (click)="deleteComment(comment.id)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- View mode -->
+        <p *ngIf="editingCommentId !== comment.id" class="comment-content">{{ comment.content }}</p>
+
+        <!-- Edit mode -->
+        <div *ngIf="editingCommentId === comment.id" class="comment-edit-area">
+          <mat-form-field appearance="outline" class="comment-field">
+            <textarea
+              matInput
+              [(ngModel)]="editingContent"
+              rows="3"
+              maxlength="2000">
+            </textarea>
+            <mat-hint align="end">{{ editingContent.length }} / 2000</mat-hint>
+          </mat-form-field>
+          <div class="comment-edit-actions">
+            <button mat-button (click)="cancelEdit()">Cancel</button>
+            <button mat-raised-button color="primary" [disabled]="!editingContent.trim()" (click)="saveEdit(comment)">
+              Save
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paginator -->
+    <mat-paginator
+      *ngIf="commentsTotalElements > commentsPageSize"
+      class="comments-paginator"
+      [length]="commentsTotalElements"
+      [pageSize]="commentsPageSize"
+      [pageIndex]="commentsPageIndex"
+      [pageSizeOptions]="[5, 10, 20]"
+      (page)="onCommentsPageChange($event)">
+    </mat-paginator>
+
+  </div>
+
 </div>

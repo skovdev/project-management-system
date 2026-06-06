@@ -93,6 +93,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles {@link CommentNotFoundException} and returns a 404 error response.
+     *
+     * @param ex the exception containing the not-found message
+     * @return error response with NOT_FOUND status
+     */
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ApiResponseDto<Void> handleCommentNotFoundException(CommentNotFoundException ex) {
+        log.error("Comment not found: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                List.of("COMMENT_NOT_FOUND"));
+    }
+
+    /**
+     * Handles {@link CommentAccessDeniedException} and returns a 403 error response.
+     *
+     * @param ex the exception thrown when a user attempts to modify another user's comment
+     * @return error response with FORBIDDEN status
+     */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(CommentAccessDeniedException.class)
+    public ApiResponseDto<Void> handleCommentAccessDeniedException(CommentAccessDeniedException ex) {
+        log.error("Comment access denied: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                List.of("COMMENT_ACCESS_DENIED"));
+    }
+
+    /**
      * Handles Spring Security {@link AccessDeniedException} thrown by {@code @PreAuthorize}
      * method-level security and returns a 403 error response.
      *
