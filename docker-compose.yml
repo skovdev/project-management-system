@@ -204,6 +204,15 @@ services:
     networks:
       - project-management-system-network
 
+  zipkin:
+    image: openzipkin/zipkin:3
+    deploy:
+      replicas: 1
+    ports:
+      - "9411:9411"
+    networks:
+      - project-management-system-network
+
   kafka:
     image: confluentinc/cp-kafka:7.7.1
     hostname: kafka
