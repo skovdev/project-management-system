@@ -55,7 +55,8 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/sign-up").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/sign-in").permitAll()
                                 .requestMatchers("/v3/api-docs/**",
-                                        "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                                        "/swagger-ui.html", "/swagger-ui/**",
+                                        "/actuator/health").permitAll()
                                 .anyRequest().authenticated())
                 .addFilterBefore(jwtVerificationTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

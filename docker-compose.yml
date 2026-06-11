@@ -238,4 +238,3 @@ services:
 
 networks:
   project-management-system-network:
-    driver: overlay

@@ -43,7 +43,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/v3/api-docs/**",
-                                        "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                                        "/swagger-ui.html", "/swagger-ui/**",
+                                        "/actuator/health").permitAll()
                                 .anyRequest()
                                 .authenticated())
                 .addFilterBefore(jwtVerificationTokenFilter, UsernamePasswordAuthenticationFilter.class)
