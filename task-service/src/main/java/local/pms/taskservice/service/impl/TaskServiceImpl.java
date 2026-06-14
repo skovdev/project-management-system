@@ -11,6 +11,9 @@ import local.pms.taskservice.event.TaskCreatedEvent;
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
+import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
+
+import local.pms.taskservice.external.ai.provider.AiExternalProvider;
 
 import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
 
@@ -45,6 +48,7 @@ public class TaskServiceImpl implements TaskService {
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final TaskCreatedProducer taskCreatedProducer;
+    private final AiExternalProvider aiExternalProvider;
 
     @Override
     @Transactional
@@ -109,6 +113,7 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidTaskInputException("Project ID cannot be null or blank. Please provide a valid project ID");
         }
         taskToUpdate.setProjectId(UUID.fromString(taskDto.projectId()));
+        taskToUpdate.setAcceptanceCriteria(taskDto.acceptanceCriteria());
         var updatedTask = taskRepository.save(taskToUpdate);
         log.info("Task with ID {} updated successfully.", taskId);
         return taskMapping.toDto(updatedTask);
@@ -132,6 +137,28 @@ public class TaskServiceImpl implements TaskService {
         log.info("Deleting all tasks for projectId: {}", projectId);
         taskRepository.deleteAllByProjectId(projectId);
         log.info("All tasks deleted for projectId: {}", projectId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public String generateAcceptanceCriteria(UUID taskId) {
+        UUID authUserId = extractAuthUserId();
+        var task = taskRepository.findByIdAndUserId(taskId, authUserId);
+        if (task.isEmpty()) {
+            log.error("Task with ID {} not found or access denied for acceptance criteria generation.", taskId);
+            throw new TaskNotFoundException(
+                    "Task with ID " + taskId + " not found. Please provide a valid task ID");
+        }
+        try {
+            log.info("Generating acceptance criteria for taskId: {}", taskId);
+            return aiExternalProvider.generateAcceptanceCriteria(
+                    task.get().getTitle(), task.get().getDescription());
+        } catch (Exception e) {
+            log.error("Failed to generate acceptance criteria for taskId '{}': {}", taskId, e.getMessage());
+            throw new AcceptanceCriteriaGenerationException(
+                    "An error occurred while generating acceptance criteria", e);
+        }
     }
 
     private UUID extractAuthUserId() {

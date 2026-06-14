@@ -10,6 +10,7 @@ import local.pms.taskservice.dto.TaskDto;
 
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
+import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
 
 import local.pms.taskservice.service.TaskService;
 import local.pms.taskservice.service.TokenService;
@@ -106,7 +107,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank title returns 400")
     void should_return400_when_createWithBlankTitle() throws Exception {
         var body = new TaskDto(null, "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -119,7 +120,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank description returns 400")
     void should_return400_when_createWithBlankDescription() throws Exception {
         var body = new TaskDto(null, "My Task", "", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -132,7 +133,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank projectId returns 400")
     void should_return400_when_createWithBlankProjectId() throws Exception {
         var body = new TaskDto(null, "My Task", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, "", null);
+                TaskPriorityType.MEDIUM, true, "", null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -220,7 +221,7 @@ class TaskRestControllerTest {
     void should_return400_when_updateWithBlankTitle() throws Exception {
         var id = UUID.randomUUID();
         var body = new TaskDto(id.toString(), "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
 
         mockMvc.perform(put(BASE_URL + "/" + id)
                         .header("Authorization", BEARER)
@@ -308,6 +309,64 @@ class TaskRestControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    // ── Acceptance Criteria Generation ──────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /tasks/{id}/acceptance-criteria/generate returns 200 with generated text")
+    void should_return200_when_generateAcceptanceCriteriaWithValidToken() throws Exception {
+        var id = UUID.randomUUID();
+        when(taskService.generateAcceptanceCriteria(id)).thenReturn("Given ... When ... Then ...");
+
+        mockMvc.perform(post(BASE_URL + "/" + id + "/acceptance-criteria")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data").value("Given ... When ... Then ..."));
+    }
+
+    @Test
+    @DisplayName("POST /tasks/{id}/acceptance-criteria/generate returns 404 when task not found")
+    void should_return404_when_generateAcceptanceCriteriaTaskNotFound() throws Exception {
+        var id = UUID.randomUUID();
+        when(taskService.generateAcceptanceCriteria(id))
+                .thenThrow(new TaskNotFoundException("Task with ID " + id + " not found"));
+
+        mockMvc.perform(post(BASE_URL + "/" + id + "/acceptance-criteria")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /tasks/{id}/acceptance-criteria/generate returns 403 when access denied")
+    void should_return403_when_generateAcceptanceCriteriaAccessDenied() throws Exception {
+        var id = UUID.randomUUID();
+        when(taskService.generateAcceptanceCriteria(id))
+                .thenThrow(new TaskAccessDeniedException("Access denied: you do not own task with ID " + id));
+
+        mockMvc.perform(post(BASE_URL + "/" + id + "/acceptance-criteria")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /tasks/{id}/acceptance-criteria/generate returns 500 when AI service fails")
+    void should_return500_when_generateAcceptanceCriteriaAiFails() throws Exception {
+        var id = UUID.randomUUID();
+        when(taskService.generateAcceptanceCriteria(id))
+                .thenThrow(new AcceptanceCriteriaGenerationException("AI service unavailable"));
+
+        mockMvc.perform(post(BASE_URL + "/" + id + "/acceptance-criteria")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("POST /tasks/{id}/acceptance-criteria/generate without token returns 401")
+    void should_return401_when_generateAcceptanceCriteriaWithoutToken() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/" + UUID.randomUUID() + "/acceptance-criteria"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private TaskDto buildTaskDto(String id) {
         return new TaskDto(
                 id,
@@ -317,6 +376,7 @@ class TaskRestControllerTest {
                 TaskPriorityType.MEDIUM,
                 true,
                 UUID.randomUUID().toString(),
+                null,
                 null
         );
     }

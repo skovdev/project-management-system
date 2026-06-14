@@ -174,6 +174,107 @@
 .priority-critical { background: #fef2f2; color: #b91c1c; }
 .priority-blocker  { background: #4c0519; color: #fda4af; }
 
+/* ── Acceptance Criteria ── */
+.ac-section {
+  margin-top: 28px;
+}
+
+.ac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ac-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ac-header-left h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ac-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #7c3aed;
+}
+
+.ac-regenerate-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.ac-generating {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 24px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.ac-generating p {
+  margin: 0;
+}
+
+.ac-empty-card {
+  padding: 4px;
+}
+
+.ac-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 24px !important;
+}
+
+.ac-empty-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--color-text-muted);
+}
+
+.ac-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.ac-editor-card {
+  padding: 4px;
+}
+
+.ac-field {
+  width: 100%;
+}
+
+.ac-field textarea {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+.ac-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 /* ── Comments ── */
 .comments-section {
   margin-top: 28px;

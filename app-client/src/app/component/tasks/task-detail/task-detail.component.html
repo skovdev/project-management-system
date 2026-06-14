@@ -90,6 +90,74 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Acceptance Criteria Section -->
+  <div *ngIf="task && !loading" class="ac-section">
+
+    <div class="ac-header">
+      <div class="ac-header-left">
+        <mat-icon class="ac-icon">auto_awesome</mat-icon>
+        <h3>Acceptance Criteria</h3>
+      </div>
+      <button
+        *ngIf="hasAc && !acGenerating"
+        mat-stroked-button
+        class="ac-regenerate-btn"
+        [disabled]="acSaving"
+        (click)="generateAc()">
+        <mat-icon>refresh</mat-icon> Re-generate
+      </button>
+    </div>
+
+    <!-- Generating spinner -->
+    <div *ngIf="acGenerating" class="ac-generating">
+      <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+      <p>Generating acceptance criteria with AI…</p>
+    </div>
+
+    <!-- Empty state -->
+    <mat-card *ngIf="!hasAc && !acGenerating" class="ac-empty-card">
+      <mat-card-content class="ac-empty-content">
+        <mat-icon class="ac-empty-icon">psychology</mat-icon>
+        <p class="ac-empty-text">No acceptance criteria yet.</p>
+        <button mat-raised-button color="primary" (click)="generateAc()">
+          <mat-icon>auto_awesome</mat-icon> Generate with AI
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Editor -->
+    <mat-card *ngIf="hasAc && !acGenerating" class="ac-editor-card">
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="ac-field">
+          <mat-label>Acceptance Criteria</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="acText"
+            rows="8"
+            placeholder="Write or generate acceptance criteria…">
+          </textarea>
+        </mat-form-field>
+        <div class="ac-actions">
+          <button
+            mat-button
+            [disabled]="!acDirty || acSaving"
+            (click)="cancelAc()">
+            Cancel
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!acDirty || acSaving"
+            (click)="saveAc()">
+            <mat-spinner *ngIf="acSaving" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+            Save
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+
   <!-- Comments Section -->
   <div *ngIf="task && !loading" class="comments-section">
 

@@ -32,4 +32,8 @@ export class TaskService {
   deleteTask(id: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`);
   }
+
+  generateAcceptanceCriteria(taskId: string): Observable<ApiResponse<string>> {
+    return this.http.post<ApiResponse<string>>(`${this.apiUrl}/${taskId}/acceptance-criteria`, null);
+  }
 }
