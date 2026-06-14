@@ -29,5 +29,7 @@ public record TaskDto(
         @NotBlank(message = "Project identifier is required")
         String projectId,
 
-        String userId
+        String userId,
+
+        String acceptanceCriteria
 ) {}

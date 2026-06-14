@@ -9,6 +9,9 @@ import local.pms.taskservice.entity.Task;
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
+import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
+
+import local.pms.taskservice.external.ai.provider.AiExternalProvider;
 
 import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
 
@@ -60,6 +63,9 @@ class TaskServiceImplTest {
 
     @Mock
     private TaskCreatedProducer taskCreatedProducer;
+
+    @Mock
+    private AiExternalProvider aiExternalProvider;
 
     @InjectMocks
     private TaskServiceImpl taskService;
@@ -217,7 +223,7 @@ class TaskServiceImplTest {
         var userId = UUID.randomUUID();
         var existing = buildTask(taskId, userId);
         var badDto = new TaskDto(taskId.toString(), "My Task", "A task description",
-                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null);
+                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null, null);
 
         stubToken(userId);
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(existing));
@@ -265,6 +271,57 @@ class TaskServiceImplTest {
         verify(taskRepository).deleteAllByProjectId(projectId);
     }
 
+    @Test
+    @DisplayName("generateAcceptanceCriteria returns AI-generated text when task is owned by caller")
+    void should_returnGeneratedText_when_generateAcceptanceCriteriaWithOwnedTask() {
+        var taskId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
+        var task = buildTask(taskId, userId);
+
+        stubToken(userId);
+        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.of(task));
+        when(aiExternalProvider.generateAcceptanceCriteria("My Task", "A task description"))
+                .thenReturn("Given ... When ... Then ...");
+
+        var result = taskService.generateAcceptanceCriteria(taskId);
+
+        assertThat(result).isEqualTo("Given ... When ... Then ...");
+        verify(aiExternalProvider).generateAcceptanceCriteria("My Task", "A task description");
+    }
+
+    @Test
+    @DisplayName("generateAcceptanceCriteria throws TaskNotFoundException when task not found")
+    void should_throwTaskNotFoundException_when_generateAcceptanceCriteriaTaskNotFound() {
+        var taskId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
+
+        stubToken(userId);
+        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> taskService.generateAcceptanceCriteria(taskId))
+                .isInstanceOf(TaskNotFoundException.class)
+                .hasMessageContaining(taskId.toString());
+
+        verify(aiExternalProvider, never()).generateAcceptanceCriteria(any(), any());
+    }
+
+    @Test
+    @DisplayName("generateAcceptanceCriteria wraps AI exception in AcceptanceCriteriaGenerationException")
+    void should_throwAcceptanceCriteriaGenerationException_when_aiProviderFails() {
+        var taskId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
+        var task = buildTask(taskId, userId);
+
+        stubToken(userId);
+        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.of(task));
+        when(aiExternalProvider.generateAcceptanceCriteria(any(), any()))
+                .thenThrow(new RuntimeException("AI unavailable"));
+
+        assertThatThrownBy(() -> taskService.generateAcceptanceCriteria(taskId))
+                .isInstanceOf(AcceptanceCriteriaGenerationException.class)
+                .hasMessageContaining("error occurred while generating acceptance criteria");
+    }
+
     private void stubToken(UUID userId) {
         when(tokenService.getToken()).thenReturn("test-token");
         when(jwtTokenProvider.extractAuthUserId("test-token")).thenReturn(userId);
@@ -293,6 +350,7 @@ class TaskServiceImplTest {
                 TaskPriorityType.MEDIUM,
                 true,
                 UUID.randomUUID().toString(),
+                null,
                 null
         );
     }

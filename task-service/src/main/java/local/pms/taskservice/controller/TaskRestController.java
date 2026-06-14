@@ -130,4 +130,25 @@ public class TaskRestController {
         taskService.delete(taskId);
         return ApiResponseDto.buildSuccessResponse(null);
     }
+
+    @Operation(
+            summary = "Generate acceptance criteria",
+            description = "Uses AI to generate acceptance criteria based on the task title and description. " +
+                          "The result is returned to the client and not persisted automatically. " +
+                          "Call PUT /{taskId} with the acceptanceCriteria field to save.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Acceptance criteria generated successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = String.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "500", description = "Error occurred while generating acceptance criteria")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PostMapping(value = "/{taskId}/acceptance-criteria", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<String> generateAcceptanceCriteria(
+            @Parameter(description = "Task identifier for which to generate acceptance criteria")
+            @PathVariable(name = "taskId") UUID taskId) {
+        return ApiResponseDto.buildSuccessResponse(taskService.generateAcceptanceCriteria(taskId));
+    }
 }

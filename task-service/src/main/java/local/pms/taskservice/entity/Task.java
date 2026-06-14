@@ -48,6 +48,9 @@ public class Task extends AbstractBaseModel {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "acceptance_criteria", columnDefinition = "TEXT")
+    private String acceptanceCriteria;
+
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
 

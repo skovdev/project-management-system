@@ -59,4 +59,14 @@ public interface TaskService {
      * @param projectId the UUID of the deleted project
      */
     void deleteAllByProjectId(UUID projectId);
+
+    /**
+     * Generates acceptance criteria for the given task using the AI service.
+     * The generated text is returned to the caller and not persisted automatically;
+     * the caller must invoke {@link #update} to save it.
+     *
+     * @param taskId the unique task identifier
+     * @return the AI-generated acceptance criteria text
+     */
+    String generateAcceptanceCriteria(UUID taskId);
 }
