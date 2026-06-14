@@ -144,6 +144,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles {@link AcceptanceCriteriaGenerationException} and returns a 500 error response.
+     *
+     * @param ex the exception thrown when the AI service fails to generate acceptance criteria
+     * @return error response with INTERNAL_SERVER_ERROR status
+     */
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(AcceptanceCriteriaGenerationException.class)
+    public ApiResponseDto<Void> handleAcceptanceCriteriaGenerationException(AcceptanceCriteriaGenerationException ex) {
+        log.error("Acceptance criteria generation failed: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                List.of("ACCEPTANCE_CRITERIA_GENERATION_FAILED"));
+    }
+
+    /**
      * Handles any unhandled {@link Exception} and returns a 500 error response.
      *
      * @param ex the unexpected exception

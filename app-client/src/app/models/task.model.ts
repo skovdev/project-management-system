@@ -18,4 +18,5 @@ export interface TaskDto {
   active: boolean;
   projectId: string;
   userId?: string;
+  acceptanceCriteria?: string;
 }
