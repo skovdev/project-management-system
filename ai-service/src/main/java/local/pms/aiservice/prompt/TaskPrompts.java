@@ -1,10 +1,12 @@
-package local.pms.taskservice.external.ai.client.prompt;
+package local.pms.aiservice.prompt;
 
 /**
- * System prompt constants used when calling the AI service for task-related generation.
+ * System-prompt constants for task-related AI generation.
+ * Centralising prompts here prevents callers from leaking AI concerns into downstream services.
  */
-public interface PromptMessage {
+public interface TaskPrompts {
 
+    /** System prompt that instructs the model to produce testable acceptance criteria in Gherkin or bullet format. */
     String SYSTEM_PROMPT_ACCEPTANCE_CRITERIA = """
             You are a software product owner expert specializing in agile and BDD practices.
             Generate clear, concise, and testable acceptance criteria for the provided task title and description.
