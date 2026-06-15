@@ -8,17 +8,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * Feign client for the ai-service chat completion endpoint.
+ * Feign client for the ai-service task acceptance-criteria endpoint.
  */
 @FeignClient(name = "ai-service", url = "${project-management-system.client.aiservice.url}")
 public interface AiFeignClient {
 
     /**
-     * Sends a list of messages to the ai-service and returns the generated text.
+     * Sends task context to the ai-service and returns generated acceptance criteria.
      *
-     * @param request the chat request containing the message list
-     * @return API response wrapping the generated string
+     * @param request the task context (title and description)
+     * @return API response wrapping the generated acceptance criteria text
      */
-    @PostMapping("/ask")
-    ApiResponseDto<String> generateContent(@RequestBody AiChatRequestDto request);
+    @PostMapping("/acceptance-criteria")
+    ApiResponseDto<String> generateAcceptanceCriteria(@RequestBody AcceptanceCriteriaRequestDto request);
 }

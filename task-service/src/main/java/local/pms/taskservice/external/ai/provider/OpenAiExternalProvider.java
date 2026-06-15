@@ -1,33 +1,25 @@
 package local.pms.taskservice.external.ai.provider;
 
-import com.openai.models.chat.completions.ChatCompletionMessageParam;
-import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
-import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
-
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import io.github.resilience4j.retry.annotation.Retry;
 
-import local.pms.taskservice.dto.api.response.ApiResponseDto;
-
 import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
 
 import local.pms.taskservice.external.ai.client.AiFeignClient;
-import local.pms.taskservice.external.ai.client.AiChatRequestDto;
-import local.pms.taskservice.external.ai.client.prompt.PromptMessage;
+import local.pms.taskservice.external.ai.client.AcceptanceCriteriaRequestDto;
 
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
  * OpenAI-backed implementation of {@link AiExternalProvider} that delegates to the ai-service
  * via Feign, protected by a circuit breaker and retry policy.
+ * The ai-service owns the prompt; this provider sends only domain data.
  */
 @Slf4j
 @Component
@@ -49,8 +41,8 @@ public class OpenAiExternalProvider implements AiExternalProvider {
     @CircuitBreaker(name = "taskAcceptanceCriteriaAiGeneration", fallbackMethod = "fallbackAcceptanceCriteria")
     @Retry(name = "taskAcceptanceCriteriaAiGeneration", fallbackMethod = "fallbackAcceptanceCriteria")
     public String generateAcceptanceCriteria(String taskTitle, String taskDescription) {
-        ApiResponseDto<String> response = aiFeignClient.generateContent(
-                new AiChatRequestDto(buildMessages(taskTitle, taskDescription)));
+        var response = aiFeignClient.generateAcceptanceCriteria(
+                new AcceptanceCriteriaRequestDto(taskTitle, taskDescription));
         if (response == null) {
             log.warn("AI service returned null response for taskTitle='{}'", taskTitle);
             throw new AcceptanceCriteriaGenerationException(
@@ -61,7 +53,7 @@ public class OpenAiExternalProvider implements AiExternalProvider {
             throw new AcceptanceCriteriaGenerationException(
                     "AI service returned errors for taskTitle='" + taskTitle + "': " + response.getErrors());
         }
-        String result = response.getData();
+        var result = response.getData();
         if (result == null || result.isBlank()) {
             log.warn("AI service returned blank acceptance criteria for taskTitle='{}'", taskTitle);
             throw new AcceptanceCriteriaGenerationException(
@@ -70,23 +62,8 @@ public class OpenAiExternalProvider implements AiExternalProvider {
         return result;
     }
 
-    private List<ChatCompletionMessageParam> buildMessages(String taskTitle, String taskDescription) {
-        return List.of(
-                ChatCompletionMessageParam.ofSystem(
-                        ChatCompletionSystemMessageParam.builder()
-                                .content(PromptMessage.SYSTEM_PROMPT_ACCEPTANCE_CRITERIA)
-                                .build()
-                ),
-                ChatCompletionMessageParam.ofUser(
-                        ChatCompletionUserMessageParam.builder()
-                                .content("Task title: " + taskTitle + "\nTask description: " + taskDescription)
-                                .build()
-                )
-        );
-    }
-
     private String fallbackAcceptanceCriteria(String taskTitle, String taskDescription, Throwable t) {
-        String correlationId = UUID.randomUUID().toString();
+        var correlationId = UUID.randomUUID().toString();
         log.error("AI call failed for taskTitle='{}', correlationId='{}'.", taskTitle, correlationId, t);
         return String.format(FALLBACK_MESSAGE_TEMPLATE, correlationId);
     }
