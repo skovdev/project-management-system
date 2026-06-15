@@ -1,7 +1,8 @@
 package local.pms.aiservice.exception.handler;
 
 import local.pms.aiservice.dto.api.response.ApiResponseDto;
-import local.pms.aiservice.exception.ChatGptException;
+
+import local.pms.aiservice.exception.AiChatException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,9 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /**
+     * Handles Bean Validation failures (e.g. blank prompts) with a 400 response.
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ApiResponseDto<Void> handleValidationException(MethodArgumentNotValidException ex) {
@@ -38,14 +42,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Handles AI model communication failures with a 500 response.
+     */
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(ChatGptException.class)
-    public ApiResponseDto<Void> handleChatGptException(ChatGptException ex) {
-        log.error("ChatGPT service error: {}", ex.getMessage(), ex);
+    @ExceptionHandler(AiChatException.class)
+    public ApiResponseDto<Void> handleAiChatException(AiChatException ex) {
+        log.error("AI model error: {}", ex.getMessage(), ex);
         return ApiResponseDto.buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "An internal error occurred. Please try again later.",
-                List.of("Error communicating with ChatGPT service"),
+                List.of("Error communicating with AI model"),
                 "AI_SERVICE_ERROR"
         );
     }
