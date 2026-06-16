@@ -13,6 +13,7 @@ import local.pms.projectservice.exception.DescriptionGenerationException;
 
 import local.pms.projectservice.external.ai.provider.AiExternalProvider;
 
+import local.pms.projectservice.kafka.producer.ProjectCreatedProducer;
 import local.pms.projectservice.kafka.producer.ProjectDeletedProducer;
 
 import local.pms.projectservice.repository.ProjectRepository;
@@ -66,6 +67,9 @@ class ProjectServiceImplTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
+    private ProjectCreatedProducer projectCreatedProducer;
+
+    @Mock
     private ProjectDeletedProducer projectDeletedProducer;
 
     @InjectMocks
@@ -85,6 +89,7 @@ class ProjectServiceImplTest {
 
         assertThat(result.title()).isEqualTo("My Project");
         verify(projectRepository).save(any(Project.class));
+        verify(projectCreatedProducer).sendProjectCreatedEvent(anyString(), any());
     }
 
     @Test
