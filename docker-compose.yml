@@ -189,6 +189,11 @@ services:
       SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
       SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
       SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+    volumes:
+      - ./notification-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar notification-service-1.0.jar
     networks:
       - project-management-system-network
