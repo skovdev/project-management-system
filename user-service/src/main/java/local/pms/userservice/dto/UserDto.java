@@ -24,5 +24,7 @@ public record UserDto(
         String email,
 
         @NotNull(message = "Authentication user identifier is required")
-        UUID authUserId
+        UUID authUserId,
+
+        String avatarUrl
 ) {}

@@ -32,6 +32,9 @@ public class User extends AbstractBaseModel {
     @Column(name = "auth_user_id", nullable = false, unique = true)
     private UUID authUserId;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
 

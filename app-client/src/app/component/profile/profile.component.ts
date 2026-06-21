@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UserService } from '../../services/user.service';
@@ -17,15 +18,19 @@ import { UserDto } from '../../models/user.model';
   imports: [
     CommonModule, ReactiveFormsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatCardModule, MatProgressSpinnerModule
+    MatCardModule, MatProgressSpinnerModule, MatIconModule
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })
 export class ProfileComponent implements OnInit {
+  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
+
   form!: FormGroup;
   loading = true;
   saving = false;
+  uploading = false;
+  deleting = false;
   currentUser: UserDto | null = null;
   username: string;
 
@@ -85,6 +90,60 @@ export class ProfileComponent implements OnInit {
         const msg = err.status === 403
           ? 'You do not have permission to update this profile.'
           : 'Failed to update profile.';
+        this.snackBar.open(msg, 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  onAvatarImageError(): void {
+    if (this.currentUser) {
+      this.currentUser = { ...this.currentUser, avatarUrl: null };
+    }
+  }
+
+  onAvatarClick(): void {
+    if (!this.currentUser || this.uploading) return;
+    this.fileInputRef.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length || !this.currentUser) return;
+    const file = input.files[0];
+    input.value = '';
+    this.uploading = true;
+    this.userService.uploadAvatar(this.currentUser.id, file).subscribe({
+      next: (res) => {
+        this.currentUser = { ...this.currentUser!, avatarUrl: res.avatarUrl };
+        this.uploading = false;
+        this.snackBar.open('Avatar updated successfully.', 'Close', { duration: 3000 });
+      },
+      error: (err) => {
+        this.uploading = false;
+        const msg = err.status === 422
+          ? 'Invalid file. Only JPEG, PNG, or WebP images up to 5 MB are accepted.'
+          : err.status === 403
+          ? 'You do not have permission to update this avatar.'
+          : 'Failed to upload avatar.';
+        this.snackBar.open(msg, 'Close', { duration: 4000 });
+      }
+    });
+  }
+
+  onDeleteAvatar(): void {
+    if (!this.currentUser?.avatarUrl || this.deleting) return;
+    this.deleting = true;
+    this.userService.deleteAvatar(this.currentUser.id).subscribe({
+      next: () => {
+        this.currentUser = { ...this.currentUser!, avatarUrl: null };
+        this.deleting = false;
+        this.snackBar.open('Avatar removed.', 'Close', { duration: 3000 });
+      },
+      error: (err) => {
+        this.deleting = false;
+        const msg = err.status === 403
+          ? 'You do not have permission to remove this avatar.'
+          : 'Failed to remove avatar.';
         this.snackBar.open(msg, 'Close', { duration: 3000 });
       }
     });

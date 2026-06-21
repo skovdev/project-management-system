@@ -8,6 +8,11 @@ import local.pms.userservice.config.jwt.JwtTokenProvider;
 
 import local.pms.userservice.dto.UserDto;
 
+import local.pms.userservice.dto.api.response.AvatarUploadResponseDto;
+
+import local.pms.userservice.exception.AvatarUploadException;
+import local.pms.userservice.exception.AvatarNotFoundException;
+
 import local.pms.userservice.exception.UserNotFoundException;
 import local.pms.userservice.exception.UserAccessDeniedException;
 
@@ -48,6 +53,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -151,7 +157,7 @@ class UserRestControllerTest {
     @DisplayName("PUT /users/{id} with blank firstName returns 400")
     void should_return400_when_updateWithBlankFirstName() throws Exception {
         var id = UUID.randomUUID();
-        var body = new UserDto(id, "", "Smith", "alice@mail.com", UUID.randomUUID());
+        var body = new UserDto(id, "", "Smith", "alice@mail.com", UUID.randomUUID(), null);
 
         mockMvc.perform(put(BASE_URL + "/" + id)
                         .header("Authorization", BEARER)
@@ -164,7 +170,7 @@ class UserRestControllerTest {
     @DisplayName("PUT /users/{id} with invalid email returns 400")
     void should_return400_when_updateWithInvalidEmail() throws Exception {
         var id = UUID.randomUUID();
-        var body = new UserDto(id, "Alice", "Smith", "not-an-email", UUID.randomUUID());
+        var body = new UserDto(id, "Alice", "Smith", "not-an-email", UUID.randomUUID(), null);
 
         mockMvc.perform(put(BASE_URL + "/" + id)
                         .header("Authorization", BEARER)
@@ -254,7 +260,128 @@ class UserRestControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    @DisplayName("PUT /users/{id}/avatar with valid image returns 200 with avatarUrl")
+    void should_return200_when_uploadAvatarWithValidFile() throws Exception {
+        var id = UUID.randomUUID();
+        var avatarUrl = "https://project-management-system-user-avatar-upload.s3.eu-north-1.amazonaws.com/avatars/" + id + "/some-uuid.jpg";
+        when(userService.uploadAvatar(eq(id), any())).thenReturn(new AvatarUploadResponseDto(avatarUrl));
+
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.jpg", "image/jpeg", "fake-image-content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/users/" + id + "/avatar")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.avatarUrl").value(avatarUrl));
+    }
+
+    @Test
+    @DisplayName("PUT /users/{id}/avatar with invalid file type returns 422")
+    void should_return422_when_uploadAvatarWithInvalidFileType() throws Exception {
+        var id = UUID.randomUUID();
+        when(userService.uploadAvatar(eq(id), any()))
+                .thenThrow(new AvatarUploadException("Unsupported file type 'text/plain'"));
+
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "doc.txt", "text/plain", "some text".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/users/" + id + "/avatar")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", BEARER))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @DisplayName("PUT /users/{id}/avatar when user not found returns 404")
+    void should_return404_when_uploadAvatarUserNotFound() throws Exception {
+        var id = UUID.randomUUID();
+        when(userService.uploadAvatar(eq(id), any()))
+                .thenThrow(new UserNotFoundException("User with id '" + id + "' not found"));
+
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.jpg", "image/jpeg", "fake-image-content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/users/" + id + "/avatar")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", BEARER))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PUT /users/{id}/avatar when access denied returns 403")
+    void should_return403_when_uploadAvatarAccessDenied() throws Exception {
+        var id = UUID.randomUUID();
+        when(userService.uploadAvatar(eq(id), any()))
+                .thenThrow(new UserAccessDeniedException("Access denied to user with id '" + id + "'"));
+
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.jpg", "image/jpeg", "fake-image-content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/users/" + id + "/avatar")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", BEARER))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PUT /users/{id}/avatar without token returns 401")
+    void should_return401_when_uploadAvatarWithoutToken() throws Exception {
+        var id = UUID.randomUUID();
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.jpg", "image/jpeg", "fake-image-content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/users/" + id + "/avatar")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; }))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id}/avatar with valid token returns 204")
+    void should_return204_when_deleteAvatarWithValidToken() throws Exception {
+        var id = UUID.randomUUID();
+        doNothing().when(userService).deleteAvatar(id);
+
+        mockMvc.perform(delete("/api/v1/users/" + id + "/avatar").header("Authorization", BEARER))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id}/avatar when no avatar set returns 404")
+    void should_return404_when_deleteAvatarNotFound() throws Exception {
+        var id = UUID.randomUUID();
+        doThrow(new AvatarNotFoundException("User with id '" + id + "' has no avatar to delete"))
+                .when(userService).deleteAvatar(id);
+
+        mockMvc.perform(delete("/api/v1/users/" + id + "/avatar").header("Authorization", BEARER))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id}/avatar when access denied returns 403")
+    void should_return403_when_deleteAvatarAccessDenied() throws Exception {
+        var id = UUID.randomUUID();
+        doThrow(new UserAccessDeniedException("Access denied to user with id '" + id + "'"))
+                .when(userService).deleteAvatar(id);
+
+        mockMvc.perform(delete("/api/v1/users/" + id + "/avatar").header("Authorization", BEARER))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id}/avatar without token returns 401")
+    void should_return401_when_deleteAvatarWithoutToken() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/" + UUID.randomUUID() + "/avatar"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private UserDto buildUserDto(UUID id, UUID authUserId) {
-        return new UserDto(id, "Alice", "Smith", "alice@mail.com", authUserId);
+        return new UserDto(id, "Alice", "Smith", "alice@mail.com", authUserId, null);
     }
 }

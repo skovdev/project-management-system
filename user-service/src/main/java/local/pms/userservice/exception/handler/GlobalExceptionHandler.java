@@ -3,6 +3,8 @@ package local.pms.userservice.exception.handler;
 import local.pms.userservice.dto.api.response.ApiResponseDto;
 
 import local.pms.userservice.exception.UserNotFoundException;
+import local.pms.userservice.exception.AvatarUploadException;
+import local.pms.userservice.exception.AvatarNotFoundException;
 import local.pms.userservice.exception.UserAccessDeniedException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -77,6 +79,42 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN.value(),
                 ex.getMessage(),
                 List.of("USER_ACCESS_DENIED")
+        );
+    }
+
+    /**
+     * Handles {@link AvatarUploadException} thrown when a file fails validation or S3 upload fails.
+     * Returns HTTP 422 Unprocessable Entity.
+     *
+     * @param ex the exception
+     * @return error response with UNPROCESSABLE_ENTITY status
+     */
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ExceptionHandler(AvatarUploadException.class)
+    public ApiResponseDto<Void> handleAvatarUploadException(AvatarUploadException ex) {
+        log.warn("Avatar upload failed: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                ex.getMessage(),
+                List.of("AVATAR_UPLOAD_FAILED")
+        );
+    }
+
+    /**
+     * Handles {@link AvatarNotFoundException} thrown when a delete is attempted on a user with no avatar.
+     * Returns HTTP 404 Not Found.
+     *
+     * @param ex the exception
+     * @return error response with NOT_FOUND status
+     */
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(AvatarNotFoundException.class)
+    public ApiResponseDto<Void> handleAvatarNotFoundException(AvatarNotFoundException ex) {
+        log.warn("Avatar not found: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                List.of("AVATAR_NOT_FOUND")
         );
     }
 

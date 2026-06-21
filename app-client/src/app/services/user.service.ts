@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
 import { Page } from '../models/page.model';
-import { UserDto } from '../models/user.model';
+import { AvatarUploadResponse, UserDto } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -26,5 +26,15 @@ export class UserService {
 
   deleteUser(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  uploadAvatar(id: string, file: File): Observable<AvatarUploadResponse> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.put<AvatarUploadResponse>(`${this.apiUrl}/${id}/avatar`, body);
+  }
+
+  deleteAvatar(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/avatar`);
   }
 }
