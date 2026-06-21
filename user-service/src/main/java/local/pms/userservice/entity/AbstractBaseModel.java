@@ -12,13 +12,27 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
 import java.util.UUID;
+import java.util.Objects;
 
 @Setter
 @Getter
 @MappedSuperclass
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AbstractBaseModel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractBaseModel other)) return false;
+        return id != null && Objects.equals(id, other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? Objects.hash(id) : System.identityHashCode(this);
+    }
 }

@@ -57,7 +57,8 @@ public class UserDetailsCreationConsumer {
                 event.userDetailsDto().firstName(),
                 event.userDetailsDto().lastName(),
                 event.userDetailsDto().email(),
-                event.userDetailsDto().authUserId());
+                event.userDetailsDto().authUserId(),
+                null);
     }
 
     private void handleUserDetailsFailed(UserDetailsCreatedEvent event) {

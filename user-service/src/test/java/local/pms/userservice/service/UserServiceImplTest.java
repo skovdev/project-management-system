@@ -7,6 +7,8 @@ import local.pms.userservice.dto.UserDto;
 import local.pms.userservice.entity.User;
 
 import local.pms.userservice.exception.UserNotFoundException;
+import local.pms.userservice.exception.AvatarUploadException;
+import local.pms.userservice.exception.AvatarNotFoundException;
 import local.pms.userservice.exception.UserAccessDeniedException;
 
 import local.pms.userservice.repository.UserRepository;
@@ -26,6 +28,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import org.springframework.mock.web.MockMultipartFile;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
@@ -36,16 +40,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private StorageService storageService;
 
     @Mock
     private TokenService tokenService;
@@ -111,7 +121,7 @@ class UserServiceImplTest {
         var id = UUID.randomUUID();
         var authUserId = UUID.randomUUID();
         var user = buildUser(id, authUserId);
-        var dto = new UserDto(id, "Bob", "Jones", "bob@mail.com", authUserId);
+        var dto = new UserDto(id, "Bob", "Jones", "bob@mail.com", authUserId, null);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
@@ -132,7 +142,7 @@ class UserServiceImplTest {
         var ownerId = UUID.randomUUID();
         var adminAuthUserId = UUID.randomUUID();
         var user = buildUser(id, ownerId);
-        var dto = new UserDto(id, "Bob", "Jones", "bob@mail.com", ownerId);
+        var dto = new UserDto(id, "Bob", "Jones", "bob@mail.com", ownerId, null);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
@@ -254,6 +264,183 @@ class UserServiceImplTest {
         verify(userRepository, never()).delete(any(User.class));
     }
 
+    @Test
+    @DisplayName("uploadAvatar uploads file, stores key, and returns presigned URL")
+    void should_returnAvatarUploadResponse_when_uploadAvatarSuccess() {
+        var id = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var user = buildUser(id, authUserId);
+        var avatarKey = "avatars/" + id + "/uuid.jpg";
+        var presignedUrl = "https://presigned.example.com/avatars/" + id + "/uuid.jpg?sig=abc";
+        var file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "fake".getBytes());
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(authUserId);
+        when(storageService.uploadAvatar(eq(id), eq(file))).thenReturn(avatarKey);
+        when(storageService.getPresignedUrl(eq(avatarKey), any())).thenReturn(presignedUrl);
+        when(userRepository.save(user)).thenReturn(user);
+
+        var result = userService.uploadAvatar(id, file);
+
+        assertThat(result.avatarUrl()).isEqualTo(presignedUrl);
+        assertThat(user.getAvatarUrl()).isEqualTo(avatarKey);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("uploadAvatar deletes existing avatar before uploading a new one")
+    void should_deleteExistingAvatar_when_uploadAvatarAndAvatarAlreadyExists() {
+        var id = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var existingKey = "avatars/" + id + "/old.jpg";
+        var newKey = "avatars/" + id + "/new.jpg";
+        var presignedUrl = "https://presigned.example.com/avatars/" + id + "/new.jpg?sig=abc";
+        var user = buildUser(id, authUserId);
+        user.setAvatarUrl(existingKey);
+        var file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "fake".getBytes());
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(authUserId);
+        when(storageService.uploadAvatar(eq(id), eq(file))).thenReturn(newKey);
+        when(storageService.getPresignedUrl(eq(newKey), any())).thenReturn(presignedUrl);
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.uploadAvatar(id, file);
+
+        verify(storageService).deleteAvatar(existingKey);
+        verify(storageService).uploadAvatar(id, file);
+    }
+
+    @Test
+    @DisplayName("uploadAvatar throws UserNotFoundException when user not found")
+    void should_throwUserNotFoundException_when_uploadAvatarUserNotFound() {
+        var id = UUID.randomUUID();
+        var file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "fake".getBytes());
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.uploadAvatar(id, file))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(storageService, never()).uploadAvatar(any(), any());
+    }
+
+    @Test
+    @DisplayName("uploadAvatar throws UserAccessDeniedException when caller is not owner and not admin")
+    void should_throwUserAccessDeniedException_when_uploadAvatarCallerNotOwner() {
+        var id = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var callerId = UUID.randomUUID();
+        var user = buildUser(id, ownerId);
+        var file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "fake".getBytes());
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
+        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
+
+        assertThatThrownBy(() -> userService.uploadAvatar(id, file))
+                .isInstanceOf(UserAccessDeniedException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(storageService, never()).uploadAvatar(any(), any());
+    }
+
+    @Test
+    @DisplayName("uploadAvatar propagates AvatarUploadException from StorageService")
+    void should_propagateAvatarUploadException_when_storageServiceFails() {
+        var id = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var user = buildUser(id, authUserId);
+        var file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "fake".getBytes());
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(authUserId);
+        when(storageService.uploadAvatar(eq(id), eq(file)))
+                .thenThrow(new AvatarUploadException("S3 upload failed"));
+
+        assertThatThrownBy(() -> userService.uploadAvatar(id, file))
+                .isInstanceOf(AvatarUploadException.class)
+                .hasMessageContaining("S3 upload failed");
+    }
+
+    @Test
+    @DisplayName("deleteAvatar removes avatar and clears URL when user owns the resource")
+    void should_deleteAvatar_when_callerOwnsResource() {
+        var id = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var avatarUrl = "https://project-management-system-user-avatar-upload.s3.eu-north-1.amazonaws.com/avatars/" + id + "/uuid.jpg";
+        var user = buildUser(id, authUserId);
+        user.setAvatarUrl(avatarUrl);
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(authUserId);
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.deleteAvatar(id);
+
+        verify(storageService).deleteAvatar(avatarUrl);
+        assertThat(user.getAvatarUrl()).isNull();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("deleteAvatar throws AvatarNotFoundException when user has no avatar")
+    void should_throwAvatarNotFoundException_when_deleteAvatarNoAvatarSet() {
+        var id = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var user = buildUser(id, authUserId);
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(authUserId);
+
+        assertThatThrownBy(() -> userService.deleteAvatar(id))
+                .isInstanceOf(AvatarNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(storageService, never()).deleteAvatar(any());
+    }
+
+    @Test
+    @DisplayName("deleteAvatar throws UserNotFoundException when user not found")
+    void should_throwUserNotFoundException_when_deleteAvatarUserNotFound() {
+        var id = UUID.randomUUID();
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.deleteAvatar(id))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(storageService, never()).deleteAvatar(any());
+    }
+
+    @Test
+    @DisplayName("deleteAvatar throws UserAccessDeniedException when caller is not owner and not admin")
+    void should_throwUserAccessDeniedException_when_deleteAvatarCallerNotOwner() {
+        var id = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var callerId = UUID.randomUUID();
+        var avatarUrl = "https://project-management-system-user-avatar-upload.s3.eu-north-1.amazonaws.com/avatars/" + id + "/uuid.jpg";
+        var user = buildUser(id, ownerId);
+        user.setAvatarUrl(avatarUrl);
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(tokenService.getToken()).thenReturn("token");
+        when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
+        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
+
+        assertThatThrownBy(() -> userService.deleteAvatar(id))
+                .isInstanceOf(UserAccessDeniedException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(storageService, never()).deleteAvatar(any());
+    }
+
     private User buildUser(UUID id, UUID authUserId) {
         var user = new User();
         user.setId(id);
@@ -266,6 +453,6 @@ class UserServiceImplTest {
     }
 
     private UserDto buildUserDto(UUID id, UUID authUserId) {
-        return new UserDto(id, "Alice", "Smith", "alice@mail.com", authUserId);
+        return new UserDto(id, "Alice", "Smith", "alice@mail.com", authUserId, null);
     }
 }
