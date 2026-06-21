@@ -4,4 +4,9 @@ export interface UserDto {
   lastName: string;
   email: string;
   authUserId: string;
+  avatarUrl?: string | null;
+}
+
+export interface AvatarUploadResponse {
+  avatarUrl: string;
 }

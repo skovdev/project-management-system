@@ -14,10 +14,42 @@
 
       <!-- Avatar & identity -->
       <div class="profile-identity">
-        <div class="profile-avatar">{{ username | slice:0:1 | uppercase }}</div>
+
+        <!-- Clickable avatar -->
+        <div class="avatar-wrapper"
+             (click)="onAvatarClick()"
+             [class.avatar-wrapper--active]="uploading"
+             [title]="currentUser ? 'Click to upload a new avatar' : ''">
+          <img *ngIf="currentUser?.avatarUrl; else letterAvatar"
+               [src]="currentUser!.avatarUrl!"
+               class="avatar-img"
+               alt="Profile avatar"
+               (error)="onAvatarImageError()" />
+          <ng-template #letterAvatar>
+            <div class="avatar-letter">{{ username | slice:0:1 | uppercase }}</div>
+          </ng-template>
+          <div class="avatar-overlay" [class.avatar-overlay--active]="uploading">
+            <mat-progress-spinner *ngIf="uploading" diameter="22" mode="indeterminate" class="avatar-spinner"></mat-progress-spinner>
+            <mat-icon *ngIf="!uploading">photo_camera</mat-icon>
+          </div>
+        </div>
+
+        <!-- Hidden file input -->
+        <input #fileInput type="file" accept="image/jpeg,image/png,image/webp" hidden
+               (change)="onFileSelected($event)" />
+
         <div class="profile-identity-text">
           <span class="identity-username">{{ username }}</span>
           <span class="identity-label">Account username</span>
+          <button *ngIf="currentUser?.avatarUrl"
+                  mat-button color="warn"
+                  class="remove-avatar-btn"
+                  (click)="$event.stopPropagation(); onDeleteAvatar()"
+                  [disabled]="deleting">
+            <mat-progress-spinner *ngIf="deleting" diameter="12" mode="indeterminate" class="btn-spinner"></mat-progress-spinner>
+            <mat-icon *ngIf="!deleting" class="btn-icon">delete_outline</mat-icon>
+            Remove photo
+          </button>
         </div>
       </div>
 

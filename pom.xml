@@ -56,6 +56,7 @@
         <mapstruct.version>1.6.2</mapstruct.version>
         <postgresql.version>42.7.4</postgresql.version>
         <aws.sdk.secret.manager.version>2.29.43</aws.sdk.secret.manager.version>
+        <aws.sdk.s3.version>2.29.43</aws.sdk.s3.version>
         <spring.ai.version>1.0.0</spring.ai.version>
         <resilience4j.spring.boot.version>2.3.0</resilience4j.spring.boot.version>
         <spring.security.version>6.3.1</spring.security.version>
@@ -250,6 +251,11 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>sts</artifactId>
                 <version>${aws.sdk.secret.manager.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3</artifactId>
+                <version>${aws.sdk.s3.version}</version>
             </dependency>
             <!-- Spring AI -->
             <dependency>

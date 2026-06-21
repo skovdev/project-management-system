@@ -4,9 +4,12 @@ import local.pms.userservice.config.jwt.JwtTokenProvider;
 
 import local.pms.userservice.dto.UserDto;
 
+import local.pms.userservice.dto.api.response.AvatarUploadResponseDto;
+
 import local.pms.userservice.entity.User;
 
 import local.pms.userservice.exception.UserNotFoundException;
+import local.pms.userservice.exception.AvatarNotFoundException;
 import local.pms.userservice.exception.UserAccessDeniedException;
 
 import local.pms.userservice.mapping.UserMapper;
@@ -15,6 +18,7 @@ import local.pms.userservice.repository.UserRepository;
 
 import local.pms.userservice.service.UserService;
 import local.pms.userservice.service.TokenService;
+import local.pms.userservice.service.StorageService;
 
 import lombok.AccessLevel;
 
@@ -29,16 +33,22 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.UUID;
+import java.time.Duration;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final Duration PRESIGNED_URL_DURATION = Duration.ofHours(1);
+
     final UserMapper userMapper = UserMapper.INSTANCE;
 
     final UserRepository userRepository;
+    final StorageService storageService;
     final TokenService tokenService;
     final JwtTokenProvider jwtTokenProvider;
 
@@ -46,7 +56,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Page<UserDto> findAll(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(userMapper::toDto);
+                .map(this::toDtoWithPresignedUrl);
     }
 
     @Override
@@ -54,7 +64,7 @@ public class UserServiceImpl implements UserService {
     public UserDto findById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with id '" + id + "' not found"));
-        return userMapper.toDto(user);
+        return toDtoWithPresignedUrl(user);
     }
 
     @Override
@@ -72,7 +82,7 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(userDto.firstName());
         user.setLastName(userDto.lastName());
         user.setEmail(userDto.email());
-        return userMapper.toDto(userRepository.save(user));
+        return toDtoWithPresignedUrl(userRepository.save(user));
     }
 
     @Override
@@ -104,12 +114,49 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByAuthUserIdIncludingDeleted(authUserId);
     }
 
+    @Override
+    @Transactional
+    public AvatarUploadResponseDto uploadAvatar(UUID id, MultipartFile file) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id '" + id + "' not found"));
+        checkOwnership(user);
+        if (user.getAvatarUrl() != null) {
+            storageService.deleteAvatar(user.getAvatarUrl());
+        }
+        var avatarKey = storageService.uploadAvatar(id, file);
+        user.setAvatarUrl(avatarKey);
+        userRepository.save(user);
+        var presignedUrl = storageService.getPresignedUrl(avatarKey, PRESIGNED_URL_DURATION);
+        return new AvatarUploadResponseDto(presignedUrl);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAvatar(UUID id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id '" + id + "' not found"));
+        checkOwnership(user);
+        if (user.getAvatarUrl() == null) {
+            throw new AvatarNotFoundException("User with id '" + id + "' has no avatar to delete");
+        }
+        storageService.deleteAvatar(user.getAvatarUrl());
+        user.setAvatarUrl(null);
+        userRepository.save(user);
+    }
+
+    private UserDto toDtoWithPresignedUrl(User user) {
+        UserDto dto = userMapper.toDto(user);
+        if (dto.avatarUrl() == null) return dto;
+        String presignedUrl = storageService.getPresignedUrl(dto.avatarUrl(), PRESIGNED_URL_DURATION);
+        return new UserDto(dto.id(), dto.firstName(), dto.lastName(), dto.email(), dto.authUserId(), presignedUrl);
+    }
+
     private void checkOwnership(User user) {
         String token = tokenService.getToken();
         UUID tokenAuthUserId = jwtTokenProvider.extractAuthUserId(token);
         if (!user.getAuthUserId().equals(tokenAuthUserId)) {
             boolean isAdmin = jwtTokenProvider.extractRoles(token).stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
             if (!isAdmin) {
                 throw new UserAccessDeniedException("Access denied to user with id '" + user.getId() + "'");
             }
