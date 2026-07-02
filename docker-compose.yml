@@ -213,6 +213,8 @@ services:
     image: openzipkin/zipkin:3
     deploy:
       replicas: 1
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
     ports:
       - "9411:9411"
     networks:
