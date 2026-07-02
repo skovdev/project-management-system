@@ -48,7 +48,7 @@ export class TaskListComponent implements OnInit {
     this.taskService.getTasks(this.pageIndex, this.pageSize).subscribe({
       next: (page) => {
         this.tasks = page.content;
-        this.totalElements = page.totalElements;
+        this.totalElements = page.page.totalElements;
         this.loading = false;
       },
       error: () => { this.loading = false; }

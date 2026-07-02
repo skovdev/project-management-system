@@ -98,7 +98,7 @@ export class TaskDetailComponent implements OnInit {
     this.commentService.getComments(this.taskId, this.commentsPageIndex, this.commentsPageSize).subscribe({
       next: (page) => {
         this.comments = page.content;
-        this.commentsTotalElements = page.totalElements;
+        this.commentsTotalElements = page.page.totalElements;
         this.commentsLoading = false;
       },
       error: () => { this.commentsLoading = false; }

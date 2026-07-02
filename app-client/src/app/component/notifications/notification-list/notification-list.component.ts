@@ -44,7 +44,7 @@ export class NotificationListComponent implements OnInit {
     this.notificationService.getNotifications(this.pageIndex, this.pageSize).subscribe({
       next: (page) => {
         this.notifications = page.content;
-        this.totalElements = page.totalElements;
+        this.totalElements = page.page.totalElements;
         this.loading = false;
       },
       error: () => { this.loading = false; }

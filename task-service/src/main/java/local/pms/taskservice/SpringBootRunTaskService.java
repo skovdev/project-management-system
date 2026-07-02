@@ -8,9 +8,14 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
+
+import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
+
 @EnableFeignClients
 @EnableDiscoveryClient
 @SpringBootApplication
+@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 public class SpringBootRunTaskService {
 
     public static void main(String[] args) {

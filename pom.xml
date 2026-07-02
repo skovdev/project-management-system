@@ -39,6 +39,7 @@
         <spring.ai.version>1.0.0</spring.ai.version>
         <resilience4j.spring.boot.version>2.3.0</resilience4j.spring.boot.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <lombok.version>1.18.38</lombok.version>
         <!-- Plugin versions -->
         <spring.boot.maven.plugin.version>3.4.6</spring.boot.maven.plugin.version>
         <maven.surefire.plugin.version>3.5.0</maven.surefire.plugin.version>
@@ -214,6 +215,18 @@
                         <compilerArgs>
                             <arg>-parameters</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
             </plugins>

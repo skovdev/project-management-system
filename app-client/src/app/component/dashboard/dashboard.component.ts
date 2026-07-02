@@ -35,8 +35,8 @@ export class DashboardComponent implements OnInit {
       tasks: this.taskService.getTasks(0, 5)
     }).subscribe({
       next: ({ projects, tasks }) => {
-        this.totalProjects = projects.totalElements;
-        this.totalTasks = tasks.totalElements;
+        this.totalProjects = projects.page.totalElements;
+        this.totalTasks = tasks.page.totalElements;
         this.recentProjects = projects.content;
         this.recentTasks = tasks.content;
         this.loading = false;
