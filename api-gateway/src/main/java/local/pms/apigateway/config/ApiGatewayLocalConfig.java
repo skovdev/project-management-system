@@ -30,7 +30,7 @@ public class ApiGatewayLocalConfig {
                         .uri(serviceHosts().get("user-service")))
                 .route("project-service", r -> r.path("/api/v1/projects/**")
                         .uri(serviceHosts().get("project-service")))
-                .route("task-service", r -> r.path("/api/v1/task/**")
+                .route("task-service", r -> r.path("/api/v1/tasks/**")
                         .uri(serviceHosts().get("task-service")))
                 .route("notification-service", r -> r.path("/api/v1/notifications/**")
                         .uri(serviceHosts().get("notification-service")))
