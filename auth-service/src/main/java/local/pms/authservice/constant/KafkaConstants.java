@@ -7,6 +7,7 @@ public final class KafkaConstants {
     public static final class GroupIds {
         public static final String AUTH_USER_DETAILS_CREATION_GROUP_ID = "auth-user-details-creation-group-id";
         public static final String AUTH_USER_DETAILS_DELETION_GROUP_ID = "auth-user-details-deletion-group-id";
+        public static final String AUTH_DLT_MONITOR_GROUP_ID = "auth-dlt-monitor-group-id";
     }
 
     public static final class Topics {
@@ -14,6 +15,8 @@ public final class KafkaConstants {
         public static final String USER_DETAILS_CREATION_FAILED_TOPIC = "user-details-creation-failed";
         public static final String USER_DETAILS_DELETION_TOPIC = "user-details-deletion";
         public static final String USER_DETAILS_DELETION_FAILED_TOPIC = "user-details-deletion-failed";
+        public static final String USER_DETAILS_CREATION_FAILED_DLT_TOPIC = "user-details-creation-failed.DLT";
+        public static final String USER_DETAILS_DELETION_FAILED_DLT_TOPIC = "user-details-deletion-failed.DLT";
     }
 }
 

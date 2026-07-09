@@ -6,15 +6,15 @@ import local.pms.projectservice.dto.ProjectDto;
 
 import local.pms.projectservice.entity.Project;
 
+import local.pms.projectservice.event.ProjectCreatedEvent;
+import local.pms.projectservice.event.ProjectDeletedEvent;
+
 import local.pms.projectservice.exception.ProjectNotFoundException;
 import local.pms.projectservice.exception.InvalidProjectInputException;
 import local.pms.projectservice.exception.ProjectAccessDeniedException;
 import local.pms.projectservice.exception.DescriptionGenerationException;
 
 import local.pms.projectservice.external.ai.provider.AiExternalProvider;
-
-import local.pms.projectservice.kafka.producer.ProjectCreatedProducer;
-import local.pms.projectservice.kafka.producer.ProjectDeletedProducer;
 
 import local.pms.projectservice.repository.ProjectRepository;
 
@@ -32,6 +32,8 @@ import org.mockito.Mock;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -45,7 +47,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
@@ -67,10 +68,7 @@ class ProjectServiceImplTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private ProjectCreatedProducer projectCreatedProducer;
-
-    @Mock
-    private ProjectDeletedProducer projectDeletedProducer;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ProjectServiceImpl projectService;
@@ -89,7 +87,7 @@ class ProjectServiceImplTest {
 
         assertThat(result.title()).isEqualTo("My Project");
         verify(projectRepository).save(any(Project.class));
-        verify(projectCreatedProducer).sendProjectCreatedEvent(anyString(), any());
+        verify(eventPublisher).publishEvent(any(ProjectCreatedEvent.class));
     }
 
     @Test
@@ -223,7 +221,7 @@ class ProjectServiceImplTest {
         projectService.delete(projectId);
 
         verify(projectRepository).deleteById(projectId);
-        verify(projectDeletedProducer).sendProjectDeletedEvent(anyString(), any());
+        verify(eventPublisher).publishEvent(any(ProjectDeletedEvent.class));
     }
 
     @Test
@@ -237,7 +235,7 @@ class ProjectServiceImplTest {
                 .hasMessageContaining(projectId.toString());
 
         verify(projectRepository, never()).deleteById(any());
-        verify(projectDeletedProducer, never()).sendProjectDeletedEvent(any(), any());
+        verify(eventPublisher, never()).publishEvent(any(ProjectDeletedEvent.class));
     }
 
     @Test

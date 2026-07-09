@@ -1,4 +1,4 @@
-package local.pms.projectservice.kafka.producer;
+package local.pms.taskservice.kafka.producer;
 
 import ch.qos.logback.classic.Logger;
 
@@ -6,9 +6,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 
 import ch.qos.logback.core.read.ListAppender;
 
-import local.pms.projectservice.constant.KafkaConstants;
+import local.pms.taskservice.constant.KafkaConstants;
 
-import local.pms.projectservice.event.ProjectDeletedEvent;
+import local.pms.taskservice.event.CommentCreatedEvent;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
@@ -42,13 +42,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
-class ProjectDeletedProducerTest {
+class CommentCreatedProducerTest {
 
     @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
 
     @InjectMocks
-    private ProjectDeletedProducer producer;
+    private CommentCreatedProducer producer;
 
     private ListAppender<ILoggingEvent> logAppender;
 
@@ -56,63 +56,64 @@ class ProjectDeletedProducerTest {
     void attachLogAppender() {
         logAppender = new ListAppender<>();
         logAppender.start();
-        ((Logger) LoggerFactory.getLogger(ProjectDeletedProducer.class)).addAppender(logAppender);
+        ((Logger) LoggerFactory.getLogger(CommentCreatedProducer.class)).addAppender(logAppender);
     }
 
     @AfterEach
     void detachLogAppender() {
-        ((Logger) LoggerFactory.getLogger(ProjectDeletedProducer.class)).detachAppender(logAppender);
+        ((Logger) LoggerFactory.getLogger(CommentCreatedProducer.class)).detachAppender(logAppender);
     }
 
     @Test
-    @DisplayName("sendProjectDeletedEvent sends event to the project-deleted topic")
-    void should_sendEvent_when_sendProjectDeletedEventCalled() {
-        var projectId = UUID.randomUUID();
-        var event = new ProjectDeletedEvent(projectId);
+    @DisplayName("sendCommentCreatedEvent sends event to the comment-created topic")
+    void should_sendEvent_when_sendCommentCreatedEventCalled() {
+        var event = buildEvent();
         var future = new SendResult<String, Object>(null, null);
         when(kafkaTemplate.send(any(String.class), any()))
                 .thenReturn(CompletableFuture.completedFuture(future));
 
-        producer.sendProjectDeletedEvent(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, event);
+        producer.sendCommentCreatedEvent(KafkaConstants.Topics.COMMENT_CREATED_TOPIC, event);
 
         var topicCaptor = ArgumentCaptor.forClass(String.class);
         var eventCaptor = ArgumentCaptor.forClass(Object.class);
         verify(kafkaTemplate).send(topicCaptor.capture(), eventCaptor.capture());
 
-        assertThat(topicCaptor.getValue()).isEqualTo(KafkaConstants.Topics.PROJECT_DELETED_TOPIC);
+        assertThat(topicCaptor.getValue()).isEqualTo(KafkaConstants.Topics.COMMENT_CREATED_TOPIC);
         assertThat(eventCaptor.getValue()).isEqualTo(event);
     }
 
     @Test
-    @DisplayName("sendProjectDeletedEvent sends correct projectId in event")
-    void should_sendCorrectProjectId_when_sendProjectDeletedEventCalled() {
-        var projectId = UUID.randomUUID();
-        var event = new ProjectDeletedEvent(projectId);
+    @DisplayName("sendCommentCreatedEvent sends the correct event payload")
+    void should_sendCorrectEvent_when_sendCommentCreatedEventCalled() {
+        var event = buildEvent();
         var future = new SendResult<String, Object>(null, null);
-        when(kafkaTemplate.send(eq(KafkaConstants.Topics.PROJECT_DELETED_TOPIC), eq(event)))
+        when(kafkaTemplate.send(eq(KafkaConstants.Topics.COMMENT_CREATED_TOPIC), eq(event)))
                 .thenReturn(CompletableFuture.completedFuture(future));
 
-        producer.sendProjectDeletedEvent(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, event);
+        producer.sendCommentCreatedEvent(KafkaConstants.Topics.COMMENT_CREATED_TOPIC, event);
 
-        verify(kafkaTemplate).send(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, event);
+        verify(kafkaTemplate).send(KafkaConstants.Topics.COMMENT_CREATED_TOPIC, event);
     }
 
     @Test
-    @DisplayName("sendProjectDeletedEvent logs the failure with the topic instead of crashing when the Kafka send fails")
+    @DisplayName("sendCommentCreatedEvent logs the failure with the topic instead of crashing when the Kafka send fails")
     void should_logFailureWithTopic_when_kafkaSendFails() {
-        var projectId = UUID.randomUUID();
-        var event = new ProjectDeletedEvent(projectId);
+        var event = buildEvent();
         var failedFuture = CompletableFuture.<SendResult<String, Object>>failedFuture(new RuntimeException("broker unavailable"));
         when(kafkaTemplate.send(any(String.class), any())).thenReturn(failedFuture);
 
-        producer.sendProjectDeletedEvent(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, event);
+        producer.sendCommentCreatedEvent(KafkaConstants.Topics.COMMENT_CREATED_TOPIC, event);
 
         assertThat(logAppender.list)
                 .anySatisfy(loggingEvent -> {
                     assertThat(loggingEvent.getFormattedMessage())
-                            .contains("Failed to publish project-deleted event")
-                            .contains(KafkaConstants.Topics.PROJECT_DELETED_TOPIC);
+                            .contains("Failed to publish comment-created event")
+                            .contains(KafkaConstants.Topics.COMMENT_CREATED_TOPIC);
                     assertThat(loggingEvent.getThrowableProxy().getMessage()).isEqualTo("broker unavailable");
                 });
+    }
+
+    private CommentCreatedEvent buildEvent() {
+        return new CommentCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "A comment");
     }
 }

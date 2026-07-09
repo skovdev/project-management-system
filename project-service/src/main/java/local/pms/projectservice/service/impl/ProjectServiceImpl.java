@@ -2,15 +2,10 @@ package local.pms.projectservice.service.impl;
 
 import local.pms.projectservice.config.jwt.JwtTokenProvider;
 
-import local.pms.projectservice.constant.KafkaConstants;
-
 import local.pms.projectservice.dto.ProjectDto;
 
 import local.pms.projectservice.event.ProjectCreatedEvent;
 import local.pms.projectservice.event.ProjectDeletedEvent;
-
-import local.pms.projectservice.kafka.producer.ProjectCreatedProducer;
-import local.pms.projectservice.kafka.producer.ProjectDeletedProducer;
 
 import local.pms.projectservice.exception.ProjectNotFoundException;
 import local.pms.projectservice.exception.ProjectAccessDeniedException;
@@ -29,6 +24,8 @@ import local.pms.projectservice.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,8 +47,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final AiExternalProvider aiExternalProvider;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final ProjectCreatedProducer projectCreatedProducer;
-    private final ProjectDeletedProducer projectDeletedProducer;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -64,8 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setUserId(extractAuthUserId());
         var savedProject = projectRepository.save(project);
         log.info("Project created with ID: {}", savedProject.getId());
-        projectCreatedProducer.sendProjectCreatedEvent(
-                KafkaConstants.Topics.PROJECT_CREATED_TOPIC,
+        eventPublisher.publishEvent(
                 new ProjectCreatedEvent(savedProject.getId(), savedProject.getUserId(), savedProject.getTitle()));
         return projectMapping.toDto(savedProject);
     }
@@ -126,7 +121,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         projectRepository.deleteById(projectId);
         log.info("Project with ID {} deleted successfully.", projectId);
-        projectDeletedProducer.sendProjectDeletedEvent(KafkaConstants.Topics.PROJECT_DELETED_TOPIC, new ProjectDeletedEvent(projectId));
+        eventPublisher.publishEvent(new ProjectDeletedEvent(projectId));
     }
 
     @Override

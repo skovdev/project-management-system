@@ -11,8 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.kafka.core.KafkaTemplate;
 
-import org.springframework.kafka.support.SendResult;
-
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -25,14 +23,14 @@ public class UserDetailsCreationProducer {
 
     public void sendUserDetailsToCreate(String topic, UserDetailsCreatedEvent event) {
         log.info("Attempting to send user details to topic: {}", topic);
-        this.kafkaTemplate.send(topic, event).whenComplete(this::loggingResult);
+        this.kafkaTemplate.send(topic, event).whenComplete((result, exception) -> loggingResult(topic, exception));
     }
 
-    private void loggingResult(SendResult<String, Object> result, Throwable exception) {
+    private void loggingResult(String topic, Throwable exception) {
         if (exception != null) {
-            log.error("Failed to send user details to topic: {}. Exception: {}", result.getRecordMetadata().topic(), exception.getMessage());
+            log.error("Failed to send user details to topic: {}", topic, exception);
         } else {
-            log.info("User details sent successfully to topic: {}", result.getRecordMetadata().topic());
+            log.info("User details sent successfully to topic: {}", topic);
         }
     }
 }

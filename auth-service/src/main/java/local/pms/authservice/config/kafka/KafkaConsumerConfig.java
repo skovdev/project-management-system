@@ -67,4 +67,24 @@ public class KafkaConsumerConfig {
         factory.setCommonErrorHandler(errorHandler(kafkaTemplate));
         return factory;
     }
+
+    public Map<String, Object> dltConsumerConfig() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        return props;
+    }
+
+    @Bean
+    public ConsumerFactory<String, String> dltConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(dltConsumerConfig());
+    }
+
+    @Bean
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> dltKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(dltConsumerFactory());
+        return factory;
+    }
 }
