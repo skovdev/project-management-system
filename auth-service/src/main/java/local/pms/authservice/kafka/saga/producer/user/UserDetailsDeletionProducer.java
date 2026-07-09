@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.kafka.core.KafkaTemplate;
 
-import org.springframework.kafka.support.SendResult;
-
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -20,15 +18,15 @@ public class UserDetailsDeletionProducer {
     final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void sendUserDetailsToDelete(String topic, UserDetailsDeletedEvent event) {
-        log.info("Attempting to send an authentication identifier to topic: {}", topic);
-        this.kafkaTemplate.send(topic, event.authUserId()).whenComplete(this::loggingResult);
+        log.info("Attempting to send user details deletion event to topic: {}", topic);
+        this.kafkaTemplate.send(topic, event).whenComplete((result, exception) -> loggingResult(topic, exception));
     }
 
-    private void loggingResult(SendResult<String, Object> result, Throwable exception) {
+    private void loggingResult(String topic, Throwable exception) {
         if (exception != null) {
-            log.error("Failed to send an authentication identifier to topic: {}. Exception: {}", result.getRecordMetadata().topic(), exception.getMessage());
+            log.error("Failed to send user details deletion event to topic: {}", topic, exception);
         } else {
-            log.info("An authentication identifier sent successfully to topic: {}", result.getRecordMetadata().topic());
+            log.info("User details deletion event sent successfully to topic: {}", topic);
         }
     }
 }
