@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.kafka.core.KafkaTemplate;
 
-import org.springframework.kafka.support.SendResult;
-
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,16 +28,14 @@ public class TaskCreatedProducer {
      */
     public void sendTaskCreatedEvent(String topic, TaskCreatedEvent event) {
         log.info("Publishing task-created event for taskId: {} to topic: {}", event.taskId(), topic);
-        kafkaTemplate.send(topic, event).whenComplete(this::logResult);
+        kafkaTemplate.send(topic, event).whenComplete((result, exception) -> logResult(topic, exception));
     }
 
-    private void logResult(SendResult<String, Object> result, Throwable exception) {
+    private void logResult(String topic, Throwable exception) {
         if (exception != null) {
-            log.error("Failed to publish task-created event to topic: {}. Error: {}",
-                    result.getRecordMetadata().topic(), exception.getMessage());
+            log.error("Failed to publish task-created event to topic: {}", topic, exception);
         } else {
-            log.info("Task-created event published successfully to topic: {}",
-                    result.getRecordMetadata().topic());
+            log.info("Task-created event published successfully to topic: {}", topic);
         }
     }
 }

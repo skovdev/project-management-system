@@ -2,8 +2,6 @@ package local.pms.taskservice.service.impl;
 
 import local.pms.taskservice.config.jwt.JwtTokenProvider;
 
-import local.pms.taskservice.constant.KafkaConstants;
-
 import local.pms.taskservice.dto.TaskDto;
 
 import local.pms.taskservice.event.TaskCreatedEvent;
@@ -15,8 +13,6 @@ import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
 
 import local.pms.taskservice.external.ai.provider.AiExternalProvider;
 
-import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
-
 import local.pms.taskservice.mapping.TaskMapping;
 
 import local.pms.taskservice.repository.TaskRepository;
@@ -27,6 +23,8 @@ import local.pms.taskservice.service.TokenService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +45,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final TaskCreatedProducer taskCreatedProducer;
+    private final ApplicationEventPublisher eventPublisher;
     private final AiExternalProvider aiExternalProvider;
 
     @Override
@@ -61,8 +59,7 @@ public class TaskServiceImpl implements TaskService {
         task.setUserId(extractAuthUserId());
         var savedTask = taskRepository.save(task);
         log.info("Task created with ID: {}", savedTask.getId());
-        taskCreatedProducer.sendTaskCreatedEvent(
-                KafkaConstants.Topics.TASK_CREATED_TOPIC,
+        eventPublisher.publishEvent(
                 new TaskCreatedEvent(savedTask.getId(), savedTask.getUserId(), savedTask.getTitle()));
         return taskMapping.toDto(savedTask);
     }

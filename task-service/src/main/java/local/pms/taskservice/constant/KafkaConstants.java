@@ -9,11 +9,13 @@ public final class KafkaConstants {
 
     public static final class GroupIds {
         public static final String PROJECT_DELETED_GROUP_ID = "project-deleted-group-id";
+        public static final String TASK_DLT_MONITOR_GROUP_ID = "task-dlt-monitor-group-id";
     }
 
     public static final class Topics {
         public static final String TASK_CREATED_TOPIC = "task-created";
         public static final String PROJECT_DELETED_TOPIC = "project-deleted";
         public static final String COMMENT_CREATED_TOPIC = "comment-created";
+        public static final String PROJECT_DELETED_DLT_TOPIC = "project-deleted.DLT";
     }
 }

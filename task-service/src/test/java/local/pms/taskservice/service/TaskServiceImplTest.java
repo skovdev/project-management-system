@@ -6,14 +6,14 @@ import local.pms.taskservice.dto.TaskDto;
 
 import local.pms.taskservice.entity.Task;
 
+import local.pms.taskservice.event.TaskCreatedEvent;
+
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
 import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
 
 import local.pms.taskservice.external.ai.provider.AiExternalProvider;
-
-import local.pms.taskservice.kafka.producer.TaskCreatedProducer;
 
 import local.pms.taskservice.repository.TaskRepository;
 
@@ -32,6 +32,8 @@ import org.mockito.InjectMocks;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -47,7 +49,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doNothing;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceImplTest {
@@ -62,7 +63,7 @@ class TaskServiceImplTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private TaskCreatedProducer taskCreatedProducer;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private AiExternalProvider aiExternalProvider;
@@ -79,12 +80,12 @@ class TaskServiceImplTest {
 
         stubToken(userId);
         when(taskRepository.save(any(Task.class))).thenReturn(saved);
-        doNothing().when(taskCreatedProducer).sendTaskCreatedEvent(any(), any());
 
         var result = taskService.create(dto);
 
         assertThat(result.title()).isEqualTo("My Task");
         verify(taskRepository).save(any(Task.class));
+        verify(eventPublisher).publishEvent(any(TaskCreatedEvent.class));
     }
 
     @Test
