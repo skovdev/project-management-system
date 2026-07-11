@@ -201,10 +201,16 @@ services:
   ai-service:
     image: ai-service-1.0
     deploy:
-      replicas: 3
+      replicas: 1
     environment:
       CONFIG_SERVER_HOST: config-server
       SPRING_PROFILES_ACTIVE: docker
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009"
+    ports:
+      - target: 5009
+        published: 5009
+        protocol: tcp
+        mode: host
     entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar ai-service-1.0.jar
     networks:
       - project-management-system-network
