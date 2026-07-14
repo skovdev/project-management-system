@@ -12,4 +12,5 @@ export interface ProjectDto {
   startDate: string;
   endDate: string;
   userId?: string;
+  organizationId?: string;
 }

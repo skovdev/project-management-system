@@ -19,6 +19,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      {
+        path: 'organizations',
+        loadComponent: () => import('./component/organizations/organization-list/organization-list.component')
+          .then(m => m.OrganizationListComponent)
+      },
+      {
+        path: 'organizations/:organizationId/members',
+        loadComponent: () => import('./component/organizations/organization-members/organization-members.component')
+          .then(m => m.OrganizationMembersComponent)
+      },
       { path: 'projects', component: ProjectListComponent },
       { path: 'tasks', component: TaskListComponent },
       { path: 'tasks/:id', component: TaskDetailComponent },

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { ProjectService } from '../../../services/project.service';
+import { CurrentOrganizationService } from '../../../services/current-organization.service';
 import { ProjectDto } from '../../../models/project.model';
 import { ProjectFormComponent } from '../project-form/project-form.component';
 
@@ -16,7 +18,7 @@ import { ProjectFormComponent } from '../project-form/project-form.component';
   selector: 'app-project-list',
   standalone: true,
   imports: [
-    CommonModule,
+    CommonModule, RouterLink,
     MatTableModule, MatPaginatorModule, MatButtonModule,
     MatIconModule, MatProgressSpinnerModule, MatCardModule
   ],
@@ -30,20 +32,28 @@ export class ProjectListComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
   loading = true;
+  organizationId: string | null = null;
 
   constructor(
     private projectService: ProjectService,
+    private currentOrganizationService: CurrentOrganizationService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
+    this.organizationId = this.currentOrganizationService.getCurrentOrganizationId();
+    if (!this.organizationId) {
+      this.loading = false;
+      return;
+    }
     this.loadProjects();
   }
 
   loadProjects(): void {
+    if (!this.organizationId) return;
     this.loading = true;
-    this.projectService.getProjects(this.pageIndex, this.pageSize).subscribe({
+    this.projectService.getProjects(this.organizationId, this.pageIndex, this.pageSize).subscribe({
       next: (page) => {
         this.projects = page.content;
         this.totalElements = page.page.totalElements;
@@ -80,8 +90,9 @@ export class ProjectListComponent implements OnInit {
   }
 
   deleteProject(id: string): void {
+    if (!this.organizationId) return;
     if (!confirm('Delete this project?')) return;
-    this.projectService.deleteProject(id).subscribe({
+    this.projectService.deleteProject(this.organizationId, id).subscribe({
       next: () => {
         this.snackBar.open('Project deleted.', 'Close', { duration: 3000 });
         this.loadProjects();

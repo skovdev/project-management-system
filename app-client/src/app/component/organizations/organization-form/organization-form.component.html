@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Organization' : 'New Organization' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+      <mat-error *ngIf="form.get('name')?.hasError('minlength')">Min 3 characters</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="4"></textarea>
+      <mat-error *ngIf="form.get('description')?.hasError('maxlength')">Max 1000 characters</mat-error>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()"
+          [disabled]="form.invalid || loading">
+    <mat-spinner *ngIf="loading" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+    {{ isEdit ? 'Update' : 'Create' }}
+  </button>
+</mat-dialog-actions>

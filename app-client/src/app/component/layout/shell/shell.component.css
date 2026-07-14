@@ -179,6 +179,37 @@
   flex: 1;
 }
 
+/* ── Organization switcher ──────────────────────────────── */
+.org-switcher-btn {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary) !important;
+  flex-shrink: 0;
+  text-transform: none;
+  font-weight: 500;
+  max-width: 220px;
+}
+
+.org-switcher-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.org-switcher-label {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-switcher-chevron {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
 /* ── Notification bell ──────────────────────────────────── */
 .notif-btn {
   color: var(--color-text-secondary) !important;

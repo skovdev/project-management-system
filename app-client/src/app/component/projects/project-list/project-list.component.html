@@ -5,7 +5,7 @@
       <h1>Projects</h1>
       <p class="page-subtitle">Manage and track all your projects</p>
     </div>
-    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+    <button *ngIf="organizationId" mat-raised-button color="primary" (click)="openCreateDialog()">
       <mat-icon>add</mat-icon> New Project
     </button>
   </div>
@@ -14,7 +14,16 @@
     <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
   </div>
 
-  <ng-container *ngIf="!loading">
+  <div *ngIf="!loading && !organizationId" class="empty-state">
+    <mat-icon class="empty-icon">apartment</mat-icon>
+    <h3 class="empty-title">No organization selected</h3>
+    <p class="empty-desc">Create or select an organization to see its projects.</p>
+    <button mat-raised-button color="primary" routerLink="/organizations">
+      <mat-icon>apartment</mat-icon> Go to Organizations
+    </button>
+  </div>
+
+  <ng-container *ngIf="!loading && organizationId">
 
     <mat-card *ngIf="projects.length > 0" class="table-card">
       <table mat-table [dataSource]="projects" class="projects-table">
