@@ -4,6 +4,8 @@ import local.pms.projectservice.config.jwt.JwtTokenProvider;
 
 import local.pms.projectservice.dto.ProjectDto;
 
+import local.pms.projectservice.entity.Project;
+
 import local.pms.projectservice.event.ProjectCreatedEvent;
 import local.pms.projectservice.event.ProjectDeletedEvent;
 
@@ -14,12 +16,16 @@ import local.pms.projectservice.exception.DescriptionGenerationException;
 
 import local.pms.projectservice.external.ai.provider.AiExternalProvider;
 
+import local.pms.projectservice.external.organization.provider.OrganizationAccessProvider;
+
 import local.pms.projectservice.mapping.ProjectMapping;
 
 import local.pms.projectservice.repository.ProjectRepository;
 
 import local.pms.projectservice.service.TokenService;
 import local.pms.projectservice.service.ProjectService;
+
+import local.pms.projectservice.type.OrganizationRoleType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final AiExternalProvider aiExternalProvider;
+    private final OrganizationAccessProvider organizationAccessProvider;
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicationEventPublisher eventPublisher;
@@ -56,10 +63,13 @@ public class ProjectServiceImpl implements ProjectService {
             log.error("ProjectDto is null, cannot create project.");
             throw new InvalidProjectInputException("Project data cannot be null. Please provide valid project information");
         }
+        requireCreatorRole(projectDto.organizationId());
+
         var project = projectMapping.toEntity(projectDto);
         project.setUserId(extractAuthUserId());
+        project.setOrganizationId(projectDto.organizationId());
         var savedProject = projectRepository.save(project);
-        log.info("Project created with ID: {}", savedProject.getId());
+        log.info("Project created with ID: {} in organization: {}", savedProject.getId(), savedProject.getOrganizationId());
         eventPublisher.publishEvent(
                 new ProjectCreatedEvent(savedProject.getId(), savedProject.getUserId(), savedProject.getTitle()));
         return projectMapping.toDto(savedProject);
@@ -67,20 +77,17 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProjectDto> findAll(Pageable pageable) {
-        return projectRepository.findAllByUserId(extractAuthUserId(), pageable)
+    public Page<ProjectDto> findAll(UUID organizationId, Pageable pageable) {
+        organizationAccessProvider.verifyMembership(organizationId);
+        return projectRepository.findAllByOrganizationId(organizationId, pageable)
                 .map(projectMapping::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ProjectDto findById(UUID projectId) {
-        var project = projectRepository.findByIdAndUserId(projectId, extractAuthUserId());
-        if (project.isEmpty()) {
-            log.error("Project with ID {} not found or access denied.", projectId);
-            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
-        }
-        return projectMapping.toDto(project.get());
+    public ProjectDto findById(UUID projectId, UUID organizationId) {
+        organizationAccessProvider.verifyMembership(organizationId);
+        return projectMapping.toDto(findProjectOrThrow(projectId, organizationId));
     }
 
     @Override
@@ -90,17 +97,9 @@ public class ProjectServiceImpl implements ProjectService {
             log.error("ProjectDto is null, cannot update project.");
             throw new InvalidProjectInputException("Project data cannot be null. Please provide valid project information");
         }
-        UUID authUserId = extractAuthUserId();
-        var existingProject = projectRepository.findById(projectId);
-        if (existingProject.isEmpty()) {
-            log.error("Project with ID {} not found, cannot update.", projectId);
-            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
-        }
-        if (!existingProject.get().getUserId().equals(authUserId)) {
-            log.error("User {} attempted to update project {} owned by another user.", authUserId, projectId);
-            throw new ProjectAccessDeniedException("Access denied: you do not own project with ID " + projectId);
-        }
-        var projectToUpdate = existingProject.get();
+        requireCreatorRole(projectDto.organizationId());
+
+        var projectToUpdate = findProjectOrThrow(projectId, projectDto.organizationId());
         projectToUpdate.setTitle(projectDto.title());
         projectToUpdate.setDescription(projectDto.description());
         projectToUpdate.setProjectStatusType(projectDto.projectStatusType());
@@ -113,12 +112,10 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public void delete(UUID projectId) {
-        var project = projectRepository.findById(projectId);
-        if (project.isEmpty()) {
-            log.error("Project with ID {} not found, cannot delete.", projectId);
-            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
-        }
+    public void delete(UUID projectId, UUID organizationId) {
+        requireCreatorRole(organizationId);
+
+        findProjectOrThrow(projectId, organizationId);
         projectRepository.deleteById(projectId);
         log.info("Project with ID {} deleted successfully.", projectId);
         eventPublisher.publishEvent(new ProjectDeletedEvent(projectId));
@@ -126,13 +123,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public String generateProjectDescription(UUID projectId, String projectTitle) {
-        UUID authUserId = extractAuthUserId();
-        var project = projectRepository.findByIdAndUserId(projectId, authUserId);
-        if (project.isEmpty()) {
-            log.error("Project with ID {} not found or access denied for description generation.", projectId);
-            throw new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
-        }
+    public String generateProjectDescription(UUID projectId, UUID organizationId, String projectTitle) {
+        organizationAccessProvider.verifyMembership(organizationId);
+        findProjectOrThrow(projectId, organizationId);
         if (projectTitle == null || projectTitle.isBlank()) {
             log.error("Project title is null or blank, cannot generate description.");
             throw new InvalidProjectInputException("Project title cannot be null or blank. Please provide a valid project title");
@@ -146,11 +139,40 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+    @Override
+    @Transactional
+    public void deleteAllByOrganizationId(UUID organizationId) {
+        log.info("Deleting all projects for organizationId: {}", organizationId);
+        var projects = projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged());
+        projects.forEach(project -> {
+            projectRepository.deleteById(project.getId());
+            eventPublisher.publishEvent(new ProjectDeletedEvent(project.getId()));
+        });
+        log.info("All projects deleted for organizationId: {}", organizationId);
+    }
+
     private UUID extractAuthUserId() {
         if (tokenService.getToken() == null || tokenService.getToken().isBlank()) {
             log.error("JWT token is missing or blank, cannot extract auth user ID.");
             throw new ProjectAccessDeniedException("Authentication token is missing or invalid. Please provide a valid token");
         }
         return jwtTokenProvider.extractAuthUserId(tokenService.getToken());
+    }
+
+    private void requireCreatorRole(UUID organizationId) {
+        var role = organizationAccessProvider.verifyMembership(organizationId);
+        if (role != OrganizationRoleType.OWNER && role != OrganizationRoleType.ADMIN) {
+            log.error("Caller with role {} attempted a restricted action on organization {}.", role, organizationId);
+            throw new ProjectAccessDeniedException(
+                    "Access denied: you do not have sufficient permissions in organization with ID " + organizationId);
+        }
+    }
+
+    private Project findProjectOrThrow(UUID projectId, UUID organizationId) {
+        return projectRepository.findByIdAndOrganizationId(projectId, organizationId)
+                .orElseThrow(() -> {
+                    log.error("Project with ID {} not found in organization {}.", projectId, organizationId);
+                    return new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
+                });
     }
 }

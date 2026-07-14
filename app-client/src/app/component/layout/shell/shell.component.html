@@ -21,6 +21,11 @@
         <mat-icon class="nav-icon">dashboard</mat-icon>
         <span class="nav-label">Dashboard</span>
       </a>
+      <a class="nav-item" routerLink="/organizations" routerLinkActive="nav-item--active"
+         (click)="closeSidenavOnMobile()" aria-label="Organizations">
+        <mat-icon class="nav-icon">apartment</mat-icon>
+        <span class="nav-label">Organizations</span>
+      </a>
       <a class="nav-item" routerLink="/projects" routerLinkActive="nav-item--active"
          (click)="closeSidenavOnMobile()" aria-label="Projects">
         <mat-icon class="nav-icon">folder_open</mat-icon>
@@ -63,6 +68,22 @@
       </button>
       <span class="header-app-name">Project Management System</span>
       <span class="header-spacer"></span>
+
+      <!-- Organization switcher -->
+      <button mat-button class="org-switcher-btn" [matMenuTriggerFor]="orgMenu"
+              aria-label="Switch organization" title="Switch organization">
+        <mat-icon class="org-switcher-icon">apartment</mat-icon>
+        <span class="org-switcher-label">{{ currentOrgName || 'No organization' }}</span>
+        <mat-icon class="org-switcher-chevron">expand_more</mat-icon>
+      </button>
+
+      <mat-menu #orgMenu="matMenu" xPosition="before">
+        <button mat-menu-item *ngFor="let org of organizations" (click)="selectOrganization(org)">
+          {{ org.name }}
+        </button>
+        <button mat-menu-item *ngIf="organizations.length === 0" disabled>No organizations yet</button>
+        <a mat-menu-item routerLink="/organizations">Manage Organizations</a>
+      </mat-menu>
 
       <!-- Notification bell -->
       <button mat-icon-button class="notif-btn"

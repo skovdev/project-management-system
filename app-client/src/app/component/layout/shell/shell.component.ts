@@ -11,7 +11,10 @@ import { interval, Subscription } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import { AuthTokenService } from '../../../services/auth-token.service';
 import { NotificationService } from '../../../services/notification.service';
+import { OrganizationService } from '../../../services/organization.service';
+import { CurrentOrganizationService } from '../../../services/current-organization.service';
 import { NotificationDto } from '../../../models/notification.model';
+import { OrganizationDto } from '../../../models/organization.model';
 
 @Component({
   selector: 'app-shell',
@@ -36,6 +39,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   unreadNotifications: NotificationDto[] = [];
 
+  organizations: OrganizationDto[] = [];
+  currentOrgName = '';
+
   private sub!: Subscription;
   private notifSub!: Subscription;
 
@@ -43,10 +49,13 @@ export class ShellComponent implements OnInit, OnDestroy {
     private authTokenService: AuthTokenService,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private organizationService: OrganizationService,
+    private currentOrganizationService: CurrentOrganizationService
   ) {
     this.username = authTokenService.getUsername() ?? '';
     this.initials = this.username ? this.username.charAt(0).toUpperCase() : 'U';
+    this.currentOrgName = this.currentOrganizationService.getCurrentOrganizationName() ?? '';
   }
 
   ngOnInit(): void {
@@ -72,6 +81,31 @@ export class ShellComponent implements OnInit, OnDestroy {
         this.unreadCount = 0;
       }
     });
+
+    this.loadOrganizations();
+  }
+
+  loadOrganizations(): void {
+    this.organizationService.getOrganizations(0, 100).subscribe({
+      next: (page) => {
+        this.organizations = page.content;
+        if (!this.currentOrganizationService.getCurrentOrganizationId() && this.organizations.length > 0) {
+          // Silent bootstrap: don't navigate away from whatever route the user landed on.
+          const first = this.organizations[0];
+          this.currentOrganizationService.setCurrentOrganization(first.id!, first.name);
+          this.currentOrgName = first.name;
+        }
+      },
+      error: () => { this.organizations = []; }
+    });
+  }
+
+  selectOrganization(org: OrganizationDto): void {
+    this.currentOrganizationService.setCurrentOrganization(org.id!, org.name);
+    this.currentOrgName = org.name;
+    // Projects reads the current org only on init, so send the user to a neutral
+    // page after an explicit switch rather than trying to force a same-route reload.
+    void this.router.navigate(['/dashboard']);
   }
 
   ngOnDestroy(): void {
@@ -89,6 +123,7 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authTokenService.logout();
+    this.currentOrganizationService.clear();
     void this.router.navigate(['/sign-in']);
   }
 

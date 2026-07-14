@@ -1,0 +1,31 @@
+.organization-list {
+  width: 100%;
+}
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 80px;
+}
+
+.table-card {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.organizations-table {
+  width: 100%;
+}
+
+.cell-title {
+  font-weight: 500;
+  color: var(--color-text) !important;
+}
+
+.cell-title .status-badge {
+  margin-left: 8px;
+}
+
+.cell-actions {
+  white-space: nowrap;
+}

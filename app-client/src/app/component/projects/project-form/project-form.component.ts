@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { ProjectService } from '../../../services/project.service';
+import { CurrentOrganizationService } from '../../../services/current-organization.service';
 import { ProjectDto, PROJECT_STATUSES } from '../../../models/project.model';
 
 @Component({
@@ -42,6 +43,7 @@ export class ProjectFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private projectService: ProjectService,
+    private currentOrganizationService: CurrentOrganizationService,
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<ProjectFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { project: ProjectDto | null }
@@ -64,12 +66,13 @@ export class ProjectFormComponent implements OnInit {
 
   generateDescription(): void {
     const title = this.form.get('title')?.value?.trim();
-    if (!title || !this.data.project?.id) {
+    const organizationId = this.currentOrganizationService.getCurrentOrganizationId();
+    if (!title || !this.data.project?.id || !organizationId) {
       this.snackBar.open('Save the project first, then generate a description.', 'Close', { duration: 3000 });
       return;
     }
     this.generating = true;
-    this.projectService.generateDescription(this.data.project.id, title).subscribe({
+    this.projectService.generateDescription(organizationId, this.data.project.id, title).subscribe({
       next: (res) => {
         let description: string = res.data;
         try {
@@ -90,6 +93,11 @@ export class ProjectFormComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) return;
+    const organizationId = this.currentOrganizationService.getCurrentOrganizationId();
+    if (!organizationId) {
+      this.snackBar.open('Select an organization before saving a project.', 'Close', { duration: 3000 });
+      return;
+    }
     this.loading = true;
     const v = this.form.value;
     const dto: ProjectDto = {
@@ -97,7 +105,8 @@ export class ProjectFormComponent implements OnInit {
       description: v.description,
       projectStatusType: v.projectStatusType,
       startDate: this.combineDateTime(v.startDatePart, v.startTimePart),
-      endDate: this.combineDateTime(v.endDatePart, v.endTimePart)
+      endDate: this.combineDateTime(v.endDatePart, v.endTimePart),
+      organizationId
     };
 
     const request = this.isEdit

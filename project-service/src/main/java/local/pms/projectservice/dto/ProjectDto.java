@@ -31,5 +31,8 @@ public record ProjectDto(
         LocalDateTime endDate,
 
         // Server-assigned from JWT; not validated in requests
-        UUID userId
+        UUID userId,
+
+        @NotNull(message = "Organization identifier is required")
+        UUID organizationId
 ) {}

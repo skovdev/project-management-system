@@ -46,58 +46,58 @@ class ProjectRepositoryTest {
     private TestEntityManager entityManager;
 
     @Test
-    @DisplayName("findAllByUserId returns only projects belonging to the given userId")
-    void should_returnProjectsForUser_when_findAllByUserId() {
-        var userId = UUID.randomUUID();
-        var otherUserId = UUID.randomUUID();
-        persistProject("Project A", userId);
-        persistProject("Project B", userId);
-        persistProject("Project C", otherUserId);
+    @DisplayName("findAllByOrganizationId returns only projects belonging to the given organization")
+    void should_returnProjectsForOrganization_when_findAllByOrganizationId() {
+        var organizationId = UUID.randomUUID();
+        var otherOrganizationId = UUID.randomUUID();
+        persistProject("Project A", organizationId);
+        persistProject("Project B", organizationId);
+        persistProject("Project C", otherOrganizationId);
         entityManager.flush();
 
-        var page = projectRepository.findAllByUserId(userId, PageRequest.of(0, 10));
+        var page = projectRepository.findAllByOrganizationId(organizationId, PageRequest.of(0, 10));
 
         assertThat(page.getTotalElements()).isEqualTo(2);
-        assertThat(page.getContent()).allMatch(p -> p.getUserId().equals(userId));
+        assertThat(page.getContent()).allMatch(p -> p.getOrganizationId().equals(organizationId));
     }
 
     @Test
-    @DisplayName("findAllByUserId returns empty page when no projects for userId")
-    void should_returnEmptyPage_when_noProjectsForUserId() {
-        var page = projectRepository.findAllByUserId(UUID.randomUUID(), PageRequest.of(0, 10));
+    @DisplayName("findAllByOrganizationId returns empty page when no projects for organizationId")
+    void should_returnEmptyPage_when_noProjectsForOrganizationId() {
+        var page = projectRepository.findAllByOrganizationId(UUID.randomUUID(), PageRequest.of(0, 10));
 
         assertThat(page.getTotalElements()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("findByIdAndUserId returns project when both id and userId match")
-    void should_returnProject_when_idAndUserIdMatch() {
-        var userId = UUID.randomUUID();
-        var saved = persistProject("My Project", userId);
+    @DisplayName("findByIdAndOrganizationId returns project when both id and organizationId match")
+    void should_returnProject_when_idAndOrganizationIdMatch() {
+        var organizationId = UUID.randomUUID();
+        var saved = persistProject("My Project", organizationId);
         entityManager.flush();
 
-        var result = projectRepository.findByIdAndUserId(saved.getId(), userId);
+        var result = projectRepository.findByIdAndOrganizationId(saved.getId(), organizationId);
 
         assertThat(result).isPresent();
         assertThat(result.get().getTitle()).isEqualTo("My Project");
     }
 
     @Test
-    @DisplayName("findByIdAndUserId returns empty when userId does not match")
-    void should_returnEmpty_when_userIdDoesNotMatch() {
-        var userId = UUID.randomUUID();
-        var saved = persistProject("My Project", userId);
+    @DisplayName("findByIdAndOrganizationId returns empty when organizationId does not match")
+    void should_returnEmpty_when_organizationIdDoesNotMatch() {
+        var organizationId = UUID.randomUUID();
+        var saved = persistProject("My Project", organizationId);
         entityManager.flush();
 
-        var result = projectRepository.findByIdAndUserId(saved.getId(), UUID.randomUUID());
+        var result = projectRepository.findByIdAndOrganizationId(saved.getId(), UUID.randomUUID());
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    @DisplayName("findByIdAndUserId returns empty when project id does not exist")
+    @DisplayName("findByIdAndOrganizationId returns empty when project id does not exist")
     void should_returnEmpty_when_projectIdDoesNotExist() {
-        var result = projectRepository.findByIdAndUserId(UUID.randomUUID(), UUID.randomUUID());
+        var result = projectRepository.findByIdAndOrganizationId(UUID.randomUUID(), UUID.randomUUID());
 
         assertThat(result).isEmpty();
     }
@@ -105,8 +105,8 @@ class ProjectRepositoryTest {
     @Test
     @DisplayName("deleteById soft-deletes project so it is no longer found by findById")
     void should_hideProjectFromFindById_when_softDeleted() {
-        var userId = UUID.randomUUID();
-        var saved = persistProject("To Delete", userId);
+        var organizationId = UUID.randomUUID();
+        var saved = persistProject("To Delete", organizationId);
         entityManager.flush();
 
         projectRepository.deleteById(saved.getId());
@@ -118,28 +118,29 @@ class ProjectRepositoryTest {
     }
 
     @Test
-    @DisplayName("deleteById soft-deletes project so it is no longer found by findByIdAndUserId")
-    void should_hideProjectFromFindByIdAndUserId_when_softDeleted() {
-        var userId = UUID.randomUUID();
-        var saved = persistProject("To Delete", userId);
+    @DisplayName("deleteById soft-deletes project so it is no longer found by findByIdAndOrganizationId")
+    void should_hideProjectFromFindByIdAndOrganizationId_when_softDeleted() {
+        var organizationId = UUID.randomUUID();
+        var saved = persistProject("To Delete", organizationId);
         entityManager.flush();
 
         projectRepository.deleteById(saved.getId());
         entityManager.flush();
         entityManager.clear();
 
-        var result = projectRepository.findByIdAndUserId(saved.getId(), userId);
+        var result = projectRepository.findByIdAndOrganizationId(saved.getId(), organizationId);
         assertThat(result).isEmpty();
     }
 
-    private Project persistProject(String title, UUID userId) {
+    private Project persistProject(String title, UUID organizationId) {
         var project = new Project();
         project.setTitle(title);
         project.setDescription("A description");
         project.setProjectStatusType(ProjectStatusType.PLANNING);
         project.setStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
         project.setEndDate(LocalDateTime.of(2026, 12, 31, 0, 0));
-        project.setUserId(userId);
+        project.setUserId(UUID.randomUUID());
+        project.setOrganizationId(organizationId);
         project.setDeleted(false);
         return entityManager.persist(project);
     }

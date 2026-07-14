@@ -16,11 +16,14 @@ import local.pms.projectservice.exception.DescriptionGenerationException;
 
 import local.pms.projectservice.external.ai.provider.AiExternalProvider;
 
+import local.pms.projectservice.external.organization.provider.OrganizationAccessProvider;
+
 import local.pms.projectservice.repository.ProjectRepository;
 
 import local.pms.projectservice.service.impl.ProjectServiceImpl;
 
 import local.pms.projectservice.type.ProjectStatusType;
+import local.pms.projectservice.type.OrganizationRoleType;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +39,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 
@@ -62,6 +66,9 @@ class ProjectServiceImplTest {
     private AiExternalProvider aiExternalProvider;
 
     @Mock
+    private OrganizationAccessProvider organizationAccessProvider;
+
+    @Mock
     private TokenService tokenService;
 
     @Mock
@@ -74,13 +81,15 @@ class ProjectServiceImplTest {
     private ProjectServiceImpl projectService;
 
     @Test
-    @DisplayName("create saves project and returns DTO with userId from token")
-    void should_saveAndReturnDto_when_createWithValidData() {
+    @DisplayName("create saves project and returns DTO when caller is OWNER of the organization")
+    void should_saveAndReturnDto_when_createWithValidDataAndOwnerRole() {
         var userId = UUID.randomUUID();
-        var dto = buildProjectDto(null, null);
-        var saved = buildProject(UUID.randomUUID(), userId);
+        var organizationId = UUID.randomUUID();
+        var dto = buildProjectDto(null, null, organizationId);
+        var saved = buildProject(UUID.randomUUID(), userId, organizationId);
 
         stubToken(userId);
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.OWNER);
         when(projectRepository.save(any(Project.class))).thenReturn(saved);
 
         var result = projectService.create(dto);
@@ -88,6 +97,31 @@ class ProjectServiceImplTest {
         assertThat(result.title()).isEqualTo("My Project");
         verify(projectRepository).save(any(Project.class));
         verify(eventPublisher).publishEvent(any(ProjectCreatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("create throws ProjectAccessDeniedException when caller is only a MEMBER")
+    void should_throwAccessDenied_when_createWithMemberRole() {
+        var organizationId = UUID.randomUUID();
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+
+        assertThatThrownBy(() -> projectService.create(buildProjectDto(null, null, organizationId)))
+                .isInstanceOf(ProjectAccessDeniedException.class);
+
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("create propagates ProjectAccessDeniedException when membership verification fails closed")
+    void should_propagateAccessDenied_when_membershipVerificationFails() {
+        var organizationId = UUID.randomUUID();
+        when(organizationAccessProvider.verifyMembership(organizationId))
+                .thenThrow(new ProjectAccessDeniedException("Access denied: unable to verify membership"));
+
+        assertThatThrownBy(() -> projectService.create(buildProjectDto(null, null, organizationId)))
+                .isInstanceOf(ProjectAccessDeniedException.class);
+
+        verify(projectRepository, never()).save(any());
     }
 
     @Test
@@ -101,63 +135,63 @@ class ProjectServiceImplTest {
     }
 
     @Test
-    @DisplayName("findAll returns page of DTOs filtered by userId from token")
+    @DisplayName("findAll returns page of DTOs scoped to the given organization")
     void should_returnPageOfDtos_when_findAll() {
-        var userId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
         var pageable = PageRequest.of(0, 10);
-        var project = buildProject(UUID.randomUUID(), userId);
+        var project = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
         var page = new PageImpl<>(List.of(project), pageable, 1);
 
-        stubToken(userId);
-        when(projectRepository.findAllByUserId(userId, pageable)).thenReturn(page);
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findAllByOrganizationId(organizationId, pageable)).thenReturn(page);
 
-        var result = projectService.findAll(pageable);
+        var result = projectService.findAll(organizationId, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).title()).isEqualTo("My Project");
     }
 
     @Test
-    @DisplayName("findById returns DTO when project exists for userId")
+    @DisplayName("findById returns DTO when project exists in the organization")
     void should_returnDto_when_findByIdExists() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
-        var project = buildProject(projectId, userId);
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(project));
 
-        var result = projectService.findById(projectId);
+        var result = projectService.findById(projectId, organizationId);
 
         assertThat(result.id()).isEqualTo(projectId);
         assertThat(result.title()).isEqualTo("My Project");
     }
 
     @Test
-    @DisplayName("findById throws ProjectNotFoundException when project not found")
+    @DisplayName("findById throws ProjectNotFoundException when project not found in the organization")
     void should_throwProjectNotFoundException_when_findByIdNotFound() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.empty());
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.findById(projectId))
+        assertThatThrownBy(() -> projectService.findById(projectId, organizationId))
                 .isInstanceOf(ProjectNotFoundException.class)
                 .hasMessageContaining(projectId.toString());
     }
 
     @Test
-    @DisplayName("update returns updated DTO when caller owns the project")
-    void should_returnUpdatedDto_when_callerOwnsProject() {
+    @DisplayName("update returns updated DTO when caller is ADMIN of the organization")
+    void should_returnUpdatedDto_when_callerIsAdmin() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
-        var existing = buildProject(projectId, userId);
+        var organizationId = UUID.randomUUID();
+        var existing = buildProject(projectId, UUID.randomUUID(), organizationId);
         var updateDto = new ProjectDto(projectId, "Updated Title", "Updated Desc",
-                ProjectStatusType.IN_PROGRESS, LocalDateTime.now(), LocalDateTime.now().plusDays(10), null);
+                ProjectStatusType.IN_PROGRESS, LocalDateTime.now(), LocalDateTime.now().plusDays(10), null, organizationId);
 
-        stubToken(userId);
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existing));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.ADMIN);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(existing));
         when(projectRepository.save(existing)).thenReturn(existing);
 
         var result = projectService.update(projectId, updateDto);
@@ -177,15 +211,15 @@ class ProjectServiceImplTest {
     }
 
     @Test
-    @DisplayName("update throws ProjectNotFoundException when project not found")
+    @DisplayName("update throws ProjectNotFoundException when project not found in the organization")
     void should_throwProjectNotFoundException_when_updateNotFound() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
 
-        stubToken(userId);
-        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.OWNER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.update(projectId, buildProjectDto(projectId, null)))
+        assertThatThrownBy(() -> projectService.update(projectId, buildProjectDto(projectId, null, organizationId)))
                 .isInstanceOf(ProjectNotFoundException.class)
                 .hasMessageContaining(projectId.toString());
 
@@ -193,44 +227,45 @@ class ProjectServiceImplTest {
     }
 
     @Test
-    @DisplayName("update throws ProjectAccessDeniedException when caller does not own the project")
-    void should_throwProjectAccessDeniedException_when_callerNotOwner() {
+    @DisplayName("update throws ProjectAccessDeniedException when caller is only a MEMBER")
+    void should_throwProjectAccessDeniedException_when_callerIsMember() {
         var projectId = UUID.randomUUID();
-        var ownerId = UUID.randomUUID();
-        var callerId = UUID.randomUUID();
-        var existing = buildProject(projectId, ownerId);
+        var organizationId = UUID.randomUUID();
 
-        stubToken(callerId);
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existing));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
 
-        assertThatThrownBy(() -> projectService.update(projectId, buildProjectDto(projectId, null)))
-                .isInstanceOf(ProjectAccessDeniedException.class)
-                .hasMessageContaining(projectId.toString());
+        assertThatThrownBy(() -> projectService.update(projectId, buildProjectDto(projectId, null, organizationId)))
+                .isInstanceOf(ProjectAccessDeniedException.class);
 
         verify(projectRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("delete removes project and publishes ProjectDeletedEvent")
+    @DisplayName("delete removes project and publishes ProjectDeletedEvent when caller is OWNER")
     void should_deleteAndPublishEvent_when_projectExists() {
         var projectId = UUID.randomUUID();
-        var project = buildProject(projectId, UUID.randomUUID());
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
 
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.OWNER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(project));
 
-        projectService.delete(projectId);
+        projectService.delete(projectId, organizationId);
 
         verify(projectRepository).deleteById(projectId);
         verify(eventPublisher).publishEvent(any(ProjectDeletedEvent.class));
     }
 
     @Test
-    @DisplayName("delete throws ProjectNotFoundException when project not found")
+    @DisplayName("delete throws ProjectNotFoundException when project not found in the organization")
     void should_throwProjectNotFoundException_when_deleteNotFound() {
         var projectId = UUID.randomUUID();
-        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+        var organizationId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> projectService.delete(projectId))
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.OWNER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> projectService.delete(projectId, organizationId))
                 .isInstanceOf(ProjectNotFoundException.class)
                 .hasMessageContaining(projectId.toString());
 
@@ -239,17 +274,31 @@ class ProjectServiceImplTest {
     }
 
     @Test
+    @DisplayName("delete throws ProjectAccessDeniedException when caller is only a MEMBER")
+    void should_throwAccessDenied_when_deleteWithMemberRole() {
+        var projectId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+
+        assertThatThrownBy(() -> projectService.delete(projectId, organizationId))
+                .isInstanceOf(ProjectAccessDeniedException.class);
+
+        verify(projectRepository, never()).deleteById(any());
+    }
+
+    @Test
     @DisplayName("generateProjectDescription returns AI-generated description")
     void should_returnDescription_when_generateDescriptionSucceeds() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
-        var project = buildProject(projectId, userId);
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(project));
         when(aiExternalProvider.generateProjectDescription("My Project")).thenReturn("Great project!");
 
-        var result = projectService.generateProjectDescription(projectId, "My Project");
+        var result = projectService.generateProjectDescription(projectId, organizationId, "My Project");
 
         assertThat(result).isEqualTo("Great project!");
     }
@@ -258,12 +307,12 @@ class ProjectServiceImplTest {
     @DisplayName("generateProjectDescription throws ProjectNotFoundException when project not found")
     void should_throwProjectNotFoundException_when_generateDescriptionProjectNotFound() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.empty());
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, "My Project"))
+        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, organizationId, "My Project"))
                 .isInstanceOf(ProjectNotFoundException.class)
                 .hasMessageContaining(projectId.toString());
     }
@@ -272,13 +321,13 @@ class ProjectServiceImplTest {
     @DisplayName("generateProjectDescription throws InvalidProjectInputException when title is blank")
     void should_throwInvalidProjectInputException_when_titleIsBlank() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
-        var project = buildProject(projectId, userId);
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(project));
 
-        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, "  "))
+        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, organizationId, "  "))
                 .isInstanceOf(InvalidProjectInputException.class)
                 .hasMessageContaining("title cannot be null or blank");
     }
@@ -287,26 +336,58 @@ class ProjectServiceImplTest {
     @DisplayName("generateProjectDescription throws DescriptionGenerationException when AI fails")
     void should_throwDescriptionGenerationException_when_aiFails() {
         var projectId = UUID.randomUUID();
-        var userId = UUID.randomUUID();
-        var project = buildProject(projectId, userId);
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
 
-        stubToken(userId);
-        when(projectRepository.findByIdAndUserId(projectId, userId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+        when(projectRepository.findByIdAndOrganizationId(projectId, organizationId)).thenReturn(Optional.of(project));
         when(aiExternalProvider.generateProjectDescription("My Project"))
                 .thenThrow(new RuntimeException("AI unavailable"));
 
-        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, "My Project"))
+        assertThatThrownBy(() -> projectService.generateProjectDescription(projectId, organizationId, "My Project"))
                 .isInstanceOf(DescriptionGenerationException.class);
     }
 
     @Test
     @DisplayName("create throws ProjectAccessDeniedException when token is null")
     void should_throwProjectAccessDeniedException_when_tokenIsNull() {
+        var organizationId = UUID.randomUUID();
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.OWNER);
         when(tokenService.getToken()).thenReturn(null);
 
-        assertThatThrownBy(() -> projectService.create(buildProjectDto(null, null)))
+        assertThatThrownBy(() -> projectService.create(buildProjectDto(null, null, organizationId)))
                 .isInstanceOf(ProjectAccessDeniedException.class)
                 .hasMessageContaining("Authentication token is missing");
+    }
+
+    @Test
+    @DisplayName("deleteAllByOrganizationId deletes and publishes an event for each project in the organization")
+    void should_deleteAndPublishEventPerProject_when_deleteAllByOrganizationId() {
+        var organizationId = UUID.randomUUID();
+        var project1 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
+        var project2 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
+        var page = new PageImpl<>(List.of(project1, project2));
+
+        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(page);
+
+        projectService.deleteAllByOrganizationId(organizationId);
+
+        verify(projectRepository).deleteById(project1.getId());
+        verify(projectRepository).deleteById(project2.getId());
+        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project1.getId()));
+        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project2.getId()));
+    }
+
+    @Test
+    @DisplayName("deleteAllByOrganizationId is a no-op when the organization has no projects")
+    void should_doNothing_when_deleteAllByOrganizationIdWithNoProjects() {
+        var organizationId = UUID.randomUUID();
+        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+
+        projectService.deleteAllByOrganizationId(organizationId);
+
+        verify(projectRepository, never()).deleteById(any());
+        verify(eventPublisher, never()).publishEvent(any(ProjectDeletedEvent.class));
     }
 
     private void stubToken(UUID userId) {
@@ -314,7 +395,7 @@ class ProjectServiceImplTest {
         when(jwtTokenProvider.extractAuthUserId("test-token")).thenReturn(userId);
     }
 
-    private Project buildProject(UUID id, UUID userId) {
+    private Project buildProject(UUID id, UUID userId, UUID organizationId) {
         var project = new Project();
         project.setId(id);
         project.setTitle("My Project");
@@ -323,11 +404,12 @@ class ProjectServiceImplTest {
         project.setStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
         project.setEndDate(LocalDateTime.of(2026, 12, 31, 0, 0));
         project.setUserId(userId);
+        project.setOrganizationId(organizationId);
         project.setDeleted(false);
         return project;
     }
 
-    private ProjectDto buildProjectDto(UUID id, UUID userId) {
+    private ProjectDto buildProjectDto(UUID id, UUID userId, UUID organizationId) {
         return new ProjectDto(
                 id,
                 "My Project",
@@ -335,7 +417,8 @@ class ProjectServiceImplTest {
                 ProjectStatusType.PLANNING,
                 LocalDateTime.of(2026, 1, 1, 0, 0),
                 LocalDateTime.of(2026, 12, 31, 0, 0),
-                userId
+                userId,
+                organizationId
         );
     }
 }

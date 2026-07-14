@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,6 +47,24 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation failed for " + fieldErrors.size() + " field(s)",
                 fieldErrors
+        );
+    }
+
+    /**
+     * Handles {@link MissingServletRequestParameterException} thrown when a required
+     * request parameter (e.g. {@code organizationId}) is absent, and returns a 400 error response.
+     *
+     * @param ex the exception containing the missing parameter's name
+     * @return error response with BAD_REQUEST status
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ApiResponseDto<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        log.warn("Missing required request parameter: {}", ex.getParameterName());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Required parameter '" + ex.getParameterName() + "' is missing",
+                List.of("MISSING_REQUIRED_PARAMETER")
         );
     }
 

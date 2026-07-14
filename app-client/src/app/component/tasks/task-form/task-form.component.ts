@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TaskService } from '../../../services/task.service';
 import { ProjectService } from '../../../services/project.service';
+import { CurrentOrganizationService } from '../../../services/current-organization.service';
 import { TaskDto, TASK_STATUSES, TASK_PRIORITIES } from '../../../models/task.model';
 import { ProjectDto } from '../../../models/project.model';
 
@@ -42,6 +43,7 @@ export class TaskFormComponent implements OnInit {
     private fb: FormBuilder,
     private taskService: TaskService,
     private projectService: ProjectService,
+    private currentOrganizationService: CurrentOrganizationService,
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<TaskFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { task: TaskDto | null }
@@ -60,9 +62,12 @@ export class TaskFormComponent implements OnInit {
       projectId: [t?.projectId ?? '', Validators.required]
     });
 
-    this.projectService.getProjects(0, 100).subscribe({
-      next: (page) => { this.projects = page.content; }
-    });
+    const organizationId = this.currentOrganizationService.getCurrentOrganizationId();
+    if (organizationId) {
+      this.projectService.getProjects(organizationId, 0, 100).subscribe({
+        next: (page) => { this.projects = page.content; }
+      });
+    }
   }
 
   onSubmit(): void {

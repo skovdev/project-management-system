@@ -47,4 +47,11 @@ public class KafkaAdminConfig {
                 .map(topic -> new NewTopic(topic.trim(), partitions, replicationFactor))
                 .toList();
     }
+
+    @Bean
+    public List<NewTopic> dltTopics() {
+        return List.of(
+                new NewTopic("organization-deleted.DLT", partitions, replicationFactor)
+        );
+    }
 }
