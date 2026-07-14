@@ -90,6 +90,37 @@ services:
     networks:
       - project-management-system-network
 
+  organization-service:
+    image: organization-service-1.0
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "240000"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+      SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "5000"
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: file:/app/db/seed_test_data.sql
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5010"
+    ports:
+      - target: 5010
+        published: 5010
+        protocol: tcp
+        mode: host
+    volumes:
+      - ./organization-service/db/seed_test_data.sql:/app/db/seed_test_data.sql:ro
+    entrypoint: ../wait-for-it.sh config-server:8888 --timeout=20 -- java -jar organization-service-1.0.jar
+    networks:
+      - project-management-system-network
+
   user-service:
     image: user-service-1.0
     deploy:
