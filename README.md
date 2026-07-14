@@ -4,7 +4,7 @@ A pet project for self-education, simulating a real-world project management pla
 
 ## Overview
 
-The **Project Management System** is a microservices-based application built with Java 21, Spring Boot 3, Spring Cloud, Kafka, and PostgreSQL. It demonstrates JWT authentication, user management, project and task tracking, AI-assisted features, in-app notifications, service discovery, centralized configuration, synchronous (OpenFeign) and asynchronous (Kafka Saga) inter-service communication, and fault tolerance via Resilience4j.
+The **Project Management System** is a microservices-based application built with Java 21, Spring Boot 3, Spring Cloud, Kafka, and PostgreSQL. It demonstrates JWT authentication, user management, organization management, project and task tracking, AI-assisted features, in-app notifications, service discovery, centralized configuration, synchronous (OpenFeign) and asynchronous (Kafka Saga) inter-service communication, and fault tolerance via Resilience4j.
 
 ## Architecture
 
@@ -16,7 +16,8 @@ app-client (Angular, :4200)
        │
        ├── auth-service          (authentication, token issuance)
        ├── user-service          (user profile management)
-       ├── project-service       (project CRUD)
+       ├── organization-service  (organization & membership management)
+       ├── project-service       (project CRUD, scoped to an organization)
        ├── task-service          (task CRUD, linked to projects)
        ├── notification-service  (in-app notifications via Kafka events)
        └── ai-service            (AI-powered project assistance)
@@ -38,7 +39,8 @@ Infrastructure:
 | `config-server` | Centralized configuration | 8888 |
 | `auth-service` | Registration, login, JWT issuance | — |
 | `user-service` | User profile data and roles | — |
-| `project-service` | Project management | — |
+| `organization-service` | Organizations and membership management | — |
+| `project-service` | Project management, scoped to an organization | — |
 | `task-service` | Task management within projects | — |
 | `notification-service` | In-app notifications (Kafka consumer) | — |
 | `ai-service` | AI-powered assistance (OpenAI) | — |
@@ -75,13 +77,34 @@ All endpoints are routed through `api-gateway` at port `8762`. JWT is required f
 | `POST` | `/api/v1/auth/sign-up` | Register a new user |
 | `POST` | `/api/v1/auth/sign-in` | Log in and receive a JWT |
 
-### Projects
+### Organizations
+
+The caller is automatically added as `OWNER` on creation. All endpoints require the caller to be a member of the organization (role checks apply to mutating operations).
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/projects` | Create a new project |
-| `GET` | `/api/v1/projects` | List all projects for the authenticated user |
-| `GET` | `/api/v1/projects/{projectId}` | Get project by ID |
+| `POST` | `/api/v1/organizations` | Create a new organization |
+| `GET` | `/api/v1/organizations` | List all organizations the caller belongs to |
+| `GET` | `/api/v1/organizations/{organizationId}` | Get organization by ID |
+| `PUT` | `/api/v1/organizations/{organizationId}` | Update an organization (OWNER/ADMIN) |
+| `DELETE` | `/api/v1/organizations/{organizationId}` | Delete an organization (OWNER) |
+| `GET` | `/api/v1/organizations/{organizationId}/members/me` | Get the caller's own membership and role |
+| `POST` | `/api/v1/organizations/{organizationId}/members` | Add a member (OWNER/ADMIN) |
+| `GET` | `/api/v1/organizations/{organizationId}/members` | List all members |
+| `PUT` | `/api/v1/organizations/{organizationId}/members/{memberId}/role` | Change a member's role (OWNER) |
+| `DELETE` | `/api/v1/organizations/{organizationId}/members/{memberId}` | Remove a member (OWNER/ADMIN, or self) |
+
+Deleting an organization publishes an `organization-deleted` Kafka event; `project-service` consumes it to cascade-delete the organization's projects.
+
+### Projects
+
+Every project belongs to an organization. `project-service` verifies the caller's membership via a synchronous OpenFeign call to `organization-service`.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/projects` | Create a new project (`organizationId` in body) |
+| `GET` | `/api/v1/projects?organizationId={organizationId}` | List all projects in an organization |
+| `GET` | `/api/v1/projects/{projectId}?organizationId={organizationId}` | Get project by ID |
 
 ### Tasks
 
@@ -158,6 +181,7 @@ project-management-system/
 ├── api-gateway/
 ├── auth-service/
 ├── user-service/
+├── organization-service/
 ├── project-service/
 ├── task-service/
 ├── notification-service/
