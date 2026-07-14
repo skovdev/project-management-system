@@ -52,7 +52,7 @@ public class ProjectRestController {
 
     private final ProjectService projectService;
 
-    @Operation(summary = "Create a new project")
+    @Operation(summary = "Create a new project", description = "The caller must be an OWNER or ADMIN member of the given organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project created successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProjectDto.class))
@@ -69,20 +69,23 @@ public class ProjectRestController {
     }
 
     @Operation(
-            summary = "Find all projects",
-            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc)")
+            summary = "Find all projects in an organization",
+            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc). The caller must be a member of the organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of projects", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProjectDto.class))
             }),
+            @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Page<ProjectDto> findAll(@ParameterObject Pageable pageable) {
-        return projectService.findAll(pageable);
+    public Page<ProjectDto> findAll(@Parameter(description = "Organization identifier to scope the list to")
+                                    @RequestParam(name = "organizationId") UUID organizationId,
+                                    @ParameterObject Pageable pageable) {
+        return projectService.findAll(organizationId, pageable);
     }
 
-    @Operation(summary = "Find a project by project identifier")
+    @Operation(summary = "Find a project by project identifier", description = "The caller must be a member of the project's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project details retrieved successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProjectDto.class))
@@ -93,11 +96,13 @@ public class ProjectRestController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<ProjectDto> findById(@Parameter(description = "Project identifier to retrieve details")
-                                               @PathVariable(name = "projectId") UUID projectId) {
-        return ApiResponseDto.buildSuccessResponse(projectService.findById(projectId));
+                                               @PathVariable(name = "projectId") UUID projectId,
+                                               @Parameter(description = "Organization the project must belong to")
+                                               @RequestParam(name = "organizationId") UUID organizationId) {
+        return ApiResponseDto.buildSuccessResponse(projectService.findById(projectId, organizationId));
     }
 
-    @Operation(summary = "Update an existing project")
+    @Operation(summary = "Update an existing project", description = "The caller must be an OWNER or ADMIN member of the project's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project updated successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProjectDto.class))
@@ -115,21 +120,23 @@ public class ProjectRestController {
         return ApiResponseDto.buildSuccessResponse(projectService.update(projectId, projectDto));
     }
 
-    @Operation(summary = "Delete a project by project identifier")
+    @Operation(summary = "Delete a project by project identifier", description = "The caller must be an OWNER or ADMIN member of the project's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Project not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(@Parameter(description = "Project identifier to delete")
-                                       @PathVariable(name = "projectId") UUID projectId) {
-        projectService.delete(projectId);
+                                       @PathVariable(name = "projectId") UUID projectId,
+                                       @Parameter(description = "Organization the project must belong to")
+                                       @RequestParam(name = "organizationId") UUID organizationId) {
+        projectService.delete(projectId, organizationId);
         return ApiResponseDto.buildSuccessResponse(null);
     }
 
-    @Operation(summary = "Generate project description")
+    @Operation(summary = "Generate project description", description = "The caller must be a member of the project's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Project description generated successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
@@ -143,8 +150,10 @@ public class ProjectRestController {
     @PostMapping(value = "/{projectId}/description", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<String> generateProjectDescription(@Parameter(description = "Project identifier to generate project description")
                                                              @PathVariable(name = "projectId") UUID projectId,
+                                                             @Parameter(description = "Organization the project must belong to")
+                                                             @RequestParam(name = "organizationId") UUID organizationId,
                                                              @Parameter(description = "Project title to generate project description")
                                                              @RequestParam(name = "projectTitle") String projectTitle) {
-        return ApiResponseDto.buildSuccessResponse(projectService.generateProjectDescription(projectId, projectTitle));
+        return ApiResponseDto.buildSuccessResponse(projectService.generateProjectDescription(projectId, organizationId, projectTitle));
     }
 }

@@ -1,0 +1,11 @@
+FROM eclipse-temurin:25-jre
+
+EXPOSE 8086
+
+ADD ../wait-for-it.sh /wait-for-it.sh
+
+WORKDIR /app
+
+COPY ../target/organization-service-1.0.jar /app
+
+ENTRYPOINT ["java", "-jar", "organization-service-1.0.jar"]

@@ -11,6 +11,6 @@ import java.util.UUID;
 import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
-    Page<Project> findAllByUserId(UUID userId, Pageable pageable);
-    Optional<Project> findByIdAndUserId(UUID id, UUID userId);
+    Page<Project> findAllByOrganizationId(UUID organizationId, Pageable pageable);
+    Optional<Project> findByIdAndOrganizationId(UUID id, UUID organizationId);
 }

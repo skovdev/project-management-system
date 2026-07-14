@@ -3,10 +3,18 @@
 -- Database : project_management_system_project_service_db
 -- Tables   : project_management_system_project
 --
--- Cross-service reference (logical, no DB-level FK):
---   user_id → auth-service: project_management_system_auth_user.id (authUserId from JWT)
+-- Cross-service references (logical, no DB-level FKs):
+--   user_id         → auth-service: project_management_system_auth_user.id (authUserId from JWT)
+--   organization_id → organization-service: project_management_system_organization.id
 --
 -- user_id values MUST match the UUIDs seeded in auth-service.
+-- organization_id values MUST be an organization the project's user_id is
+-- actually a member of, per organization-service's seed data:
+--   admin      (a...0001) → Acme Corp (cc...0001, OWNER)  or Initech (cc...0003, ADMIN)
+--   john.doe   (a...0002) → Acme Corp (cc...0001, ADMIN)  or Globex Inc (cc...0002, OWNER)
+--   jane.smith (a...0003) → Globex Inc (cc...0002, MEMBER) or Initech (cc...0003, OWNER)
+--   bob.jones  (a...0004) → Acme Corp (cc...0001, MEMBER) or Initech (cc...0003, MEMBER)
+--                            (bob.jones is NOT a member of Globex Inc)
 --
 -- project_status enum: PLANNING | IN_PROGRESS | COMPLETED | ON_HOLD | CANCELLED
 --
@@ -17,9 +25,9 @@
 -- 1. Projects  (covers all five status values for broad scenario coverage)
 -- ---------------------------------------------------------------
 INSERT INTO project_management_system_project
-    (id, title, description, project_status, start_date, end_date, user_id, deleted)
+    (id, title, description, project_status, start_date, end_date, user_id, organization_id, deleted)
 VALUES
-    -- Owned by john.doe (a...0002)
+    -- Owned by john.doe (a...0002), in Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000001',
      'E-Commerce Platform Redesign',
      'Full redesign of the customer-facing shop: new UI, updated checkout flow, and product recommendation engine.',
@@ -27,9 +35,10 @@ VALUES
      '2026-01-15 09:00:00',
      '2026-06-30 18:00:00',
      'a0000000-0000-0000-0000-000000000002',
+     'cc000000-0000-0000-0000-000000000001',
      false),
 
-    -- Owned by jane.smith (a...0003)
+    -- Owned by jane.smith (a...0003), in Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000002',
      'Mobile Banking Application',
      'Cross-platform mobile app for retail banking customers, covering account management, transfers, and notifications.',
@@ -37,9 +46,10 @@ VALUES
      '2026-03-01 09:00:00',
      '2026-12-31 18:00:00',
      'a0000000-0000-0000-0000-000000000003',
+     'cc000000-0000-0000-0000-000000000002',
      false),
 
-    -- Owned by bob.jones (a...0004)
+    -- Owned by bob.jones (a...0004), in Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000003',
      'HR Management System v2',
      'Second-generation HR platform with automated onboarding, leave management, and performance review modules.',
@@ -47,9 +57,10 @@ VALUES
      '2025-06-01 09:00:00',
      '2026-01-31 18:00:00',
      'a0000000-0000-0000-0000-000000000004',
+     'cc000000-0000-0000-0000-000000000001',
      false),
 
-    -- Owned by admin (a...0001)
+    -- Owned by admin (a...0001), in Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000004',
      'Data Analytics Dashboard',
      'Centralised BI dashboard aggregating KPIs from sales, support, and operations for executive reporting.',
@@ -57,9 +68,10 @@ VALUES
      '2025-09-01 09:00:00',
      '2026-08-31 18:00:00',
      'a0000000-0000-0000-0000-000000000001',
+     'cc000000-0000-0000-0000-000000000001',
      false),
 
-    -- Owned by john.doe (a...0002) – cancelled legacy project
+    -- Owned by john.doe (a...0002), in Globex Inc (cc...0002) – cancelled legacy project
     ('c0000000-0000-0000-0000-000000000005',
      'Legacy CRM Migration',
      'Migration of the old on-premise CRM to a cloud-native SaaS solution. Project was cancelled after vendor change.',
@@ -67,6 +79,7 @@ VALUES
      '2025-01-10 09:00:00',
      '2025-07-31 18:00:00',
      'a0000000-0000-0000-0000-000000000002',
+     'cc000000-0000-0000-0000-000000000002',
      false)
 ON CONFLICT (id) DO NOTHING;
 
@@ -74,156 +87,166 @@ ON CONFLICT (id) DO NOTHING;
 -- 2. Additional projects (2 per user, 10 users = 20 more projects)
 -- ---------------------------------------------------------------
 INSERT INTO project_management_system_project
-    (id, title, description, project_status, start_date, end_date, user_id, deleted)
+    (id, title, description, project_status, start_date, end_date, user_id, organization_id, deleted)
 VALUES
-    -- admin (a...0001)
+    -- admin (a...0001) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000006',
      'DevOps Infrastructure Modernization',
      'Migrate all services to Kubernetes, introduce GitOps pipelines, and consolidate observability tooling across environments.',
      'IN_PROGRESS',
      '2026-02-01 09:00:00', '2026-09-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000001', false),
 
+    -- admin (a...0001) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000007',
      'Customer Support Portal',
      'Self-service support portal with ticket management, live chat, and an AI-powered FAQ knowledge base.',
      'PLANNING',
      '2026-04-01 09:00:00', '2026-12-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000003', false),
 
-    -- john.doe (a...0002)
+    -- john.doe (a...0002) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000008',
      'API Gateway Consolidation',
      'Replace three separate gateway instances with a single managed gateway layer providing unified auth, rate-limiting, and routing.',
      'IN_PROGRESS',
      '2026-01-20 09:00:00', '2026-07-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false),
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000001', false),
 
+    -- john.doe (a...0002) → Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000009',
      'Inventory Management System',
      'Warehouse inventory tracking with barcode scanning, automatic reorder triggers, and supplier integration via EDI.',
      'COMPLETED',
      '2025-03-01 09:00:00', '2025-12-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false),
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000002', false),
 
-    -- jane.smith (a...0003)
+    -- jane.smith (a...0003) → Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000010',
      'IoT Fleet Monitoring Platform',
      'Real-time telematics dashboard for a fleet of 500+ vehicles including GPS tracking, fuel consumption, and driver behaviour scoring.',
      'IN_PROGRESS',
      '2026-01-10 09:00:00', '2026-10-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000003', false),
+     'a0000000-0000-0000-0000-000000000003', 'cc000000-0000-0000-0000-000000000002', false),
 
+    -- jane.smith (a...0003) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000011',
      'Healthcare Patient Portal',
      'HIPAA-compliant portal for patients to view appointments, access lab results, request prescription refills, and message providers.',
      'PLANNING',
      '2026-05-01 09:00:00', '2027-02-28 18:00:00',
-     'a0000000-0000-0000-0000-000000000003', false),
+     'a0000000-0000-0000-0000-000000000003', 'cc000000-0000-0000-0000-000000000003', false),
 
-    -- bob.jones (a...0004)
+    -- bob.jones (a...0004) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000012',
      'Supply Chain Optimization Tool',
      'End-to-end supply chain visibility platform with demand forecasting, supplier risk scoring, and logistics cost optimisation.',
      'IN_PROGRESS',
      '2026-02-15 09:00:00', '2026-11-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000004', false),
+     'a0000000-0000-0000-0000-000000000004', 'cc000000-0000-0000-0000-000000000003', false),
 
+    -- bob.jones (a...0004) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000013',
      'Employee Self-Service Portal',
      'HR self-service portal enabling employees to manage leave requests, view payslips, update personal details, and access company policies.',
      'PLANNING',
      '2026-04-15 09:00:00', '2026-12-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000004', false),
+     'a0000000-0000-0000-0000-000000000004', 'cc000000-0000-0000-0000-000000000001', false),
 
-    -- admin (a...0001, continued)
+    -- admin (a...0001, continued) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000014',
      'AI-Powered Content Moderation',
      'Automated moderation pipeline using ML models to classify user-generated content for policy violations with human review fallback.',
      'IN_PROGRESS',
      '2026-03-01 09:00:00', '2026-10-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000003', false),
 
+    -- admin (a...0001, continued) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000015',
      'Real-Time Analytics Engine',
      'Stream processing engine built on Kafka Streams and Flink to deliver sub-second dashboards for operational metrics.',
      'PLANNING',
      '2026-05-15 09:00:00', '2027-01-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000001', false),
 
-    -- john.doe (a...0002, continued)
+    -- john.doe (a...0002, continued) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000016',
      'Cybersecurity Audit Platform',
      'Centralised audit trail and vulnerability management platform integrating SIEM logs, CVE feeds, and compliance reporting.',
      'IN_PROGRESS',
      '2026-01-05 09:00:00', '2026-08-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false),
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000001', false),
 
+    -- john.doe (a...0002, continued) → Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000017',
      'Cloud Cost Optimisation Dashboard',
      'Multi-cloud spend analytics with anomaly detection, reserved-instance recommendations, and team-level budget alerting.',
      'PLANNING',
      '2026-04-01 09:00:00', '2026-12-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false),
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000002', false),
 
-    -- jane.smith (a...0003, continued)
+    -- jane.smith (a...0003, continued) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000018',
      'Marketing Automation Suite',
      'Multi-channel campaign orchestration platform with A/B testing, personalisation engine, and attribution reporting.',
      'IN_PROGRESS',
      '2026-02-01 09:00:00', '2026-09-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000003', false),
+     'a0000000-0000-0000-0000-000000000003', 'cc000000-0000-0000-0000-000000000003', false),
 
+    -- jane.smith (a...0003, continued) → Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000019',
      'Customer Loyalty Program',
      'Points-based loyalty system with tier management, reward catalogue, and partner redemption integrations.',
      'COMPLETED',
      '2025-04-01 09:00:00', '2026-01-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000003', false),
+     'a0000000-0000-0000-0000-000000000003', 'cc000000-0000-0000-0000-000000000002', false),
 
-    -- bob.jones (a...0004, continued)
+    -- bob.jones (a...0004, continued) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000020',
      'Fraud Detection System',
      'Real-time transaction scoring engine using ensemble ML models to flag suspicious activity with adaptive thresholds per merchant category.',
      'IN_PROGRESS',
      '2026-01-15 09:00:00', '2026-09-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000004', false),
+     'a0000000-0000-0000-0000-000000000004', 'cc000000-0000-0000-0000-000000000003', false),
 
+    -- bob.jones (a...0004, continued) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000021',
      'Payment Gateway Integration',
      'Unified payment abstraction layer supporting Stripe, PayPal, and Adyen with PCI-DSS compliant tokenisation and reconciliation.',
      'PLANNING',
      '2026-05-01 09:00:00', '2027-01-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000004', false),
+     'a0000000-0000-0000-0000-000000000004', 'cc000000-0000-0000-0000-000000000001', false),
 
-    -- admin (a...0001, continued)
+    -- admin (a...0001, continued) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000022',
      'Knowledge Management Platform',
      'Internal wiki and document management system with semantic search, version control, and role-based access control.',
      'IN_PROGRESS',
      '2026-02-10 09:00:00', '2026-10-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000001', false),
 
+    -- admin (a...0001, continued) → Initech (cc...0003)
     ('c0000000-0000-0000-0000-000000000023',
      'Remote Work Collaboration Tool',
      'Async-first collaboration workspace combining video rooms, threaded discussions, shared whiteboards, and calendar integration.',
      'ON_HOLD',
      '2025-10-01 09:00:00', '2026-06-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000001', false),
+     'a0000000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000003', false),
 
-    -- john.doe (a...0002, continued)
+    -- john.doe (a...0002, continued) → Globex Inc (cc...0002)
     ('c0000000-0000-0000-0000-000000000024',
      'ERP System Migration',
      'Phased migration from SAP ECC to S/4HANA covering finance, procurement, and manufacturing modules with zero-downtime cutover.',
      'IN_PROGRESS',
      '2026-01-01 09:00:00', '2027-06-30 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false),
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000002', false),
 
+    -- john.doe (a...0002, continued) → Acme Corp (cc...0001)
     ('c0000000-0000-0000-0000-000000000025',
      'Data Warehouse Modernisation',
      'Deprecate the on-premise Teradata DW in favour of Snowflake; includes historical data migration and dbt model rewrite.',
      'CANCELLED',
      '2025-06-01 09:00:00', '2026-03-31 18:00:00',
-     'a0000000-0000-0000-0000-000000000002', false)
+     'a0000000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000001', false)
 
 ON CONFLICT (id) DO NOTHING;

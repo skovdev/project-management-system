@@ -1,0 +1,82 @@
+<div class="organization-list">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1>Organizations</h1>
+      <p class="page-subtitle">Manage your organizations and switch your active one</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon> New Organization
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <mat-card *ngIf="organizations.length > 0" class="table-card">
+      <table mat-table [dataSource]="organizations" class="organizations-table">
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let o" class="cell-title">
+            {{ o.name }}
+            <span *ngIf="isSelected(o)" class="status-badge status-in_progress">ACTIVE</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <td mat-cell *matCellDef="let o">{{ o.description }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let o" class="cell-actions">
+            <button mat-icon-button color="primary" [disabled]="isSelected(o)"
+                    (click)="selectOrganization(o)" title="Set as active organization"
+                    aria-label="Select organization">
+              <mat-icon>check_circle_outline</mat-icon>
+            </button>
+            <button mat-icon-button [routerLink]="['/organizations', o.id, 'members']"
+                    title="Manage members" aria-label="Manage members">
+              <mat-icon>group</mat-icon>
+            </button>
+            <button mat-icon-button (click)="openEditDialog(o)" title="Edit organization"
+                    aria-label="Edit organization">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteOrganization(o)" title="Delete organization"
+                    aria-label="Delete organization">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5, 10, 20]"
+        (page)="onPageChange($event)"
+        aria-label="Select page">
+      </mat-paginator>
+    </mat-card>
+
+    <div *ngIf="organizations.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">apartment</mat-icon>
+      <h3 class="empty-title">No organizations yet</h3>
+      <p class="empty-desc">Create an organization to start sharing projects with your team.</p>
+      <button mat-raised-button color="primary" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon> Create Organization
+      </button>
+    </div>
+
+  </ng-container>
+</div>

@@ -46,6 +46,9 @@ public class Project extends AbstractBaseModel {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
+
     @ColumnDefault(value = "false")
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;

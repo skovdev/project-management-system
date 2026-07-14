@@ -1,0 +1,96 @@
+<div class="organization-members">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <a routerLink="/organizations" class="back-link"><mat-icon>arrow_back</mat-icon> Organizations</a>
+      <h1>Members</h1>
+      <p class="page-subtitle">Manage who belongs to this organization and their role</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="toggleAddForm()">
+      <mat-icon>person_add</mat-icon> Add Member
+    </button>
+  </div>
+
+  <mat-card *ngIf="showAddForm" class="add-form-card">
+    <form [formGroup]="addForm" class="add-form">
+      <mat-form-field appearance="outline">
+        <mat-label>User</mat-label>
+        <mat-select formControlName="userId">
+          <mat-option *ngFor="let u of availableUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }} ({{ u.email }})</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="addMember()" [disabled]="addForm.invalid || adding">
+        <mat-spinner *ngIf="adding" diameter="16" style="display:inline-block;margin-right:6px"></mat-spinner>
+        Add
+      </button>
+      <button mat-button (click)="toggleAddForm()">Cancel</button>
+    </form>
+  </mat-card>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <mat-card *ngIf="members.length > 0" class="table-card">
+      <table mat-table [dataSource]="members" class="members-table">
+
+        <ng-container matColumnDef="user">
+          <th mat-header-cell *matHeaderCellDef>Member</th>
+          <td mat-cell *matCellDef="let m" class="cell-title">{{ displayName(m.userId) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let m">
+            <mat-form-field appearance="outline" class="role-select">
+              <mat-select [value]="m.role" (selectionChange)="changeRole(m, $event.value)">
+                <mat-option *ngFor="let r of roles" [value]="r">
+                  <span class="role-badge role-{{ r | lowercase }}">{{ r }}</span>
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let m" class="cell-actions">
+            <button mat-icon-button color="warn" (click)="removeMember(m)" title="Remove member"
+                    aria-label="Remove member">
+              <mat-icon>person_remove</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5, 10, 20]"
+        (page)="onPageChange($event)"
+        aria-label="Select page">
+      </mat-paginator>
+    </mat-card>
+
+    <div *ngIf="members.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">group</mat-icon>
+      <h3 class="empty-title">No members yet</h3>
+      <p class="empty-desc">Add a member to start collaborating in this organization.</p>
+    </div>
+
+  </ng-container>
+</div>
