@@ -39,7 +39,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 
@@ -361,32 +360,31 @@ class ProjectServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteAllByOrganizationId deletes and publishes an event for each project in the organization")
+    @DisplayName("deleteAllByOrganizationId bulk soft-deletes and publishes an event for each project in the organization")
     void should_deleteAndPublishEventPerProject_when_deleteAllByOrganizationId() {
         var organizationId = UUID.randomUUID();
-        var project1 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
-        var project2 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
-        var page = new PageImpl<>(List.of(project1, project2));
+        var projectId1 = UUID.randomUUID();
+        var projectId2 = UUID.randomUUID();
 
-        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(page);
+        when(projectRepository.findIdByOrganizationId(organizationId)).thenReturn(List.of(projectId1, projectId2));
 
         projectService.deleteAllByOrganizationId(organizationId);
 
-        verify(projectRepository).deleteById(project1.getId());
-        verify(projectRepository).deleteById(project2.getId());
-        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project1.getId()));
-        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project2.getId()));
+        verify(projectRepository).softDeleteAllByOrganizationId(organizationId);
+        verify(projectRepository, never()).deleteById(any());
+        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(projectId1));
+        verify(eventPublisher).publishEvent(new ProjectDeletedEvent(projectId2));
     }
 
     @Test
-    @DisplayName("deleteAllByOrganizationId is a no-op when the organization has no projects")
+    @DisplayName("deleteAllByOrganizationId publishes no events when the organization has no projects")
     void should_doNothing_when_deleteAllByOrganizationIdWithNoProjects() {
         var organizationId = UUID.randomUUID();
-        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+        when(projectRepository.findIdByOrganizationId(organizationId)).thenReturn(List.of());
 
         projectService.deleteAllByOrganizationId(organizationId);
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository).softDeleteAllByOrganizationId(organizationId);
         verify(eventPublisher, never()).publishEvent(any(ProjectDeletedEvent.class));
     }
 

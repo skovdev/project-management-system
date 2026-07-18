@@ -18,7 +18,7 @@ import local.pms.projectservice.external.ai.provider.AiExternalProvider;
 
 import local.pms.projectservice.external.organization.provider.OrganizationAccessProvider;
 
-import local.pms.projectservice.mapping.ProjectMapping;
+import local.pms.projectservice.mapping.ProjectMapper;
 
 import local.pms.projectservice.repository.ProjectRepository;
 
@@ -47,7 +47,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
-    private final ProjectMapping projectMapping = ProjectMapping.INSTANCE;
+    private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
     private final ProjectRepository projectRepository;
     private final AiExternalProvider aiExternalProvider;
@@ -65,14 +65,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
         requireCreatorRole(projectDto.organizationId());
 
-        var project = projectMapping.toEntity(projectDto);
+        var project = projectMapper.toEntity(projectDto);
         project.setUserId(extractAuthUserId());
-        project.setOrganizationId(projectDto.organizationId());
         var savedProject = projectRepository.save(project);
         log.info("Project created with ID: {} in organization: {}", savedProject.getId(), savedProject.getOrganizationId());
         eventPublisher.publishEvent(
                 new ProjectCreatedEvent(savedProject.getId(), savedProject.getUserId(), savedProject.getTitle()));
-        return projectMapping.toDto(savedProject);
+        return projectMapper.toDto(savedProject);
     }
 
     @Override
@@ -80,14 +79,14 @@ public class ProjectServiceImpl implements ProjectService {
     public Page<ProjectDto> findAll(UUID organizationId, Pageable pageable) {
         organizationAccessProvider.verifyMembership(organizationId);
         return projectRepository.findAllByOrganizationId(organizationId, pageable)
-                .map(projectMapping::toDto);
+                .map(projectMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProjectDto findById(UUID projectId, UUID organizationId) {
         organizationAccessProvider.verifyMembership(organizationId);
-        return projectMapping.toDto(findProjectOrThrow(projectId, organizationId));
+        return projectMapper.toDto(findProjectOrThrow(projectId, organizationId));
     }
 
     @Override
@@ -100,14 +99,10 @@ public class ProjectServiceImpl implements ProjectService {
         requireCreatorRole(projectDto.organizationId());
 
         var projectToUpdate = findProjectOrThrow(projectId, projectDto.organizationId());
-        projectToUpdate.setTitle(projectDto.title());
-        projectToUpdate.setDescription(projectDto.description());
-        projectToUpdate.setProjectStatusType(projectDto.projectStatusType());
-        projectToUpdate.setStartDate(projectDto.startDate());
-        projectToUpdate.setEndDate(projectDto.endDate());
+        projectMapper.updateEntityFromDto(projectDto, projectToUpdate);
         var updatedProject = projectRepository.save(projectToUpdate);
         log.info("Project with ID {} updated successfully.", projectId);
-        return projectMapping.toDto(updatedProject);
+        return projectMapper.toDto(updatedProject);
     }
 
     @Override
@@ -143,11 +138,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void deleteAllByOrganizationId(UUID organizationId) {
         log.info("Deleting all projects for organizationId: {}", organizationId);
-        var projects = projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged());
-        projects.forEach(project -> {
-            projectRepository.deleteById(project.getId());
-            eventPublisher.publishEvent(new ProjectDeletedEvent(project.getId()));
-        });
+        var projectIds = projectRepository.findIdByOrganizationId(organizationId);
+        projectRepository.softDeleteAllByOrganizationId(organizationId);
+        projectIds.forEach(id -> eventPublisher.publishEvent(new ProjectDeletedEvent(id)));
         log.info("All projects deleted for organizationId: {}", organizationId);
     }
 
