@@ -2,25 +2,30 @@ package local.pms.userservice.service.impl;
 
 import local.pms.userservice.service.TokenService;
 
-import lombok.AccessLevel;
-
-import lombok.experimental.FieldDefaults;
-
 import org.springframework.stereotype.Component;
 
+/**
+ * Holds the current request's JWT bearer token in a {@link ThreadLocal} rather than a plain
+ * field: this bean is a singleton, and a plain field would be shared mutable state across every
+ * request thread, letting one in-flight request's token leak into or overwrite another's.
+ */
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TokenServiceImpl implements TokenService {
 
-    private String token;
+    private final ThreadLocal<String> token = new ThreadLocal<>();
 
     @Override
     public void setToken(String token) {
-        this.token = token;
+        this.token.set(token);
     }
 
     @Override
     public String getToken() {
-        return token;
+        return token.get();
+    }
+
+    @Override
+    public void clear() {
+        token.remove();
     }
 }

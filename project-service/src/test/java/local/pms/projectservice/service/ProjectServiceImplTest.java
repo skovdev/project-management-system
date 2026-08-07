@@ -390,6 +390,49 @@ class ProjectServiceImplTest {
         verify(eventPublisher, never()).publishEvent(any(ProjectDeletedEvent.class));
     }
 
+    @Test
+    @DisplayName("findOrganizationIdByProjectId returns organizationId when caller is a member")
+    void should_returnOrganizationId_when_callerIsMember() {
+        var projectId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId)).thenReturn(OrganizationRoleType.MEMBER);
+
+        var result = projectService.findOrganizationIdByProjectId(projectId);
+
+        assertThat(result).isEqualTo(organizationId);
+    }
+
+    @Test
+    @DisplayName("findOrganizationIdByProjectId throws ProjectNotFoundException when project does not exist")
+    void should_throwProjectNotFoundException_when_findOrganizationIdByProjectIdNotFound() {
+        var projectId = UUID.randomUUID();
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> projectService.findOrganizationIdByProjectId(projectId))
+                .isInstanceOf(ProjectNotFoundException.class)
+                .hasMessageContaining(projectId.toString());
+
+        verify(organizationAccessProvider, never()).verifyMembership(any());
+    }
+
+    @Test
+    @DisplayName("findOrganizationIdByProjectId throws ProjectAccessDeniedException when caller is not a member of the project's organization")
+    void should_throwProjectAccessDeniedException_when_findOrganizationIdByProjectIdCallerNotMember() {
+        var projectId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var project = buildProject(projectId, UUID.randomUUID(), organizationId);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(organizationAccessProvider.verifyMembership(organizationId))
+                .thenThrow(new ProjectAccessDeniedException("Access denied: you are not a member of organization with ID " + organizationId));
+
+        assertThatThrownBy(() -> projectService.findOrganizationIdByProjectId(projectId))
+                .isInstanceOf(ProjectAccessDeniedException.class);
+    }
+
     private void stubToken(UUID userId) {
         when(tokenService.getToken()).thenReturn("test-token");
         when(jwtTokenProvider.extractAuthUserId("test-token")).thenReturn(userId);

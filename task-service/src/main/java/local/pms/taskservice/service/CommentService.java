@@ -15,6 +15,7 @@ public interface CommentService {
 
     /**
      * Creates a new comment on the specified task authored by the authenticated user.
+     * The caller must be a member of the task's organization.
      *
      * @param taskId the task to comment on
      * @param dto    the comment content
@@ -24,6 +25,7 @@ public interface CommentService {
 
     /**
      * Returns a paginated list of comments for the specified task.
+     * The caller must be a member of the task's organization.
      *
      * @param taskId   the task whose comments to retrieve
      * @param pageable pagination and sorting parameters
@@ -32,7 +34,8 @@ public interface CommentService {
     Page<CommentDto> findAll(UUID taskId, Pageable pageable);
 
     /**
-     * Updates the content of a comment. Only the original author may update a comment.
+     * Updates the content of a comment. The caller must be a member of the task's
+     * organization and the original author of the comment.
      *
      * @param taskId    the task that owns the comment
      * @param commentId the comment to update
@@ -42,7 +45,8 @@ public interface CommentService {
     CommentDto update(UUID taskId, UUID commentId, CommentRequestDto dto);
 
     /**
-     * Deletes a comment. Authors may delete their own comments; admins may delete any comment.
+     * Deletes a comment. The caller must be a member of the task's organization and
+     * the original author of the comment (no organization-role-based bypass).
      *
      * @param taskId    the task that owns the comment
      * @param commentId the comment to delete

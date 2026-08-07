@@ -77,4 +77,16 @@ public interface ProjectService {
      * @param organizationId the UUID of the deleted organization
      */
     void deleteAllByOrganizationId(UUID organizationId);
+
+    /**
+     * Resolves the organization a project belongs to. Used by other services
+     * (e.g. task-service) to derive organizationId from a projectId.
+     * The caller must be a member of the resolved organization.
+     *
+     * @param projectId the unique project identifier
+     * @return the organization identifier the project belongs to
+     * @throws local.pms.projectservice.exception.ProjectAccessDeniedException if the caller
+     *         is not a member of the project's organization
+     */
+    UUID findOrganizationIdByProjectId(UUID projectId);
 }

@@ -141,8 +141,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles Spring Security {@link AccessDeniedException} thrown by {@code @PreAuthorize}
-     * method-level security and returns a 403 error response.
+     * Handles Spring Security {@link AccessDeniedException}, should Spring Security ever
+     * throw one on this path, and returns a 403 error response.
      *
      * @param ex the access denied exception
      * @return error response with FORBIDDEN status

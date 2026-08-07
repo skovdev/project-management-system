@@ -31,8 +31,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,7 +64,6 @@ public class UserRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = UserDto.class))
             })
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<UserDto> findAll(@ParameterObject Pageable pageable) {
         return userService.findAll(pageable);
@@ -79,7 +76,6 @@ public class UserRestController {
             }),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public UserDto findById(@PathVariable UUID id) {
         return userService.findById(id);
@@ -93,7 +89,6 @@ public class UserRestController {
             @ApiResponse(responseCode = "403", description = "Access denied", content = @Content),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public UserDto update(@PathVariable UUID id, @RequestBody @Valid UserDto userDto) {
         return userService.update(id, userDto);
@@ -105,7 +100,6 @@ public class UserRestController {
             @ApiResponse(responseCode = "403", description = "Access denied", content = @Content),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id) {
@@ -123,7 +117,6 @@ public class UserRestController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
             @ApiResponse(responseCode = "422", description = "Invalid file type or size", content = @Content)
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public AvatarUploadResponseDto uploadAvatar(@PathVariable UUID id,
                                                 @RequestParam("file") MultipartFile file) {
@@ -138,7 +131,6 @@ public class UserRestController {
             @ApiResponse(responseCode = "403", description = "Access denied", content = @Content),
             @ApiResponse(responseCode = "404", description = "User not found or no avatar set", content = @Content)
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{id}/avatar")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAvatar(@PathVariable UUID id) {

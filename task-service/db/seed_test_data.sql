@@ -5,9 +5,12 @@
 --            project_management_system_task_comment
 --
 -- Cross-service references (logical, no DB-level FKs):
---   project_id → project-service: project_management_system_project.id
---   user_id    → auth-service:    project_management_system_auth_user.id (authUserId from JWT)
---   author_id  → auth-service:    project_management_system_auth_user.id (authUserId from JWT)
+--   project_id      → project-service: project_management_system_project.id
+--   organization_id → organization-service: project_management_system_organization.id
+--                      (must match the organization_id of the referenced project, per
+--                      project-service's own seed data)
+--   user_id         → auth-service: project_management_system_auth_user.id (authUserId from JWT)
+--   author_id       → auth-service: project_management_system_auth_user.id (authUserId from JWT)
 --
 -- task_status   enum: TODO | IN_PROGRESS | DONE | ON_HOLD | CANCELLED
 -- task_priority enum: LOW  | MEDIUM      | HIGH | CRITICAL | BLOCKER
@@ -21,7 +24,7 @@
 INSERT INTO project_management_system_task
     (id, title, description,
      task_status, task_priority,
-     active, project_id, user_id, deleted)
+     active, project_id, user_id, organization_id, deleted)
 VALUES
     -- E-Commerce Platform Redesign (c...001), assigned to john.doe (b...0002)
     ('d0000000-0000-0000-0000-000000000001',
@@ -30,6 +33,7 @@ VALUES
      'IN_PROGRESS', 'HIGH',
      true,
      'c0000000-0000-0000-0000-000000000001',
+     'cc000000-0000-0000-0000-000000000001',
      'a0000000-0000-0000-0000-000000000002',
      false),
 
@@ -40,6 +44,7 @@ VALUES
      'TODO', 'MEDIUM',
      true,
      'c0000000-0000-0000-0000-000000000002',
+     'cc000000-0000-0000-0000-000000000002',
      'a0000000-0000-0000-0000-000000000003',
      false),
 
@@ -50,6 +55,7 @@ VALUES
      'DONE', 'LOW',
      false,
      'c0000000-0000-0000-0000-000000000003',
+     'cc000000-0000-0000-0000-000000000001',
      'a0000000-0000-0000-0000-000000000004',
      false),
 
@@ -60,6 +66,7 @@ VALUES
      'ON_HOLD', 'CRITICAL',
      false,
      'c0000000-0000-0000-0000-000000000004',
+     'cc000000-0000-0000-0000-000000000001',
      'a0000000-0000-0000-0000-000000000001',
      false)
 ON CONFLICT (id) DO NOTHING;
@@ -108,507 +115,507 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO project_management_system_task
     (id, title, description,
      task_status, task_priority,
-     active, project_id, user_id, deleted)
+     active, project_id, user_id, organization_id, deleted)
 VALUES
     -- DevOps Infrastructure Modernization (c006, admin)
     ('d0000000-0000-0000-0000-000000000005',
      'Set Up Kubernetes Cluster',
      'Provision a production-grade K8s cluster on AWS EKS with multi-AZ node groups, autoscaling, and RBAC configuration.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000006', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000006',
      'Configure GitOps Pipeline with ArgoCD',
      'Install ArgoCD, define ApplicationSet manifests, and migrate three existing services to GitOps-managed deployments.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000006', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000007',
      'Centralise Logging with OpenSearch',
      'Deploy OpenSearch cluster, configure Fluent Bit DaemonSet, and migrate from the legacy ELK stack.',
      'IN_PROGRESS', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000006', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000008',
      'Define Resource Quotas and Network Policies',
      'Establish namespace-level resource quotas and Kubernetes NetworkPolicy rules to enforce least-privilege pod traffic.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000006', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     -- Customer Support Portal (c007, admin)
     ('d0000000-0000-0000-0000-000000000009',
      'Design Portal Information Architecture',
      'Map user journeys, define site structure, and produce lo-fi wireframes for ticket creation, live chat, and FAQ flows.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000007', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000010',
      'Set Up Ticketing Backend',
      'Implement ticket entity, service layer, and REST API with SLA tracking and priority routing.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000007', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000011',
      'Integrate Live Chat Service',
      'Evaluate and integrate a live chat provider (Intercom or Crisp) via webhook relay into the portal backend.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000007', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000012',
      'Build AI FAQ Knowledge Base',
      'Index documentation with a vector store and expose a semantic search API to power FAQ suggestions in the support portal.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000007', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     -- API Gateway Consolidation (c008, john.doe)
     ('d0000000-0000-0000-0000-000000000013',
      'Audit Existing Gateway Configurations',
      'Document all route rules, auth middleware, and rate-limit settings from the three legacy gateway instances.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000008', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000014',
      'Provision Managed Gateway Infrastructure',
      'Deploy Kong Gateway on Kubernetes with Helm, configure Postgres backend, and verify HA readiness.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000008', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000015',
      'Migrate Authentication Middleware',
      'Port JWT validation plugins and API-key management from the legacy gateways to Kong consumer groups.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000008', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000016',
      'Implement Rate-Limiting and Circuit-Breaker Policies',
      'Define rate-limit tiers per consumer group and configure Resilience4j circuit breakers on all upstream services.',
      'TODO', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000008', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- Inventory Management System (c009, john.doe — COMPLETED)
     ('d0000000-0000-0000-0000-000000000017',
      'Implement Barcode Scanner Integration',
      'Completed integration of Zebra TC21 handheld scanners via MQTT bridge to the inventory service.',
      'DONE', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000009', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000009', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000018',
      'Build Automatic Reorder Trigger',
      'Implemented rule engine that fires purchase-order events when stock falls below configurable thresholds.',
      'DONE', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000009', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000009', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000019',
      'Supplier EDI Integration',
      'Connected to top-5 suppliers via AS2 EDI; mapped 850/855/856 transactions to internal order lifecycle events.',
      'DONE', 'LOW', false,
-     'c0000000-0000-0000-0000-000000000009', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000009', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000020',
      'Develop Stock Reporting Dashboard',
      'Delivered Grafana-based dashboard covering turnover rate, dead stock, and shrinkage by warehouse zone.',
      'DONE', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000009', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000009', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- IoT Fleet Monitoring Platform (c010, jane.smith)
     ('d0000000-0000-0000-0000-000000000021',
      'Ingest Telematics Data Stream',
      'Set up Kafka topic for vehicle telemetry, define Avro schema, and implement consumer that persists readings to TimescaleDB.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000010', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000022',
      'Build GPS Live Map View',
      'Integrate Mapbox GL JS to render vehicle positions updated every 5 seconds from the WebSocket push endpoint.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000010', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000023',
      'Implement Driver Behaviour Scoring',
      'Compute harsh-braking, cornering, and speeding scores from telemetry events using a configurable threshold engine.',
      'IN_PROGRESS', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000010', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000024',
      'Fuel Consumption Anomaly Alerting',
      'Detect statistically significant deviations in per-vehicle fuel consumption and trigger alerts via notification-service.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000010', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- Healthcare Patient Portal (c011, jane.smith — PLANNING)
     ('d0000000-0000-0000-0000-000000000025',
      'HIPAA Gap Analysis',
      'Conduct a formal gap analysis against HIPAA Security Rule controls and produce a prioritised remediation backlog.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000011', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000026',
      'Patient Authentication Flow',
      'Design and implement MFA-backed patient login with identity verification meeting NIST 800-63B AAL2 requirements.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000011', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000027',
      'Lab Results Viewer',
      'Build a read-only lab result viewer with HL7 FHIR R4 integration from the hospital Laboratory Information System.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000011', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000028',
      'Prescription Refill Request API',
      'Implement refill request flow with pharmacy routing logic and real-time status tracking visible to patients.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000011', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- Supply Chain Optimization Tool (c012, bob.jones)
     ('d0000000-0000-0000-0000-000000000029',
      'Demand Forecasting Model Integration',
      'Integrate pre-trained LSTM demand forecasting model via REST API and wire predictions into replenishment planning.',
      'IN_PROGRESS', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000012', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000030',
      'Supplier Risk Scoring Module',
      'Aggregate delivery SLA history, financial health data, and geopolitical risk indices into per-supplier risk scores.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000012', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000031',
      'Logistics Cost Calculator',
      'Build cost optimisation engine comparing route options, carrier rates, and customs duty profiles for outbound shipments.',
      'IN_PROGRESS', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000012', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000032',
      'Executive Supply Chain Dashboard',
      'Deliver a Recharts-based dashboard showing end-to-end supply chain KPIs and on-time-in-full metrics for C-level reporting.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000012', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', false),
 
     -- Employee Self-Service Portal (c013, bob.jones — PLANNING)
     ('d0000000-0000-0000-0000-000000000033',
      'Leave Request Workflow',
      'Design multi-step approval workflow for leave requests with manager delegation and calendar conflict detection.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000013', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000034',
      'Payslip PDF Generation',
      'Generate monthly payslip PDFs from payroll data using JasperReports and store in S3 for employee self-service download.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000013', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000035',
      'Personal Details Update Flow',
      'Allow employees to update contact info, bank details, and emergency contacts with a manager confirmation step.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000013', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000036',
      'Company Policy Document Repository',
      'Build searchable policy document library with version tracking and mandatory per-document acknowledgement tracking.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000013', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false),
 
     -- AI-Powered Content Moderation (c014, admin)
     ('d0000000-0000-0000-0000-000000000037',
      'Train Multi-Label Classification Model',
      'Fine-tune a DistilBERT checkpoint on the internal moderation dataset covering 12 policy violation categories.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000014', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000038',
      'Build Async Moderation Pipeline',
      'Implement Kafka consumer that routes content to the ML scoring service and writes verdicts back to the audit table.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000014', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000039',
      'Human Review Queue Interface',
      'Build a React-based review dashboard where moderators handle low-confidence model predictions with keyboard shortcuts.',
      'IN_PROGRESS', 'BLOCKER', true,
-     'c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000014', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000040',
      'Metrics and Bias Monitoring',
      'Set up MLflow experiment tracking and a Grafana dashboard for precision/recall drift and demographic parity metrics.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000014', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     -- Real-Time Analytics Engine (c015, admin — PLANNING)
     ('d0000000-0000-0000-0000-000000000041',
      'Design Stream Processing Topology',
      'Define Kafka Streams topology for sessionisation, windowed aggregation, and late-arrival event handling.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000015', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000015', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000042',
      'Evaluate Flink vs Kafka Streams',
      'Benchmark both frameworks against throughput and latency requirements; produce ADR with recommendation.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000015', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000015', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000043',
      'Implement Backpressure Handling',
      'Design and test backpressure propagation to prevent consumer lag from cascading into the upstream producer.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000015', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000015', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000044',
      'Build Sub-Second Dashboard Prototype',
      'Deliver a proof-of-concept dashboard consuming from the stream engine with end-to-end latency under 1 second.',
      'TODO', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000015', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000015', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     -- Cybersecurity Audit Platform (c016, john.doe)
     ('d0000000-0000-0000-0000-000000000045',
      'Ingest SIEM Logs into Audit Store',
      'Configure Filebeat-to-Kafka pipeline for SIEM log ingestion; normalise events to Elastic Common Schema (ECS).',
      'IN_PROGRESS', 'BLOCKER', true,
-     'c0000000-0000-0000-0000-000000000016', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000016', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000046',
      'CVE Feed Synchronisation',
      'Schedule daily NVD CVE feed pulls, parse affected CPE entries, and cross-reference against deployed service versions.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000016', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000016', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000047',
      'Compliance Report Generator',
      'Implement templated PDF report generation for SOC 2 Type II, PCI-DSS, and ISO 27001 evidence packages.',
      'IN_PROGRESS', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000016', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000016', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000048',
      'Vulnerability Ticket Auto-Creation',
      'Auto-create prioritised remediation tickets from new critical/high CVE matches and assign to the owning engineering team.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000016', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000016', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- Cloud Cost Optimisation Dashboard (c017, john.doe — PLANNING)
     ('d0000000-0000-0000-0000-000000000049',
      'Multi-Cloud Cost Data Aggregation',
      'Pull cost and usage reports from AWS, Azure, and GCP into a unified Parquet data lake partitioned by account and service.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000017', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000017', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000050',
      'Anomaly Detection on Cloud Spend',
      'Implement statistical spend anomaly detection using ARIMA baseline to alert on unexpected cost spikes within 1 hour.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000017', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000017', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000051',
      'Reserved-Instance Recommendation Engine',
      'Analyse usage patterns and recommend optimal RI coverage per service targeting 30 % reduction in compute spend.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000017', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000017', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000052',
      'Team Budget Alert System',
      'Allow finance to set per-team monthly budgets; trigger Slack and email alerts at 80 % and 100 % spend thresholds.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000017', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000017', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- Marketing Automation Suite (c018, jane.smith)
     ('d0000000-0000-0000-0000-000000000053',
      'Build Campaign Orchestration Engine',
      'Implement a directed-graph workflow engine where marketers define multi-step drip campaigns with conditional branching.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000018', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000018', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000054',
      'A/B Test Framework',
      'Build variant assignment, metric collection, and statistical significance testing for email subject lines and CTAs.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000018', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000018', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000055',
      'Personalisation Rules Engine',
      'Implement audience segmentation and content personalisation based on user behaviour, demographics, and purchase history.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000018', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000018', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000056',
      'Attribution Reporting Dashboard',
      'Build first-touch, last-touch, and linear attribution models and expose them in the campaign analytics dashboard.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000018', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000018', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- Customer Loyalty Program (c019, jane.smith — COMPLETED)
     ('d0000000-0000-0000-0000-000000000057',
      'Points Accrual Engine',
      'Delivered configurable rule engine mapping purchase events to points awards with double-points promotional support.',
      'DONE', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000019', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000019', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', false),
 
     ('d0000000-0000-0000-0000-000000000058',
      'Tier Management System',
      'Implemented Bronze/Silver/Gold/Platinum tier thresholds with automatic upgrade/downgrade on rolling 12-month spend.',
      'DONE', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000019', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000019', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000059',
      'Reward Catalogue API',
      'Built REST API for the reward catalogue with stock management, eligibility filtering, and points redemption flow.',
      'DONE', 'LOW', false,
-     'c0000000-0000-0000-0000-000000000019', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000019', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000060',
      'Partner Redemption Integration',
      'Integrated two airline and one hotel partner redemption APIs with points-to-currency conversion and confirmation webhooks.',
      'DONE', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000019', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000019', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- Fraud Detection System (c020, bob.jones)
     ('d0000000-0000-0000-0000-000000000061',
      'Feature Engineering Pipeline',
      'Build real-time feature extraction from the transaction stream: velocity checks, amount z-score, device fingerprint, and geolocation deviation.',
      'IN_PROGRESS', 'BLOCKER', true,
-     'c0000000-0000-0000-0000-000000000020', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000020', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000062',
      'Model Serving Infrastructure',
      'Deploy XGBoost scoring model behind a low-latency REST API with P99 < 20 ms SLA using Triton Inference Server.',
      'TODO', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000020', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000020', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000063',
      'Alert Triage Dashboard',
      'Build an analyst dashboard showing triggered fraud alerts with transaction context, historical patterns, and one-click case creation.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000020', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000020', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000064',
      'Adaptive Threshold Tuning',
      'Implement feedback loop where analyst decisions retrain threshold parameters weekly via the MLflow model registry.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000020', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000020', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- Payment Gateway Integration (c021, bob.jones — PLANNING)
     ('d0000000-0000-0000-0000-000000000065',
      'PCI-DSS Scope Assessment',
      'Define the cardholder data environment scope, identify all data flows, and produce a network segmentation diagram.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000021', 'a0000000-0000-0000-0000-000000000004', false),
+     'c0000000-0000-0000-0000-000000000021', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', false),
 
     ('d0000000-0000-0000-0000-000000000066',
      'Stripe Integration',
      'Implement Stripe PaymentIntent flow with 3DS2, webhook signature validation, and idempotency key management.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000021', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000021', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000067',
      'PayPal and Adyen Integration',
      'Implement PayPal Orders API and Adyen drop-in payments with a unified normalised result model across providers.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000021', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000021', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000068',
      'Tokenisation Vault Design',
      'Design PCI-compliant tokenisation vault using HashiCorp Vault Transit secrets engine to eliminate PANs from application storage.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000021', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000021', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     -- Knowledge Management Platform (c022, admin)
     ('d0000000-0000-0000-0000-000000000069',
      'Implement Semantic Search with Elasticsearch',
      'Configure dense vector search using the ELSER model to support natural-language document queries across the knowledge base.',
      'IN_PROGRESS', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000022', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000022', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000070',
      'Document Version Control System',
      'Build version history with diff viewer, rollback capability, and change authorship tracking per document section.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000022', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000022', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000071',
      'RBAC Permission Model',
      'Implement space-level and page-level permissions with inheritance, group membership, and guest access controls.',
      'IN_PROGRESS', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000022', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000022', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000072',
      'Full-Text Index Sync Pipeline',
      'Set up incremental Debezium CDC pipeline to keep the Elasticsearch index in sync with the PostgreSQL document store.',
      'TODO', 'LOW', true,
-     'c0000000-0000-0000-0000-000000000022', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000022', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- Remote Work Collaboration Tool (c023, admin — ON_HOLD)
     ('d0000000-0000-0000-0000-000000000073',
      'Video Room WebRTC Infrastructure',
      'Planned implementation of a self-hosted Jitsi-based WebRTC room service — on hold pending infrastructure cost review.',
      'ON_HOLD', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000023', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000023', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000074',
      'Threaded Discussion Board',
      'Planned thread-and-reply model with rich text editing, @mentions, and emoji reactions — deferred pending go/no-go decision.',
      'ON_HOLD', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000023', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000023', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000075',
      'Shared Whiteboard Feature',
      'Planned real-time collaborative canvas using the tldraw library — blocked on open-source licensing review.',
      'ON_HOLD', 'LOW', false,
-     'c0000000-0000-0000-0000-000000000023', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000023', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000076',
      'Google Calendar Integration',
      'Planned OAuth2 calendar sync for scheduling video rooms directly from discussion threads — on hold with the project.',
      'ON_HOLD', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000023', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000023', 'cc000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', false),
 
     -- ERP System Migration (c024, john.doe)
     ('d0000000-0000-0000-0000-000000000077',
      'SAP Data Extraction and Transformation',
      'Extract and transform master data (GL accounts, cost centres, vendors, customers) from ECC using the LTMC migration cockpit.',
      'IN_PROGRESS', 'BLOCKER', true,
-     'c0000000-0000-0000-0000-000000000024', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000024', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000078',
      'Cutover Runbook Preparation',
      'Document step-by-step cutover plan with rollback checkpoints, team assignments, and go/no-go decision criteria per phase.',
      'TODO', 'HIGH', true,
-     'c0000000-0000-0000-0000-000000000024', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000024', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000079',
      'Integration Testing in S/4HANA Sandbox',
      'Execute integration test cycles for procure-to-pay and order-to-cash processes in the S/4HANA sandbox environment.',
      'IN_PROGRESS', 'CRITICAL', true,
-     'c0000000-0000-0000-0000-000000000024', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000024', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000080',
      'End-User Training Delivery',
      'Deliver role-based S/4HANA Fiori training to 250 finance and procurement users across three global regions.',
      'TODO', 'MEDIUM', true,
-     'c0000000-0000-0000-0000-000000000024', 'a0000000-0000-0000-0000-000000000003', false),
+     'c0000000-0000-0000-0000-000000000024', 'cc000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', false),
 
     -- Data Warehouse Modernisation (c025, john.doe — CANCELLED)
     ('d0000000-0000-0000-0000-000000000081',
      'Teradata Schema Inventory',
      'Catalogued all 1,200 tables, identified 340 active models, and documented full lineage before project cancellation.',
      'CANCELLED', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000025', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000025', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000082',
      'Snowflake Account Setup',
      'Provisioned Snowflake Enterprise trial and defined virtual warehouse sizing — cancelled before full validation completed.',
      'CANCELLED', 'MEDIUM', false,
-     'c0000000-0000-0000-0000-000000000025', 'a0000000-0000-0000-0000-000000000001', false),
+     'c0000000-0000-0000-0000-000000000025', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', false),
 
     ('d0000000-0000-0000-0000-000000000083',
      'dbt Model Rewrite Spike',
      'Began rewriting 40 % of SQL transforms as dbt models before the project was deprioritised and formally cancelled.',
      'CANCELLED', 'LOW', false,
-     'c0000000-0000-0000-0000-000000000025', 'a0000000-0000-0000-0000-000000000002', false),
+     'c0000000-0000-0000-0000-000000000025', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', false),
 
     ('d0000000-0000-0000-0000-000000000084',
      'Historical Data Migration Proof of Concept',
      'Loaded 6 months of historical data into Snowflake staging area to validate ETL performance — work cancelled mid-execution.',
      'CANCELLED', 'HIGH', false,
-     'c0000000-0000-0000-0000-000000000025', 'a0000000-0000-0000-0000-000000000003', false)
+     'c0000000-0000-0000-0000-000000000025', 'cc000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', false)
 
 ON CONFLICT (id) DO NOTHING;
 

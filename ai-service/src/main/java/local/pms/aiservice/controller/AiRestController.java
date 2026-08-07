@@ -20,8 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,7 +54,6 @@ public class AiRestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT token"),
             @ApiResponse(responseCode = "500", description = "Failed to communicate with AI model")
     })
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/ask")
     public ApiResponseDto<String> ask(@Valid @RequestBody AiChatRequestDto request) {
         log.info("Received AI chat request");

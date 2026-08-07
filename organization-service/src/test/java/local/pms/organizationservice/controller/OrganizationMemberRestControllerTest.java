@@ -36,8 +36,6 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
@@ -48,6 +46,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doNothing;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -84,8 +83,6 @@ class OrganizationMemberRestControllerTest {
     void setUpJwtMocksAsUser() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test

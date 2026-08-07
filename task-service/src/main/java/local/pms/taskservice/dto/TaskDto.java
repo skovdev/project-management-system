@@ -31,5 +31,7 @@ public record TaskDto(
 
         String userId,
 
+        String organizationId,
+
         String acceptanceCriteria
 ) {}

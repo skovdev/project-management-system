@@ -4,10 +4,12 @@ import io.jsonwebtoken.MalformedJwtException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import local.pms.notificationservice.config.jwt.JwtTokenProvider;
+
 import local.pms.notificationservice.service.TokenService;
 
 import lombok.AccessLevel;
@@ -18,7 +20,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.stereotype.Component;
@@ -96,13 +98,17 @@ public class JwtVerificationTokenFilter extends OncePerRequestFilter {
         }
         tokenService.setToken(token);
         SecurityContextHolder.getContext().setAuthentication(fillAuthenticationToken(token));
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            // the underlying worker thread is pooled and reused for the next, unrelated request
+            tokenService.clear();
+        }
     }
 
     private UsernamePasswordAuthenticationToken fillAuthenticationToken(String bearerToken) {
         String username = jwtTokenProvider.extractUsername(bearerToken);
-        List<GrantedAuthority> authorities = jwtTokenProvider.extractAuthorities(bearerToken);
-        return new UsernamePasswordAuthenticationToken(username, null, authorities);
+        return new UsernamePasswordAuthenticationToken(username, null, List.of());
     }
 
     private void handleErrorResponse(HttpServletResponse response, int status, String message) throws IOException {

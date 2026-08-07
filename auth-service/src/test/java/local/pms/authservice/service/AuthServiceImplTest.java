@@ -4,13 +4,9 @@ import local.pms.authservice.config.jwt.JwtTokenProvider;
 
 import local.pms.authservice.dto.SignUpDto;
 
-import local.pms.authservice.dto.authuser.AuthRoleDto;
 import local.pms.authservice.dto.authuser.AuthUserDto;
-import local.pms.authservice.dto.authuser.AuthPermissionDto;
 
-import local.pms.authservice.entity.AuthRole;
 import local.pms.authservice.entity.AuthUser;
-import local.pms.authservice.entity.AuthPermission;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 import local.pms.authservice.event.UserDetailsDeletedEvent;
@@ -289,29 +285,16 @@ class AuthServiceImplTest {
     }
 
     private AuthUser buildAuthUser(UUID id, String username) {
-        var role = new AuthRole();
-        role.setAuthority("USER");
-
-        var permission = new AuthPermission();
-        permission.setPermission("READ_ALL");
-
         var authUser = new AuthUser();
         authUser.setId(id);
         authUser.setUsername(username);
         authUser.setPassword("hashed");
-        authUser.setAuthRoles(List.of(role));
-        authUser.setAuthPermissions(List.of(permission));
         authUser.setDeleted(false);
         return authUser;
     }
 
     private AuthUserDto buildAuthUserDto(UUID id, String username) {
-        return new AuthUserDto(
-                id,
-                username,
-                "hashed",
-                List.of(new AuthRoleDto(UUID.randomUUID(), "USER", id)),
-                List.of(new AuthPermissionDto(UUID.randomUUID(), "READ_ALL", id)));
+        return new AuthUserDto(id, username, "hashed");
     }
 
     private Authentication buildAuthentication(String username) {

@@ -21,8 +21,6 @@ import org.springframework.context.annotation.Import;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
@@ -60,8 +58,6 @@ class AiRestControllerTest {
     void setUpJwtMocksAsUser() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test

@@ -83,7 +83,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     public OrganizationDto update(UUID organizationId, OrganizationDto organizationDto) {
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var member = organizationAccessGuard.requireMembership(organizationId, authUserId);
-        organizationAccessGuard.requireRole(organizationId, member, OrganizationRoleType.OWNER, OrganizationRoleType.ADMIN);
+        organizationAccessGuard.requireAtLeast(organizationId, member, OrganizationRoleType.ADMIN);
 
         var organization = findOrganizationOrThrow(organizationId);
         organization.setName(organizationDto.name());
@@ -98,7 +98,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     public void delete(UUID organizationId) {
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var member = organizationAccessGuard.requireMembership(organizationId, authUserId);
-        organizationAccessGuard.requireRole(organizationId, member, OrganizationRoleType.OWNER);
+        organizationAccessGuard.requireAtLeast(organizationId, member, OrganizationRoleType.OWNER);
 
         findOrganizationOrThrow(organizationId);
         // Cascade the member rows synchronously, in the same transaction, so the membership

@@ -3,9 +3,6 @@ package local.pms.authservice.entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
 
 import lombok.Setter;
 import lombok.Getter;
@@ -16,8 +13,6 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLRestriction;
-
-import java.util.List;
 
 @Entity
 @Setter
@@ -33,14 +28,6 @@ public class AuthUser extends AbstractBaseModel {
 
     @Column(name = "password", nullable = false)
     String password;
-
-    @SQLRestriction("deleted = false")
-    @OneToMany(mappedBy = "authUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    List<AuthRole> authRoles;
-
-    @SQLRestriction("deleted = false")
-    @OneToMany(mappedBy = "authUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    List<AuthPermission> authPermissions;
 
     @ColumnDefault(value = "false")
     @Column(name = "deleted", nullable = false)

@@ -136,8 +136,8 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("update returns updated DTO when caller is ADMIN")
-    void should_returnUpdatedDto_when_callerIsAdmin() {
+    @DisplayName("update throws UserAccessDeniedException when caller has ADMIN role but is not the owner (no global admin bypass)")
+    void should_throwUserAccessDeniedException_when_adminRoleButNotOwner() {
         var id = UUID.randomUUID();
         var ownerId = UUID.randomUUID();
         var adminAuthUserId = UUID.randomUUID();
@@ -147,14 +147,12 @@ class UserServiceImplTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
         when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(adminAuthUserId);
-        when(jwtTokenProvider.extractRoles("token"))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-        when(userRepository.save(user)).thenReturn(user);
 
-        var result = userService.update(id, dto);
+        assertThatThrownBy(() -> userService.update(id, dto))
+                .isInstanceOf(UserAccessDeniedException.class)
+                .hasMessageContaining(id.toString());
 
-        assertThat(result).isNotNull();
-        verify(userRepository).save(user);
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -171,7 +169,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("update throws UserAccessDeniedException when caller is not owner and not admin")
+    @DisplayName("update throws UserAccessDeniedException when caller is not the owner")
     void should_throwUserAccessDeniedException_when_callerNotOwner() {
         var id = UUID.randomUUID();
         var ownerId = UUID.randomUUID();
@@ -181,7 +179,6 @@ class UserServiceImplTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
         when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
-        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.update(id, buildUserDto(id, ownerId)))
                 .isInstanceOf(UserAccessDeniedException.class)
@@ -220,7 +217,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("delete throws UserAccessDeniedException when caller is not owner and not admin")
+    @DisplayName("delete throws UserAccessDeniedException when caller is not the owner")
     void should_throwUserAccessDeniedException_when_deleteCallerNotOwner() {
         var id = UUID.randomUUID();
         var ownerId = UUID.randomUUID();
@@ -230,7 +227,6 @@ class UserServiceImplTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
         when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
-        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.delete(id))
                 .isInstanceOf(UserAccessDeniedException.class)
@@ -328,7 +324,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("uploadAvatar throws UserAccessDeniedException when caller is not owner and not admin")
+    @DisplayName("uploadAvatar throws UserAccessDeniedException when caller is not the owner")
     void should_throwUserAccessDeniedException_when_uploadAvatarCallerNotOwner() {
         var id = UUID.randomUUID();
         var ownerId = UUID.randomUUID();
@@ -339,7 +335,6 @@ class UserServiceImplTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
         when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
-        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.uploadAvatar(id, file))
                 .isInstanceOf(UserAccessDeniedException.class)
@@ -420,7 +415,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteAvatar throws UserAccessDeniedException when caller is not owner and not admin")
+    @DisplayName("deleteAvatar throws UserAccessDeniedException when caller is not the owner")
     void should_throwUserAccessDeniedException_when_deleteAvatarCallerNotOwner() {
         var id = UUID.randomUUID();
         var ownerId = UUID.randomUUID();
@@ -432,7 +427,6 @@ class UserServiceImplTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(tokenService.getToken()).thenReturn("token");
         when(jwtTokenProvider.extractAuthUserId("token")).thenReturn(callerId);
-        when(jwtTokenProvider.extractRoles("token")).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.deleteAvatar(id))
                 .isInstanceOf(UserAccessDeniedException.class)
