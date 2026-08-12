@@ -19,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +52,6 @@ public class TaskAiRestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT token"),
             @ApiResponse(responseCode = "500", description = "Failed to communicate with AI model")
     })
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/acceptance-criteria")
     public ApiResponseDto<String> generateAcceptanceCriteria(@Valid @RequestBody AcceptanceCriteriaRequestDto request) {
         log.info("Received acceptance-criteria generation request for task title='{}'", request.title());

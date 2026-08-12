@@ -1,8 +1,6 @@
 package local.pms.authservice.repository;
 
-import local.pms.authservice.entity.AuthRole;
 import local.pms.authservice.entity.AuthUser;
-import local.pms.authservice.entity.AuthPermission;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -22,8 +20,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -120,26 +116,13 @@ class AuthUserRepositoryIT {
     }
 
     /**
-     * Persists a minimal {@link AuthUser} with a role and permission and returns the managed entity.
+     * Persists a minimal {@link AuthUser} and returns the managed entity.
      */
     private AuthUser persistAuthUser(String username) {
         var user = new AuthUser();
         user.setUsername(username);
         user.setPassword("hashed");
         user.setDeleted(false);
-
-        var role = new AuthRole();
-        role.setAuthority("USER");
-        role.setAuthUser(user);
-        role.setDeleted(false);
-
-        var permission = new AuthPermission();
-        permission.setPermission("READ_ALL");
-        permission.setAuthUser(user);
-        permission.setDeleted(false);
-
-        user.setAuthRoles(List.of(role));
-        user.setAuthPermissions(List.of(permission));
 
         return entityManager.persist(user);
     }

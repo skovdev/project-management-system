@@ -160,6 +160,7 @@ class TaskRepositoryTest {
         task.setActive(true);
         task.setProjectId(projectId);
         task.setUserId(userId);
+        task.setOrganizationId(UUID.randomUUID());
         task.setDeleted(false);
         return entityManager.persist(task);
     }

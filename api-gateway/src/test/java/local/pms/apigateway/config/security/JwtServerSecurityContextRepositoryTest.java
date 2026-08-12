@@ -50,7 +50,6 @@ class JwtServerSecurityContextRepositoryTest {
     void should_returnPopulatedContext_when_validBearerToken() {
         doNothing().when(jwtTokenProvider).validateToken("valid.jwt");
         when(jwtTokenProvider.extractUsername("valid.jwt")).thenReturn("alice");
-        when(jwtTokenProvider.extractRoles("valid.jwt")).thenReturn(List.of("ROLE_USER"));
 
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/v1/users/1")
@@ -62,9 +61,7 @@ class JwtServerSecurityContextRepositoryTest {
         assertThat(context).isNotNull();
         assertThat(context.getAuthentication()).isInstanceOf(UsernamePasswordAuthenticationToken.class);
         assertThat(context.getAuthentication().getName()).isEqualTo("alice");
-        assertThat(context.getAuthentication().getAuthorities())
-                .extracting("authority")
-                .containsExactly("ROLE_USER");
+        assertThat(context.getAuthentication().getAuthorities()).isEmpty();
     }
 
     @Test
@@ -107,26 +104,6 @@ class JwtServerSecurityContextRepositoryTest {
         var result = repository.load(exchange).blockOptional();
 
         assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("load() grants multiple roles when JWT contains several role claims")
-    void should_returnContextWithMultipleRoles_when_tokenHasMultipleRoles() {
-        doNothing().when(jwtTokenProvider).validateToken("multi.jwt");
-        when(jwtTokenProvider.extractUsername("multi.jwt")).thenReturn("admin");
-        when(jwtTokenProvider.extractRoles("multi.jwt")).thenReturn(List.of("ROLE_USER", "ROLE_ADMIN"));
-
-        var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/v1/users/1")
-                        .header("Authorization", "Bearer multi.jwt")
-                        .build());
-
-        var context = repository.load(exchange).block();
-
-        assertThat(context).isNotNull();
-        assertThat(context.getAuthentication().getAuthorities())
-                .extracting("authority")
-                .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN");
     }
 
     @Test

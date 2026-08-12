@@ -2,28 +2,30 @@ package local.pms.notificationservice.service.impl;
 
 import local.pms.notificationservice.service.TokenService;
 
-import lombok.AccessLevel;
-
-import lombok.experimental.FieldDefaults;
-
 import org.springframework.stereotype.Service;
 
 /**
- * Simple in-memory holder for the JWT bearer token for the duration of each request.
+ * Holds the current request's JWT bearer token in a {@link ThreadLocal} rather than a plain
+ * field: this bean is a singleton, and a plain field would be shared mutable state across every
+ * request thread, letting one in-flight request's token leak into or overwrite another's.
  */
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TokenServiceImpl implements TokenService {
 
-    String token;
+    private final ThreadLocal<String> token = new ThreadLocal<>();
 
     @Override
     public void setToken(String token) {
-        this.token = token;
+        this.token.set(token);
     }
 
     @Override
     public String getToken() {
-        return token;
+        return token.get();
+    }
+
+    @Override
+    public void clear() {
+        token.remove();
     }
 }

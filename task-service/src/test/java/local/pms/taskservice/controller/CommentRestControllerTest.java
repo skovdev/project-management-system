@@ -24,8 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
-import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.context.annotation.Import;
 
 import org.springframework.data.domain.PageImpl;
@@ -33,7 +31,7 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -69,21 +67,19 @@ class CommentRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private CommentService commentService;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private TokenService tokenService;
 
     @BeforeEach
     void setUpJwtMocksAsUser() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test

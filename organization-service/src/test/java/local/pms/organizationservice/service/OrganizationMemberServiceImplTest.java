@@ -127,7 +127,7 @@ class OrganizationMemberServiceImplTest {
         when(organizationAccessGuard.getAuthenticatedUserId()).thenReturn(authUserId);
         when(organizationAccessGuard.requireMembership(organizationId, authUserId)).thenReturn(callerMember);
         doThrow(new OrganizationAccessDeniedException("Access denied"))
-                .when(organizationAccessGuard).requireRole(organizationId, callerMember, OrganizationRoleType.OWNER, OrganizationRoleType.ADMIN);
+                .when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
 
         assertThatThrownBy(() -> organizationMemberService.addMember(organizationId, new AddMemberRequestDto(UUID.randomUUID(), OrganizationRoleType.MEMBER)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
@@ -223,7 +223,7 @@ class OrganizationMemberServiceImplTest {
         when(organizationAccessGuard.getAuthenticatedUserId()).thenReturn(authUserId);
         when(organizationAccessGuard.requireMembership(organizationId, authUserId)).thenReturn(callerMember);
         doThrow(new OrganizationAccessDeniedException("Access denied"))
-                .when(organizationAccessGuard).requireRole(organizationId, callerMember, OrganizationRoleType.OWNER);
+                .when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.OWNER);
 
         assertThatThrownBy(() -> organizationMemberService.updateRole(organizationId, memberId, new UpdateMemberRoleRequestDto(OrganizationRoleType.MEMBER)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
@@ -307,7 +307,7 @@ class OrganizationMemberServiceImplTest {
         organizationMemberService.removeMember(organizationId, memberId);
 
         verify(organizationMemberRepository).deleteById(memberId);
-        verify(organizationAccessGuard, never()).requireRole(any(), any(), any());
+        verify(organizationAccessGuard, never()).requireAtLeast(any(), any(), any());
     }
 
     @Test
@@ -325,7 +325,7 @@ class OrganizationMemberServiceImplTest {
         when(organizationAccessGuard.requireMembership(organizationId, authUserId)).thenReturn(callerMember);
         when(organizationMemberRepository.findByIdAndOrganizationId(memberId, organizationId)).thenReturn(Optional.of(targetMember));
         doThrow(new OrganizationAccessDeniedException("Access denied"))
-                .when(organizationAccessGuard).requireRole(organizationId, callerMember, OrganizationRoleType.OWNER, OrganizationRoleType.ADMIN);
+                .when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
 
         assertThatThrownBy(() -> organizationMemberService.removeMember(organizationId, memberId))
                 .isInstanceOf(OrganizationAccessDeniedException.class);

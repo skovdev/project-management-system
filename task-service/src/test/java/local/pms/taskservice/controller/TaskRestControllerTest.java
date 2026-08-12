@@ -26,8 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
-import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.context.annotation.Import;
 
 import org.springframework.data.domain.PageImpl;
@@ -35,7 +33,7 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -70,21 +68,19 @@ class TaskRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private TaskService taskService;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private TokenService tokenService;
 
     @BeforeEach
     void setUpJwtMocksAsUser() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test
@@ -107,7 +103,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank title returns 400")
     void should_return400_when_createWithBlankTitle() throws Exception {
         var body = new TaskDto(null, "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -120,7 +116,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank description returns 400")
     void should_return400_when_createWithBlankDescription() throws Exception {
         var body = new TaskDto(null, "My Task", "", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -133,7 +129,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank projectId returns 400")
     void should_return400_when_createWithBlankProjectId() throws Exception {
         var body = new TaskDto(null, "My Task", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, "", null, null);
+                TaskPriorityType.MEDIUM, true, "", null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -168,6 +164,19 @@ class TaskRestControllerTest {
     void should_return401_when_findAllWithoutToken() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /tasks?projectId=... returns 200 with tasks scoped to the project")
+    void should_return200_when_findAllByProject() throws Exception {
+        var projectId = UUID.randomUUID();
+        var dto = buildTaskDto(UUID.randomUUID().toString());
+        var page = new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1);
+        when(taskService.findAllByProject(eq(projectId), any())).thenReturn(page);
+
+        mockMvc.perform(get(BASE_URL).param("projectId", projectId.toString()).header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("My Task"));
     }
 
 
@@ -221,7 +230,7 @@ class TaskRestControllerTest {
     void should_return400_when_updateWithBlankTitle() throws Exception {
         var id = UUID.randomUUID();
         var body = new TaskDto(id.toString(), "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
 
         mockMvc.perform(put(BASE_URL + "/" + id)
                         .header("Authorization", BEARER)
@@ -273,8 +282,6 @@ class TaskRestControllerTest {
     @DisplayName("DELETE /tasks/{id} with ADMIN role returns 200")
     void should_return200_when_deleteWithAdminRole() throws Exception {
         var id = UUID.randomUUID();
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         doNothing().when(taskService).delete(id);
 
         mockMvc.perform(delete(BASE_URL + "/" + id).header("Authorization", BEARER))
@@ -283,9 +290,24 @@ class TaskRestControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /tasks/{id} with USER role returns 403")
-    void should_return403_when_deleteWithUserRole() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/" + UUID.randomUUID()).header("Authorization", BEARER))
+    @DisplayName("DELETE /tasks/{id} with USER role returns 200 (regression: endpoint must be reachable by a plain USER)")
+    void should_return200_when_deleteWithUserRole() throws Exception {
+        var id = UUID.randomUUID();
+        doNothing().when(taskService).delete(id);
+
+        mockMvc.perform(delete(BASE_URL + "/" + id).header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200));
+    }
+
+    @Test
+    @DisplayName("DELETE /tasks/{id} with USER role who lacks edit access returns 403")
+    void should_return403_when_deleteAccessDenied() throws Exception {
+        var id = UUID.randomUUID();
+        doThrow(new TaskAccessDeniedException("Access denied: you do not have sufficient permissions for task with ID " + id))
+                .when(taskService).delete(id);
+
+        mockMvc.perform(delete(BASE_URL + "/" + id).header("Authorization", BEARER))
                 .andExpect(status().isForbidden());
     }
 
@@ -293,8 +315,6 @@ class TaskRestControllerTest {
     @DisplayName("DELETE /tasks/{id} when task not found returns 404")
     void should_return404_when_deleteNotFound() throws Exception {
         var id = UUID.randomUUID();
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         doThrow(new TaskNotFoundException("Task with ID " + id + " not found"))
                 .when(taskService).delete(id);
 
@@ -376,6 +396,7 @@ class TaskRestControllerTest {
                 TaskPriorityType.MEDIUM,
                 true,
                 UUID.randomUUID().toString(),
+                null,
                 null,
                 null
         );

@@ -50,7 +50,7 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
     public OrganizationMemberDto addMember(UUID organizationId, AddMemberRequestDto request) {
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var organizationMember = organizationAccessGuard.requireMembership(organizationId, authUserId);
-        organizationAccessGuard.requireRole(organizationId, organizationMember, OrganizationRoleType.OWNER, OrganizationRoleType.ADMIN);
+        organizationAccessGuard.requireAtLeast(organizationId, organizationMember, OrganizationRoleType.ADMIN);
 
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> {
@@ -84,7 +84,7 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
     public OrganizationMemberDto updateRole(UUID organizationId, UUID memberId, UpdateMemberRoleRequestDto request) {
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var callerMember = organizationAccessGuard.requireMembership(organizationId, authUserId);
-        organizationAccessGuard.requireRole(organizationId, callerMember, OrganizationRoleType.OWNER);
+        organizationAccessGuard.requireAtLeast(organizationId, callerMember, OrganizationRoleType.OWNER);
 
         var targetMember = findMemberOrThrow(organizationId, memberId);
 
@@ -110,7 +110,7 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
 
         boolean isSelfRemoval = targetMember.getUserId().equals(authUserId);
         if (!isSelfRemoval) {
-            organizationAccessGuard.requireRole(organizationId, callerMember, OrganizationRoleType.OWNER, OrganizationRoleType.ADMIN);
+            organizationAccessGuard.requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
         }
 
         if (targetMember.getRole() == OrganizationRoleType.OWNER

@@ -155,11 +155,7 @@ public class UserServiceImpl implements UserService {
         String token = tokenService.getToken();
         UUID tokenAuthUserId = jwtTokenProvider.extractAuthUserId(token);
         if (!user.getAuthUserId().equals(tokenAuthUserId)) {
-            boolean isAdmin = jwtTokenProvider.extractRoles(token).stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-            if (!isAdmin) {
-                throw new UserAccessDeniedException("Access denied to user with id '" + user.getId() + "'");
-            }
+            throw new UserAccessDeniedException("Access denied to user with id '" + user.getId() + "'");
         }
     }
 }

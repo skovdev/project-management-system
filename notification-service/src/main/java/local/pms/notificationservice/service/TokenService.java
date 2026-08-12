@@ -18,4 +18,9 @@ public interface TokenService {
      * @return the bearer token, or {@code null} if not yet set
      */
     String getToken();
+
+    /**
+     * Clears the token stored for the current request thread.
+     */
+    void clear();
 }

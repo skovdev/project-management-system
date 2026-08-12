@@ -25,8 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
-import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.context.annotation.Import;
 
 import org.springframework.data.domain.PageImpl;
@@ -34,7 +32,7 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -70,21 +68,19 @@ class ProjectRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private ProjectService projectService;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private TokenService tokenService;
 
     @BeforeEach
     void setUpJwtMocksAsUser() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test
@@ -375,6 +371,47 @@ class ProjectRestControllerTest {
         mockMvc.perform(post(BASE_URL + "/" + UUID.randomUUID() + "/description")
                         .param("organizationId", UUID.randomUUID().toString())
                         .param("projectTitle", "My Project"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /projects/{id}/organization-id returns 200 with the organizationId")
+    void should_return200_when_findOrganizationIdByProjectIdSucceeds() throws Exception {
+        var id = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        when(projectService.findOrganizationIdByProjectId(id)).thenReturn(organizationId);
+
+        mockMvc.perform(get(BASE_URL + "/" + id + "/organization-id").header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.organizationId").value(organizationId.toString()));
+    }
+
+    @Test
+    @DisplayName("GET /projects/{id}/organization-id when project not found returns 404")
+    void should_return404_when_findOrganizationIdByProjectIdNotFound() throws Exception {
+        var id = UUID.randomUUID();
+        when(projectService.findOrganizationIdByProjectId(id))
+                .thenThrow(new ProjectNotFoundException("Project with ID " + id + " not found"));
+
+        mockMvc.perform(get(BASE_URL + "/" + id + "/organization-id").header("Authorization", BEARER))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /projects/{id}/organization-id when caller is not a member returns 403")
+    void should_return403_when_findOrganizationIdByProjectIdAccessDenied() throws Exception {
+        var id = UUID.randomUUID();
+        when(projectService.findOrganizationIdByProjectId(id))
+                .thenThrow(new ProjectAccessDeniedException("Access denied"));
+
+        mockMvc.perform(get(BASE_URL + "/" + id + "/organization-id").header("Authorization", BEARER))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /projects/{id}/organization-id without token returns 401")
+    void should_return401_when_findOrganizationIdByProjectIdWithoutToken() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + UUID.randomUUID() + "/organization-id"))
                 .andExpect(status().isUnauthorized());
     }
 

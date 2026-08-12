@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import local.pms.projectservice.dto.ProjectDto;
+import local.pms.projectservice.dto.ProjectOrganizationDto;
 
 import local.pms.projectservice.dto.api.response.ApiResponseDto;
 
@@ -25,8 +26,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
-
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.validation.Valid;
 
@@ -61,7 +60,6 @@ public class ProjectRestController {
             @ApiResponse(responseCode = "500", description = "Error occurred while creating project"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<ProjectDto> create(@Parameter(description = "Project data to create a new project")
                                              @Valid @RequestBody ProjectDto projectDto) {
@@ -77,7 +75,6 @@ public class ProjectRestController {
             }),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<ProjectDto> findAll(@Parameter(description = "Organization identifier to scope the list to")
                                     @RequestParam(name = "organizationId") UUID organizationId,
@@ -93,7 +90,6 @@ public class ProjectRestController {
             @ApiResponse(responseCode = "404", description = "Project not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<ProjectDto> findById(@Parameter(description = "Project identifier to retrieve details")
                                                @PathVariable(name = "projectId") UUID projectId,
@@ -111,7 +107,6 @@ public class ProjectRestController {
             @ApiResponse(responseCode = "404", description = "Project not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<ProjectDto> update(@Parameter(description = "Project identifier to update")
                                              @PathVariable(name = "projectId") UUID projectId,
@@ -126,7 +121,6 @@ public class ProjectRestController {
             @ApiResponse(responseCode = "404", description = "Project not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(@Parameter(description = "Project identifier to delete")
                                        @PathVariable(name = "projectId") UUID projectId,
@@ -146,7 +140,6 @@ public class ProjectRestController {
             @ApiResponse(responseCode = "500", description = "Error occurred while generating project description"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(value = "/{projectId}/description", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<String> generateProjectDescription(@Parameter(description = "Project identifier to generate project description")
                                                              @PathVariable(name = "projectId") UUID projectId,
@@ -155,5 +148,22 @@ public class ProjectRestController {
                                                              @Parameter(description = "Project title to generate project description")
                                                              @RequestParam(name = "projectTitle") String projectTitle) {
         return ApiResponseDto.buildSuccessResponse(projectService.generateProjectDescription(projectId, organizationId, projectTitle));
+    }
+
+    @Operation(
+            summary = "Resolve the organization a project belongs to",
+            description = "Used by other services to derive organizationId from a projectId. The caller must be a member of the project's organization")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Organization identifier resolved successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProjectOrganizationDto.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the project's organization"),
+            @ApiResponse(responseCode = "404", description = "Project not found")
+    })
+    @GetMapping(value = "/{projectId}/organization-id", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<ProjectOrganizationDto> findOrganizationIdByProjectId(@Parameter(description = "Project identifier to resolve the organization for")
+                                                                                @PathVariable(name = "projectId") UUID projectId) {
+        return ApiResponseDto.buildSuccessResponse(
+                new ProjectOrganizationDto(projectService.findOrganizationIdByProjectId(projectId)));
     }
 }

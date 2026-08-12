@@ -26,7 +26,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Base64;
 
 @Slf4j
@@ -66,15 +65,6 @@ public class JwtTokenProvider {
 
     public String extractUsername(String token) {
         return extractClaims(token).get("username", String.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    public List<String> extractRoles(String token) {
-        var roles = extractClaims(token).get("roles");
-        if (roles instanceof List<?> list) {
-            return (List<String>) list;
-        }
-        return List.of();
     }
 
     private Claims extractClaims(String token) {

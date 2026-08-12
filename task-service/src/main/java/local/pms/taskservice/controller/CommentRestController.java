@@ -32,8 +32,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,16 +57,16 @@ public class CommentRestController {
 
     final CommentService commentService;
 
-    @Operation(summary = "Create a new comment on a task")
+    @Operation(summary = "Create a new comment on a task", description = "The caller must be a member of the task's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Comment created successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommentDto.class))
             }),
             @ApiResponse(responseCode = "400", description = "Invalid comment data provided"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the task's organization"),
             @ApiResponse(responseCode = "404", description = "Task not found")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<CommentDto> create(
             @Parameter(description = "Task identifier to comment on") @PathVariable UUID taskId,
@@ -78,15 +76,16 @@ public class CommentRestController {
 
     @Operation(
             summary = "Find all comments for a task",
-            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=createdAt,desc)")
+            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=createdAt,desc). " +
+                          "The caller must be a member of the task's organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of comments", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommentDto.class))
             }),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the task's organization"),
             @ApiResponse(responseCode = "404", description = "Task not found")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<CommentDto> findAll(
             @Parameter(description = "Task identifier") @PathVariable UUID taskId,
@@ -94,17 +93,16 @@ public class CommentRestController {
         return commentService.findAll(taskId, pageable);
     }
 
-    @Operation(summary = "Update an existing comment (author only)")
+    @Operation(summary = "Update an existing comment (author only)", description = "The caller must be a member of the task's organization and the comment's author")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Comment updated successfully", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommentDto.class))
             }),
             @ApiResponse(responseCode = "400", description = "Invalid comment data provided"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Access denied — not the comment author"),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the task's organization, or not the comment author"),
             @ApiResponse(responseCode = "404", description = "Task or comment not found")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{commentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<CommentDto> update(
             @Parameter(description = "Task identifier") @PathVariable UUID taskId,
@@ -113,14 +111,13 @@ public class CommentRestController {
         return ApiResponseDto.buildSuccessResponse(commentService.update(taskId, commentId, dto));
     }
 
-    @Operation(summary = "Delete a comment (author or ADMIN)")
+    @Operation(summary = "Delete a comment (author or organization OWNER/ADMIN)", description = "The caller must be a member of the task's organization, and either the comment's author or an OWNER/ADMIN of the organization")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Comment deleted successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Access denied — not the comment author"),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the task's organization, or neither the comment author nor an organization OWNER/ADMIN"),
             @ApiResponse(responseCode = "404", description = "Task or comment not found")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{commentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(
             @Parameter(description = "Task identifier") @PathVariable UUID taskId,
