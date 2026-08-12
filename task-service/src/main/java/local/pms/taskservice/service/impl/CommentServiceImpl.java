@@ -14,6 +14,8 @@ import local.pms.taskservice.exception.CommentNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
 import local.pms.taskservice.exception.CommentAccessDeniedException;
 
+import local.pms.taskservice.external.organization.provider.OrganizationAccessProvider;
+
 import local.pms.taskservice.mapping.CommentMapping;
 
 import local.pms.taskservice.repository.TaskRepository;
@@ -21,6 +23,8 @@ import local.pms.taskservice.repository.CommentRepository;
 
 import local.pms.taskservice.service.TokenService;
 import local.pms.taskservice.service.CommentService;
+
+import local.pms.taskservice.type.OrganizationRoleType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,8 +35,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.stereotype.Service;
 
@@ -48,7 +50,6 @@ import java.util.UUID;
 public class CommentServiceImpl implements CommentService {
 
     private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
-    private static final String ROLE_ADMIN = "ROLE_ADMIN";
 
     private final CommentMapping commentMapping;
     private final CommentRepository commentRepository;
@@ -56,6 +57,8 @@ public class CommentServiceImpl implements CommentService {
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicationEventPublisher eventPublisher;
+    private final OrganizationAccessProvider organizationAccessProvider;
+    private final TaskOrganizationResolver taskOrganizationResolver;
 
     /**
      * {@inheritDoc}
@@ -63,7 +66,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto create(UUID taskId, CommentRequestDto dto) {
-        verifyTaskExists(taskId);
+        verifyTaskAccess(taskId);
         var authorId = extractAuthUserId();
 
         var comment = new Comment();
@@ -86,7 +89,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public Page<CommentDto> findAll(UUID taskId, Pageable pageable) {
-        verifyTaskExists(taskId);
+        verifyTaskAccess(taskId);
         return commentRepository.findAllByTaskId(taskId, pageable)
                 .map(commentMapping::toDto);
     }
@@ -97,7 +100,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto update(UUID taskId, UUID commentId, CommentRequestDto dto) {
-        verifyTaskExists(taskId);
+        verifyTaskAccess(taskId);
         var authorId = extractAuthUserId();
 
         var comment = resolveCommentForAuthor(commentId, taskId, authorId);
@@ -113,22 +116,23 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void delete(UUID taskId, UUID commentId) {
-        verifyTaskExists(taskId);
+        var role = verifyTaskAccess(taskId);
+        var authorId = extractAuthUserId();
 
-        if (isAdmin()) {
+        if (role.isAtLeast(OrganizationRoleType.ADMIN)) {
             var comment = commentRepository.findByIdAndTaskId(commentId, taskId)
                     .orElseThrow(() -> {
-                        log.error("Comment {} not found on task {} for admin delete.", commentId, taskId);
+                        log.error("Comment {} not found on task {}.", commentId, taskId);
                         return new CommentNotFoundException("Comment with ID " + commentId + " not found on task " + taskId);
                     });
             commentRepository.deleteById(comment.getId());
-            log.info("Comment with ID: {} on task {} deleted by ADMIN.", commentId, taskId);
-        } else {
-            var authorId = extractAuthUserId();
-            var comment = resolveCommentForAuthor(commentId, taskId, authorId);
-            commentRepository.deleteById(comment.getId());
-            log.info("Comment with ID: {} on task {} deleted by authorId: {}", commentId, taskId, authorId);
+            log.info("Comment with ID: {} on task {} deleted by organization {} authorId: {}", commentId, taskId, role, authorId);
+            return;
         }
+
+        var comment = resolveCommentForAuthor(commentId, taskId, authorId);
+        commentRepository.deleteById(comment.getId());
+        log.info("Comment with ID: {} on task {} deleted by authorId: {}", commentId, taskId, authorId);
     }
 
     private Comment resolveCommentForAuthor(UUID commentId, UUID taskId, UUID authorId) {
@@ -141,11 +145,13 @@ public class CommentServiceImpl implements CommentService {
                 });
     }
 
-    private void verifyTaskExists(UUID taskId) {
-        if (!taskRepository.existsById(taskId)) {
-            log.error("Task with ID {} not found.", taskId);
-            throw new TaskNotFoundException("Task with ID " + taskId + " not found. Please provide a valid task ID");
-        }
+    private OrganizationRoleType verifyTaskAccess(UUID taskId) {
+        var task = taskRepository.findById(taskId)
+                .orElseThrow(() -> {
+                    log.error("Task with ID {} not found.", taskId);
+                    return new TaskNotFoundException("Task with ID " + taskId + " not found. Please provide a valid task ID");
+                });
+        return organizationAccessProvider.verifyMembership(taskOrganizationResolver.resolve(task));
     }
 
     private UUID extractAuthUserId() {
@@ -154,11 +160,5 @@ public class CommentServiceImpl implements CommentService {
             throw new TaskAccessDeniedException("Access denied: missing or invalid authentication token");
         }
         return jwtTokenProvider.extractAuthUserId(tokenService.getToken());
-    }
-
-    private boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                .stream()
-                .anyMatch(a -> a.getAuthority().equals(ROLE_ADMIN));
     }
 }

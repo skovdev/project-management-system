@@ -52,11 +52,9 @@ public class OrganizationAccessGuard {
                 });
     }
 
-    public void requireRole(UUID organizationId, OrganizationMember member, OrganizationRoleType... allowedRoles) {
-        for (OrganizationRoleType allowed : allowedRoles) {
-            if (member.getRole() == allowed) {
-                return;
-            }
+    public void requireAtLeast(UUID organizationId, OrganizationMember member, OrganizationRoleType minimumRole) {
+        if (member.getRole().isAtLeast(minimumRole)) {
+            return;
         }
         log.error("User {} with role {} attempted a restricted action on organization {}.",
                 member.getUserId(), member.getRole(), organizationId);

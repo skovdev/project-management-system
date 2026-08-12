@@ -28,8 +28,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PutMapping;
@@ -37,6 +35,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +62,6 @@ public class TaskRestController {
             @ApiResponse(responseCode = "500", description = "Error occurred while creating task"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<TaskDto> create(@Parameter(description = "Task data to create a new task")
                                           @Valid @RequestBody TaskDto taskDto) {
@@ -72,16 +70,20 @@ public class TaskRestController {
 
     @Operation(
             summary = "Find all tasks",
-            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc)")
+            description = "Pagination params: page (0-based), size. Sorting: sort=field,asc|desc (e.g., sort=id,asc). " +
+                          "When projectId is provided, returns all tasks in that project (caller must be a member " +
+                          "of the project's organization); otherwise returns only the caller's own tasks.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of tasks", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TaskDto.class))
-            })
+            }),
+            @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Page<TaskDto> findAll(@ParameterObject Pageable pageable) {
-        return taskService.findAll(pageable);
+    public Page<TaskDto> findAll(@Parameter(description = "Project identifier to scope the list to")
+                                 @RequestParam(name = "projectId", required = false) UUID projectId,
+                                 @ParameterObject Pageable pageable) {
+        return projectId != null ? taskService.findAllByProject(projectId, pageable) : taskService.findAll(pageable);
     }
 
     @Operation(summary = "Find a task by task identifier")
@@ -92,7 +94,6 @@ public class TaskRestController {
             @ApiResponse(responseCode = "404", description = "Task not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<TaskDto> findById(@Parameter(description = "Task identifier to retrieve details")
                                             @PathVariable(name = "taskId") UUID taskId) {
@@ -108,7 +109,6 @@ public class TaskRestController {
             @ApiResponse(responseCode = "404", description = "Task not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<TaskDto> update(@Parameter(description = "Task identifier to update")
                                           @PathVariable(name = "taskId") UUID taskId,
@@ -123,7 +123,6 @@ public class TaskRestController {
             @ApiResponse(responseCode = "404", description = "Task not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping(value = "/{taskId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(@Parameter(description = "Task identifier to delete")
                                        @PathVariable(name = "taskId") UUID taskId) {
@@ -144,7 +143,6 @@ public class TaskRestController {
             @ApiResponse(responseCode = "403", description = "Access denied"),
             @ApiResponse(responseCode = "500", description = "Error occurred while generating acceptance criteria")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(value = "/{taskId}/acceptance-criteria", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<String> generateAcceptanceCriteria(
             @Parameter(description = "Task identifier for which to generate acceptance criteria")

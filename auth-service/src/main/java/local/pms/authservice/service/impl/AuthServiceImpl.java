@@ -5,13 +5,9 @@ import local.pms.authservice.config.jwt.JwtTokenProvider;
 import local.pms.authservice.dto.SignUpDto;
 
 import local.pms.authservice.dto.authuser.AuthUserDto;
-import local.pms.authservice.dto.authuser.AuthRoleDto;
 import local.pms.authservice.dto.authuser.UserDetailsDto;
-import local.pms.authservice.dto.authuser.AuthPermissionDto;
 
 import local.pms.authservice.entity.AuthUser;
-import local.pms.authservice.entity.AuthRole;
-import local.pms.authservice.entity.AuthPermission;
 
 import local.pms.authservice.event.UserDetailsCreatedEvent;
 import local.pms.authservice.event.UserDetailsDeletedEvent;
@@ -49,13 +45,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.List;
 import java.util.HashMap;
 import java.util.Optional;
 
 import java.util.UUID;
-
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -63,12 +56,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    static final String ROLE_USER = "USER";
-    static final String READ_ALL = "READ_ALL";
     static final String AUTH_USER_ID_KEY = "authUserId";
     static final String USERNAME_KEY = "username";
-    static final String ROLES_KEY = "roles";
-    static final String PERMISSIONS_KEY = "permissions";
 
     final AuthUserMapper authUserMapper = AuthUserMapper.INSTANCE;
 
@@ -99,12 +88,6 @@ public class AuthServiceImpl implements AuthService {
         try {
 
             AuthUser authUser = buildAuthUser(signUpDto);
-            AuthRole authRole = buildAuthRole(authUser);
-
-            AuthPermission authPermission = buildAuthPermission(authUser);
-
-            authUser.setAuthRoles(List.of(authRole));
-            authUser.setAuthPermissions(List.of(authPermission));
 
             authUserRepository.save(authUser);
 
@@ -127,20 +110,6 @@ public class AuthServiceImpl implements AuthService {
         authUser.setUsername(signUpDto.username());
         authUser.setPassword(passwordEncoder.encode(signUpDto.password()));
         return authUser;
-    }
-
-    private AuthRole buildAuthRole(AuthUser authUser) {
-        AuthRole authRole = new AuthRole();
-        authRole.setAuthority(ROLE_USER);
-        authRole.setAuthUser(authUser);
-        return authRole;
-    }
-
-    private AuthPermission buildAuthPermission(AuthUser authUser) {
-        AuthPermission authPermission = new AuthPermission();
-        authPermission.setPermission(READ_ALL);
-        authPermission.setAuthUser(authUser);
-        return authPermission;
     }
 
     private UserDetailsDto fillUserDetailsDto(SignUpDto signUpDto, UUID authUserId) {
@@ -166,21 +135,7 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> data = new HashMap<>();
         data.put(AUTH_USER_ID_KEY, authUserDto.id());
         data.put(USERNAME_KEY, authUserDto.username());
-        data.put(ROLES_KEY, getRoles(authUserDto.authRoles()));
-        data.put(PERMISSIONS_KEY, getPermissions(authUserDto.authPermissions()));
         return data;
-    }
-
-    private List<String> getRoles(List<AuthRoleDto> authRoles) {
-        return authRoles.stream()
-                .map(AuthRoleDto::authority)
-                .collect(Collectors.toList());
-    }
-
-    private List<String> getPermissions(List<AuthPermissionDto> authPermissions) {
-        return authPermissions.stream()
-                .map(AuthPermissionDto::permission)
-                .collect(Collectors.toList());
     }
 
     @Override

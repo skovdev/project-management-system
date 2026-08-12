@@ -19,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +52,6 @@ public class ProjectAiRestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT token"),
             @ApiResponse(responseCode = "500", description = "Failed to communicate with AI model")
     })
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/description")
     public ApiResponseDto<String> generateProjectDescription(@Valid @RequestBody ProjectDescriptionRequestDto request) {
         log.info("Received project-description generation request for title='{}'", request.title());

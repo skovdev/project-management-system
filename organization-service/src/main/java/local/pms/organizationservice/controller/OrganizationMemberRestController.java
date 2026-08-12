@@ -28,8 +28,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,7 +60,6 @@ public class OrganizationMemberRestController {
             }),
             @ApiResponse(responseCode = "404", description = "Organization not found or caller is not a member")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationMemberDto> getMyMembership(@Parameter(description = "Organization identifier")
                                                                  @PathVariable(name = "organizationId") UUID organizationId) {
@@ -79,7 +76,6 @@ public class OrganizationMemberRestController {
             @ApiResponse(responseCode = "409", description = "User is already a member"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationMemberDto> addMember(@Parameter(description = "Organization identifier")
                                                            @PathVariable(name = "organizationId") UUID organizationId,
@@ -98,7 +94,6 @@ public class OrganizationMemberRestController {
             @ApiResponse(responseCode = "404", description = "Organization not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<OrganizationMemberDto> findAll(@Parameter(description = "Organization identifier")
                                                @PathVariable(name = "organizationId") UUID organizationId,
@@ -115,7 +110,6 @@ public class OrganizationMemberRestController {
             @ApiResponse(responseCode = "404", description = "Organization or member not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{memberId}/role", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationMemberDto> updateRole(@Parameter(description = "Organization identifier")
                                                              @PathVariable(name = "organizationId") UUID organizationId,
@@ -133,7 +127,6 @@ public class OrganizationMemberRestController {
             @ApiResponse(responseCode = "404", description = "Organization or member not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{memberId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> removeMember(@Parameter(description = "Organization identifier")
                                              @PathVariable(name = "organizationId") UUID organizationId,

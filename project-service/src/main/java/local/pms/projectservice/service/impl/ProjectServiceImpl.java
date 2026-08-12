@@ -151,6 +151,19 @@ public class ProjectServiceImpl implements ProjectService {
         log.info("All projects deleted for organizationId: {}", organizationId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UUID findOrganizationIdByProjectId(UUID projectId) {
+        var organizationId = projectRepository.findById(projectId)
+                .map(Project::getOrganizationId)
+                .orElseThrow(() -> {
+                    log.error("Project with ID {} not found.", projectId);
+                    return new ProjectNotFoundException("Project with ID " + projectId + " not found. Please provide a valid project ID");
+                });
+        organizationAccessProvider.verifyMembership(organizationId);
+        return organizationId;
+    }
+
     private UUID extractAuthUserId() {
         if (tokenService.getToken() == null || tokenService.getToken().isBlank()) {
             log.error("JWT token is missing or blank, cannot extract auth user ID.");
@@ -161,7 +174,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private void requireCreatorRole(UUID organizationId) {
         var role = organizationAccessProvider.verifyMembership(organizationId);
-        if (role != OrganizationRoleType.OWNER && role != OrganizationRoleType.ADMIN) {
+        if (!role.isAtLeast(OrganizationRoleType.ADMIN)) {
             log.error("Caller with role {} attempted a restricted action on organization {}.", role, organizationId);
             throw new ProjectAccessDeniedException(
                     "Access denied: you do not have sufficient permissions in organization with ID " + organizationId);

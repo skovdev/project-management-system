@@ -13,8 +13,6 @@ import org.springframework.http.HttpHeaders;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 
@@ -25,6 +23,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -53,14 +53,10 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
         try {
             jwtTokenProvider.validateToken(token);
 
-            var authorities = jwtTokenProvider.extractRoles(token).stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .toList();
-
             var authentication = new UsernamePasswordAuthenticationToken(
                     jwtTokenProvider.extractUsername(token),
                     null,
-                    authorities
+                    List.of()
             );
 
             return Mono.just(new SecurityContextImpl(authentication));

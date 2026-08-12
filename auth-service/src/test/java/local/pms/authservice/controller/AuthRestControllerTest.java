@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import local.pms.authservice.config.jwt.JwtTokenProvider;
 
-import local.pms.authservice.dto.authuser.AuthRoleDto;
 import local.pms.authservice.dto.authuser.AuthUserDto;
-import local.pms.authservice.dto.authuser.AuthPermissionDto;
 
 import local.pms.authservice.exception.AuthUserNotFoundException;
 
@@ -31,7 +29,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 
@@ -199,11 +196,6 @@ class AuthRestControllerTest {
     }
 
     private AuthUserDto buildAuthUserDto(UUID id, String username) {
-        return new AuthUserDto(
-                id,
-                username,
-                "hashed",
-                List.of(new AuthRoleDto(UUID.randomUUID(), "USER", id)),
-                List.of(new AuthPermissionDto(UUID.randomUUID(), "READ_ALL", id)));
+        return new AuthUserDto(id, username, "hashed");
     }
 }

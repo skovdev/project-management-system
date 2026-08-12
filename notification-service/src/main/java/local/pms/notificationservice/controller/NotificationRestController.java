@@ -29,8 +29,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,7 +57,6 @@ public class NotificationRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NotificationDto.class))
             })
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<NotificationDto> findAll(@ParameterObject Pageable pageable) {
         return notificationService.findAll(pageable);
@@ -72,7 +69,6 @@ public class NotificationRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NotificationDto.class))
             })
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/unread", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<List<NotificationDto>> findUnread() {
         return ApiResponseDto.buildSuccessResponse(notificationService.findUnread());
@@ -86,7 +82,6 @@ public class NotificationRestController {
             @ApiResponse(responseCode = "404", description = "Notification not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{notificationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<NotificationDto> findById(
             @Parameter(description = "Notification identifier")
@@ -102,7 +97,6 @@ public class NotificationRestController {
             @ApiResponse(responseCode = "404", description = "Notification not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{notificationId}/read", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<NotificationDto> markAsRead(
             @Parameter(description = "Notification identifier to mark as read")
@@ -116,7 +110,6 @@ public class NotificationRestController {
             @ApiResponse(responseCode = "404", description = "Notification not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{notificationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(
             @Parameter(description = "Notification identifier to delete")

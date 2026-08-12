@@ -26,8 +26,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,7 +57,6 @@ public class OrganizationRestController {
             @ApiResponse(responseCode = "400", description = "Invalid organization data provided"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationDto> create(@Parameter(description = "Organization data to create a new organization")
                                                   @Valid @RequestBody OrganizationDto organizationDto) {
@@ -74,7 +71,6 @@ public class OrganizationRestController {
                     @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrganizationDto.class))
             }),
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<OrganizationDto> findAll(@ParameterObject Pageable pageable) {
         return organizationService.findAll(pageable);
@@ -88,7 +84,6 @@ public class OrganizationRestController {
             @ApiResponse(responseCode = "404", description = "Organization not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping(value = "/{organizationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationDto> findById(@Parameter(description = "Organization identifier to retrieve details")
                                                     @PathVariable(name = "organizationId") UUID organizationId) {
@@ -104,7 +99,6 @@ public class OrganizationRestController {
             @ApiResponse(responseCode = "404", description = "Organization not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping(value = "/{organizationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<OrganizationDto> update(@Parameter(description = "Organization identifier to update")
                                                   @PathVariable(name = "organizationId") UUID organizationId,
@@ -119,7 +113,6 @@ public class OrganizationRestController {
             @ApiResponse(responseCode = "404", description = "Organization not found"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @DeleteMapping(value = "/{organizationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponseDto<Void> delete(@Parameter(description = "Organization identifier to delete")
                                        @PathVariable(name = "organizationId") UUID organizationId) {

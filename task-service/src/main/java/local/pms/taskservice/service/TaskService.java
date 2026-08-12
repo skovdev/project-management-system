@@ -21,12 +21,22 @@ public interface TaskService {
     TaskDto create(TaskDto taskDto);
 
     /**
-     * Retrieves a paginated list of all tasks.
+     * Retrieves a paginated list of the caller's own tasks.
      *
      * @param pageable pagination and sorting parameters
      * @return a page of task DTOs
      */
     Page<TaskDto> findAll(Pageable pageable);
+
+    /**
+     * Retrieves a paginated list of all tasks belonging to a project.
+     * The caller must be a member of the project's organization.
+     *
+     * @param projectId the project identifier to scope the list to
+     * @param pageable  pagination and sorting parameters
+     * @return a page of task DTOs
+     */
+    Page<TaskDto> findAllByProject(UUID projectId, Pageable pageable);
 
     /**
      * Finds a task by its identifier.

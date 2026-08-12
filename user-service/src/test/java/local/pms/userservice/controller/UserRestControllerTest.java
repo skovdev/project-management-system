@@ -36,8 +36,6 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -84,8 +82,6 @@ class UserRestControllerTest {
     void setUpJwtMocks() {
         when(jwtTokenProvider.isTokenExpired(any())).thenReturn(false);
         when(jwtTokenProvider.extractUsername(any())).thenReturn("testuser");
-        when(jwtTokenProvider.extractAuthorities(any()))
-                .thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     @Test
