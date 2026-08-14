@@ -18,6 +18,13 @@
 -- Run is idempotent: ON CONFLICT (id) DO NOTHING
 -- =============================================================
 
+-- Guards against schema drift: this script runs on every task-service
+-- startup (SPRING_SQL_INIT_MODE=always) across multiple replicas, and
+-- Hibernate's ddl-auto=update has no cross-replica locking, so it can
+-- lag behind. Ensure the column this script writes to actually exists
+-- before inserting into it.
+ALTER TABLE project_management_system_task ADD COLUMN IF NOT EXISTS organization_id UUID;
+
 -- ---------------------------------------------------------------
 -- 1. Tasks  (one per project, one per user — respects unique constraints)
 -- ---------------------------------------------------------------
