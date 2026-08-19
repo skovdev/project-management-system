@@ -17,6 +17,7 @@ import { AuthTokenService } from '../../../services/auth-token.service';
 import { TaskDto } from '../../../models/task.model';
 import { CommentDto } from '../../../models/comment.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
+import { CommentItemComponent } from './comment-item/comment-item.component';
 
 @Component({
   selector: 'app-task-detail',
@@ -25,7 +26,8 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     CommonModule,
     FormsModule,
     MatCardModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatFormFieldModule, MatInputModule, MatPaginatorModule
+    MatFormFieldModule, MatInputModule, MatPaginatorModule,
+    CommentItemComponent
   ],
   templateUrl: './task-detail.component.html',
   styleUrl: './task-detail.component.css'
@@ -44,9 +46,6 @@ export class TaskDetailComponent implements OnInit {
 
   newCommentContent = '';
   submittingComment = false;
-
-  editingCommentId: string | null = null;
-  editingContent = '';
 
   currentUserId: string | null;
 
@@ -128,59 +127,6 @@ export class TaskDetailComponent implements OnInit {
         this.snackBar.open('Failed to post comment.', 'Close', { duration: 3000 });
       }
     });
-  }
-
-  startEdit(comment: CommentDto): void {
-    this.editingCommentId = comment.id;
-    this.editingContent = comment.content;
-  }
-
-  cancelEdit(): void {
-    this.editingCommentId = null;
-    this.editingContent = '';
-  }
-
-  saveEdit(comment: CommentDto): void {
-    const content = this.editingContent.trim();
-    if (!content) return;
-    this.commentService.updateComment(this.taskId, comment.id, { content }).subscribe({
-      next: (res) => {
-        comment.content = res.data.content;
-        comment.updatedAt = res.data.updatedAt;
-        this.cancelEdit();
-        this.snackBar.open('Comment updated.', 'Close', { duration: 3000 });
-      },
-      error: () => {
-        this.snackBar.open('Failed to update comment.', 'Close', { duration: 3000 });
-      }
-    });
-  }
-
-  deleteComment(commentId: string): void {
-    if (!confirm('Delete this comment?')) return;
-    this.commentService.deleteComment(this.taskId, commentId).subscribe({
-      next: () => {
-        this.snackBar.open('Comment deleted.', 'Close', { duration: 3000 });
-        if (this.comments.length === 1 && this.commentsPageIndex > 0) {
-          this.commentsPageIndex--;
-        }
-        this.loadComments();
-      },
-      error: (err) => {
-        const msg = err.status === 403
-          ? 'You can only delete your own comments.'
-          : 'Failed to delete comment.';
-        this.snackBar.open(msg, 'Close', { duration: 3000 });
-      }
-    });
-  }
-
-  isOwnComment(comment: CommentDto): boolean {
-    return !!this.currentUserId && comment.authorId === this.currentUserId;
-  }
-
-  shortId(id: string): string {
-    return id.slice(0, 8);
   }
 
   openEditDialog(): void {

@@ -34,6 +34,9 @@ public class Comment extends AbstractBaseModel {
     @Column(name = "author_id", nullable = false)
     private UUID authorId;
 
+    @Column(name = "parent_comment_id")
+    private UUID parentCommentId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
