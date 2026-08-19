@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 import static local.pms.taskservice.constant.VersionAPI.API_V1;
@@ -124,5 +125,26 @@ public class CommentRestController {
             @Parameter(description = "Comment identifier to delete") @PathVariable UUID commentId) {
         commentService.delete(taskId, commentId);
         return ApiResponseDto.buildSuccessResponse(null);
+    }
+
+    @Operation(
+            summary = "Generate AI reply suggestions for a comment",
+            description = "Uses AI to generate 3 concise, distinct reply suggestions for the given comment, based on the task " +
+                          "and recent thread context. The result is returned to the client and not persisted. " +
+                          "The caller must be a member of the task's organization")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reply suggestions generated successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = String.class, type = "array"))
+            }),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied — not a member of the task's organization"),
+            @ApiResponse(responseCode = "404", description = "Task or comment not found"),
+            @ApiResponse(responseCode = "500", description = "Error occurred while generating reply suggestions")
+    })
+    @PostMapping(value = "/{commentId}/suggestions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<List<String>> generateReplySuggestions(
+            @Parameter(description = "Task identifier") @PathVariable UUID taskId,
+            @Parameter(description = "Comment identifier to generate reply suggestions for") @PathVariable UUID commentId) {
+        return ApiResponseDto.buildSuccessResponse(commentService.generateReplySuggestions(taskId, commentId));
     }
 }

@@ -204,50 +204,13 @@
 
     <!-- Comment list -->
     <div *ngIf="!commentsLoading && comments.length > 0" class="comment-list">
-      <div *ngFor="let comment of comments" class="comment-item">
-
-        <div class="comment-header">
-          <div class="comment-author">
-            <div class="comment-avatar">{{ shortId(comment.authorId)[0].toUpperCase() }}</div>
-            <div class="comment-meta">
-              <span class="comment-author-id">{{ shortId(comment.authorId) }}…</span>
-              <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
-            </div>
-            <span *ngIf="comment.updatedAt !== comment.createdAt" class="comment-edited">(edited)</span>
-          </div>
-          <div class="comment-actions" *ngIf="isOwnComment(comment) && editingCommentId !== comment.id">
-            <button mat-icon-button title="Edit comment" (click)="startEdit(comment)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button title="Delete comment" (click)="deleteComment(comment.id)">
-              <mat-icon>delete_outline</mat-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- View mode -->
-        <p *ngIf="editingCommentId !== comment.id" class="comment-content">{{ comment.content }}</p>
-
-        <!-- Edit mode -->
-        <div *ngIf="editingCommentId === comment.id" class="comment-edit-area">
-          <mat-form-field appearance="outline" class="comment-field">
-            <textarea
-              matInput
-              [(ngModel)]="editingContent"
-              rows="3"
-              maxlength="2000">
-            </textarea>
-            <mat-hint align="end">{{ editingContent.length }} / 2000</mat-hint>
-          </mat-form-field>
-          <div class="comment-edit-actions">
-            <button mat-button (click)="cancelEdit()">Cancel</button>
-            <button mat-raised-button color="primary" [disabled]="!editingContent.trim()" (click)="saveEdit(comment)">
-              Save
-            </button>
-          </div>
-        </div>
-
-      </div>
+      <app-comment-item
+        *ngFor="let comment of comments"
+        [comment]="comment"
+        [taskId]="taskId"
+        [currentUserId]="currentUserId"
+        (changed)="loadComments()">
+      </app-comment-item>
     </div>
 
     <!-- Paginator -->

@@ -31,4 +31,8 @@ export class CommentService {
   deleteComment(taskId: string, commentId: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.baseUrl}/${taskId}/comments/${commentId}`);
   }
+
+  generateReplySuggestions(taskId: string, commentId: string): Observable<ApiResponse<string[]>> {
+    return this.http.post<ApiResponse<string[]>>(`${this.baseUrl}/${taskId}/comments/${commentId}/suggestions`, null);
+  }
 }

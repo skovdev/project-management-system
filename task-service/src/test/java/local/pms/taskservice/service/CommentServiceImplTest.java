@@ -15,6 +15,9 @@ import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.CommentNotFoundException;
 import local.pms.taskservice.exception.TaskAccessDeniedException;
 import local.pms.taskservice.exception.CommentAccessDeniedException;
+import local.pms.taskservice.exception.CommentSuggestionGenerationException;
+
+import local.pms.taskservice.external.ai.provider.AiExternalProvider;
 
 import local.pms.taskservice.external.organization.provider.OrganizationAccessProvider;
 
@@ -60,6 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
@@ -88,6 +92,9 @@ class CommentServiceImplTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AiExternalProvider aiExternalProvider;
 
     @Mock
     private OrganizationAccessProvider organizationAccessProvider;
@@ -194,7 +201,80 @@ class CommentServiceImplTest {
     }
 
     @Test
-    @DisplayName("findAll returns page of comments for the task")
+    @DisplayName("create attaches the comment to the given parentCommentId when replying to a top-level comment")
+    void should_setParentCommentId_when_createReplyingToTopLevelComment() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var parentId = UUID.randomUUID();
+        var parent = buildComment(parentId, taskId, authorId);
+        var dto = new CommentRequestDto(COMMENT_CONTENT, parentId);
+        var saved = buildComment(UUID.randomUUID(), taskId, authorId);
+        saved.setParentCommentId(parentId);
+        var expectedDto = buildCommentDto(saved.getId(), taskId, authorId);
+
+        stubToken(authorId);
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(parentId, taskId)).thenReturn(Optional.of(parent));
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+        when(commentMapping.toDto(saved)).thenReturn(expectedDto);
+
+        commentService.create(taskId, dto);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(captor.capture());
+        assertThat(captor.getValue().getParentCommentId()).isEqualTo(parentId);
+    }
+
+    @Test
+    @DisplayName("create flattens a reply-to-a-reply to the thread's root parent")
+    void should_flattenToRootParent_when_createReplyingToAReply() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var rootId = UUID.randomUUID();
+        var replyId = UUID.randomUUID();
+        var reply = buildComment(replyId, taskId, authorId);
+        reply.setParentCommentId(rootId);
+        var dto = new CommentRequestDto(COMMENT_CONTENT, replyId);
+        var saved = buildComment(UUID.randomUUID(), taskId, authorId);
+        var expectedDto = buildCommentDto(saved.getId(), taskId, authorId);
+
+        stubToken(authorId);
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(replyId, taskId)).thenReturn(Optional.of(reply));
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+        when(commentMapping.toDto(saved)).thenReturn(expectedDto);
+
+        commentService.create(taskId, dto);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(captor.capture());
+        assertThat(captor.getValue().getParentCommentId()).isEqualTo(rootId);
+    }
+
+    @Test
+    @DisplayName("create throws CommentNotFoundException when parentCommentId does not reference an existing comment on the task")
+    void should_throwCommentNotFoundException_when_createParentCommentMissing() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var parentId = UUID.randomUUID();
+        var dto = new CommentRequestDto(COMMENT_CONTENT, parentId);
+
+        stubToken(authorId);
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(parentId, taskId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.create(taskId, dto))
+                .isInstanceOf(CommentNotFoundException.class)
+                .hasMessageContaining(parentId.toString());
+
+        verify(commentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("findAll returns page of top-level comments for the task, with no replies")
     void should_returnPageOfComments_when_findAll() {
         var taskId = UUID.randomUUID();
         var organizationId = UUID.randomUUID();
@@ -206,7 +286,8 @@ class CommentServiceImplTest {
         var expectedDto = buildCommentDto(commentId, taskId, authorId);
 
         stubTaskAccess(taskId, organizationId);
-        when(commentRepository.findAllByTaskId(taskId, pageable)).thenReturn(page);
+        when(commentRepository.findAllByTaskIdAndParentCommentIdIsNull(taskId, pageable)).thenReturn(page);
+        when(commentRepository.findAllByParentCommentIdInOrderByCreatedAtAsc(List.of(commentId))).thenReturn(List.of());
         when(commentMapping.toDto(comment)).thenReturn(expectedDto);
 
         var result = commentService.findAll(taskId, pageable);
@@ -214,6 +295,48 @@ class CommentServiceImplTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).content()).isEqualTo(COMMENT_CONTENT);
         assertThat(result.getContent().get(0).taskId()).isEqualTo(taskId.toString());
+        assertThat(result.getContent().get(0).replies()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findAll attaches replies to their top-level parent, ordered oldest first, without paginating them")
+    void should_attachReplies_when_findAllTopLevelCommentHasReplies() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var parentId = UUID.randomUUID();
+        var replyId1 = UUID.randomUUID();
+        var replyId2 = UUID.randomUUID();
+        var pageable = PageRequest.of(0, 10);
+        var parent = buildComment(parentId, taskId, authorId);
+        var reply1 = buildComment(replyId1, taskId, authorId);
+        reply1.setParentCommentId(parentId);
+        var reply2 = buildComment(replyId2, taskId, authorId);
+        reply2.setParentCommentId(parentId);
+        var page = new PageImpl<>(List.of(parent), pageable, 1);
+        var parentDto = buildCommentDto(parentId, taskId, authorId);
+        // MapStruct's @Mapping(target = "replies", ignore = true) leaves replies null on the
+        // record it builds — mirror that here so the test actually exercises the .withReplies(...)
+        // fix-up in the service rather than a stub that already has replies populated.
+        var reply1Dto = buildCommentDto(replyId1, taskId, authorId).withReplies(null);
+        var reply2Dto = buildCommentDto(replyId2, taskId, authorId).withReplies(null);
+
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findAllByTaskIdAndParentCommentIdIsNull(taskId, pageable)).thenReturn(page);
+        when(commentRepository.findAllByParentCommentIdInOrderByCreatedAtAsc(List.of(parentId)))
+                .thenReturn(List.of(reply1, reply2));
+        when(commentMapping.toDto(parent)).thenReturn(parentDto);
+        when(commentMapping.toDto(reply1)).thenReturn(reply1Dto);
+        when(commentMapping.toDto(reply2)).thenReturn(reply2Dto);
+
+        var result = commentService.findAll(taskId, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).replies())
+                .extracting(CommentDto::id)
+                .containsExactly(replyId1.toString(), replyId2.toString());
+        assertThat(result.getContent().get(0).replies())
+                .allSatisfy(reply -> assertThat(reply.replies()).isNotNull().isEmpty());
     }
 
     @Test
@@ -225,12 +348,13 @@ class CommentServiceImplTest {
         var emptyPage = new PageImpl<Comment>(List.of(), pageable, 0);
 
         stubTaskAccess(taskId, organizationId);
-        when(commentRepository.findAllByTaskId(taskId, pageable)).thenReturn(emptyPage);
+        when(commentRepository.findAllByTaskIdAndParentCommentIdIsNull(taskId, pageable)).thenReturn(emptyPage);
 
         var result = commentService.findAll(taskId, pageable);
 
         assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
+        verify(commentRepository, never()).findAllByParentCommentIdInOrderByCreatedAtAsc(any());
     }
 
     @Test
@@ -484,6 +608,101 @@ class CommentServiceImplTest {
                 .hasMessageContaining(commentId.toString());
     }
 
+    @Test
+    @DisplayName("generateReplySuggestions returns AI-generated suggestions excluding the target comment from thread context")
+    void should_returnSuggestions_when_generateReplySuggestions() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var commentId = UUID.randomUUID();
+        var otherCommentId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var target = buildComment(commentId, taskId, authorId);
+        var other = buildComment(otherCommentId, taskId, authorId);
+        other.setContent("Another comment.");
+        var pageable = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        var page = new PageImpl<>(List.of(target, other), pageable, 2);
+
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(target));
+        when(commentRepository.findAllByTaskId(eq(taskId), any())).thenReturn(page);
+        when(aiExternalProvider.generateCommentSuggestions("My Task", "A task description", COMMENT_CONTENT, List.of("Another comment.")))
+                .thenReturn(List.of("Suggestion one.", "Suggestion two.", "Suggestion three."));
+
+        var result = commentService.generateReplySuggestions(taskId, commentId);
+
+        assertThat(result).containsExactly("Suggestion one.", "Suggestion two.", "Suggestion three.");
+        verify(aiExternalProvider).generateCommentSuggestions("My Task", "A task description", COMMENT_CONTENT, List.of("Another comment."));
+    }
+
+    @Test
+    @DisplayName("generateReplySuggestions throws TaskNotFoundException when task does not exist")
+    void should_throwTaskNotFoundException_when_taskNotFound_onGenerateReplySuggestions() {
+        var taskId = UUID.randomUUID();
+        var commentId = UUID.randomUUID();
+        stubTaskNotFound(taskId);
+
+        assertThatThrownBy(() -> commentService.generateReplySuggestions(taskId, commentId))
+                .isInstanceOf(TaskNotFoundException.class)
+                .hasMessageContaining(taskId.toString());
+
+        verify(aiExternalProvider, never()).generateCommentSuggestions(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("generateReplySuggestions throws TaskAccessDeniedException when caller is not a member of the task's organization")
+    void should_throwTaskAccessDeniedException_when_notOrganizationMember_onGenerateReplySuggestions() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var commentId = UUID.randomUUID();
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(buildTask(taskId, organizationId)));
+        when(organizationAccessProvider.verifyMembership(organizationId))
+                .thenThrow(new TaskAccessDeniedException("Access denied: you are not a member of organization with ID " + organizationId));
+
+        assertThatThrownBy(() -> commentService.generateReplySuggestions(taskId, commentId))
+                .isInstanceOf(TaskAccessDeniedException.class)
+                .hasMessageContaining(organizationId.toString());
+
+        verify(aiExternalProvider, never()).generateCommentSuggestions(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("generateReplySuggestions throws CommentNotFoundException when comment does not exist")
+    void should_throwCommentNotFoundException_when_commentNotFound_onGenerateReplySuggestions() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var commentId = UUID.randomUUID();
+
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.generateReplySuggestions(taskId, commentId))
+                .isInstanceOf(CommentNotFoundException.class)
+                .hasMessageContaining(commentId.toString());
+
+        verify(aiExternalProvider, never()).generateCommentSuggestions(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("generateReplySuggestions wraps AI exception in CommentSuggestionGenerationException")
+    void should_throwCommentSuggestionGenerationException_when_aiProviderFails() {
+        var taskId = UUID.randomUUID();
+        var organizationId = UUID.randomUUID();
+        var commentId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var target = buildComment(commentId, taskId, authorId);
+        var page = new PageImpl<>(List.of(target), PageRequest.of(0, 10), 1);
+
+        stubTaskAccess(taskId, organizationId);
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(target));
+        when(commentRepository.findAllByTaskId(eq(taskId), any())).thenReturn(page);
+        when(aiExternalProvider.generateCommentSuggestions(any(), any(), any(), any()))
+                .thenThrow(new RuntimeException("AI unavailable"));
+
+        assertThatThrownBy(() -> commentService.generateReplySuggestions(taskId, commentId))
+                .isInstanceOf(CommentSuggestionGenerationException.class)
+                .hasMessageContaining("error occurred while generating comment reply suggestions");
+    }
+
     private void stubToken(UUID userId) {
         when(tokenService.getToken()).thenReturn("test-token");
         when(jwtTokenProvider.extractAuthUserId("test-token")).thenReturn(userId);
@@ -502,6 +721,8 @@ class CommentServiceImplTest {
         var task = new Task();
         task.setId(id);
         task.setOrganizationId(organizationId);
+        task.setTitle("My Task");
+        task.setDescription("A task description");
         return task;
     }
 
@@ -511,8 +732,10 @@ class CommentServiceImplTest {
                 COMMENT_CONTENT,
                 taskId.toString(),
                 authorId.toString(),
+                null,
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                List.of()
         );
     }
 
