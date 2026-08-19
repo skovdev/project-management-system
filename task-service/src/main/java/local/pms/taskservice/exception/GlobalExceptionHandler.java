@@ -160,6 +160,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles {@link CommentSuggestionGenerationException} and returns a 500 error response.
+     *
+     * @param ex the exception thrown when the AI service fails to generate comment reply suggestions
+     * @return error response with INTERNAL_SERVER_ERROR status
+     */
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(CommentSuggestionGenerationException.class)
+    public ApiResponseDto<Void> handleCommentSuggestionGenerationException(CommentSuggestionGenerationException ex) {
+        log.error("Comment suggestion generation failed: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                List.of("COMMENT_SUGGESTION_GENERATION_FAILED"));
+    }
+
+    /**
      * Handles any unhandled {@link Exception} and returns a 500 error response.
      *
      * @param ex the unexpected exception

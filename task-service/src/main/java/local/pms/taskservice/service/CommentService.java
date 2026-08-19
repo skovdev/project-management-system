@@ -6,6 +6,7 @@ import local.pms.taskservice.dto.CommentRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -52,4 +53,15 @@ public interface CommentService {
      * @param commentId the comment to delete
      */
     void delete(UUID taskId, UUID commentId);
+
+    /**
+     * Generates AI reply suggestions for an existing comment, using the task and recent thread
+     * comments as context. The caller must be a member of the task's organization.
+     * Suggestions are generated in a single AI request and are not persisted.
+     *
+     * @param taskId    the task that owns the comment
+     * @param commentId the comment to generate reply suggestions for
+     * @return exactly 3 AI-generated reply suggestions
+     */
+    List<String> generateReplySuggestions(UUID taskId, UUID commentId);
 }

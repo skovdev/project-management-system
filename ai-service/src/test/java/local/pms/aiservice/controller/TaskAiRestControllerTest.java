@@ -146,4 +146,80 @@ class TaskAiRestControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.errorCode").value("AI_SERVICE_ERROR"));
     }
+
+    @Test
+    @DisplayName("POST /ai/task/comment-suggestions with valid input returns 200 with 3 suggestions")
+    void should_return200_when_commentSuggestionsValidRequest() throws Exception {
+        when(taskAiService.generateCommentSuggestions(any(), any(), any(), any()))
+                .thenReturn(List.of("Suggestion one.", "Suggestion two.", "Suggestion three."));
+
+        mockMvc.perform(post(BASE_URL + "/comment-suggestions")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "taskTitle": "Implement user login",
+                                  "taskDescription": "Allow users to log in using email and password",
+                                  "commentContent": "Should we support SSO too?",
+                                  "threadContext": ["Looks good to me."]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.length()").value(3))
+                .andExpect(jsonPath("$.data[0]").value("Suggestion one."));
+    }
+
+    @Test
+    @DisplayName("POST /ai/task/comment-suggestions with blank comment content returns 400 VALIDATION_ERROR")
+    void should_return400_when_commentContentIsBlank() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/comment-suggestions")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "taskTitle": "Implement user login",
+                                  "taskDescription": "Allow users to log in using email and password",
+                                  "commentContent": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("POST /ai/task/comment-suggestions without token returns 401")
+    void should_return401_when_commentSuggestionsNoToken() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/comment-suggestions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "taskTitle": "Implement user login",
+                                  "taskDescription": "Allow users to log in using email and password",
+                                  "commentContent": "Should we support SSO too?"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /ai/task/comment-suggestions when AI model fails returns 500 AI_SERVICE_ERROR")
+    void should_return500_when_commentSuggestionsAiServiceThrows() throws Exception {
+        when(taskAiService.generateCommentSuggestions(any(), any(), any(), any()))
+                .thenThrow(new AiChatException("Failed to communicate with AI model"));
+
+        mockMvc.perform(post(BASE_URL + "/comment-suggestions")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "taskTitle": "Implement user login",
+                                  "taskDescription": "Allow users to log in using email and password",
+                                  "commentContent": "Should we support SSO too?"
+                                }
+                                """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("AI_SERVICE_ERROR"));
+    }
 }

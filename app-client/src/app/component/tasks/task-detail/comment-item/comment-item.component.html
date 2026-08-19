@@ -1,0 +1,117 @@
+<div class="comment-item" [class.comment-item--reply]="isReply">
+
+  <div class="comment-header">
+    <div class="comment-author">
+      <div class="comment-avatar">{{ shortId(comment.authorId)[0].toUpperCase() }}</div>
+      <div class="comment-meta">
+        <span class="comment-author-id">{{ shortId(comment.authorId) }}…</span>
+        <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
+      </div>
+      <span *ngIf="comment.updatedAt !== comment.createdAt" class="comment-edited">(edited)</span>
+    </div>
+    <div class="comment-actions" *ngIf="!editing">
+      <button
+        mat-icon-button
+        title="Reply"
+        [disabled]="replying"
+        (click)="startReply()">
+        <mat-icon>reply</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        title="Suggest reply with AI"
+        [disabled]="suggestionsLoading"
+        (click)="generateSuggestions()">
+        <mat-icon>auto_awesome</mat-icon>
+      </button>
+      <ng-container *ngIf="isOwnComment">
+        <button mat-icon-button title="Edit comment" (click)="startEdit()">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button title="Delete comment" (click)="deleteComment()">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- View mode -->
+  <p *ngIf="!editing" class="comment-content">{{ comment.content }}</p>
+
+  <!-- Edit mode -->
+  <div *ngIf="editing" class="comment-edit-area">
+    <mat-form-field appearance="outline" class="comment-field">
+      <textarea
+        matInput
+        [(ngModel)]="editingContent"
+        rows="3"
+        maxlength="2000">
+      </textarea>
+      <mat-hint align="end">{{ editingContent.length }} / 2000</mat-hint>
+    </mat-form-field>
+    <div class="comment-edit-actions">
+      <button mat-button (click)="cancelEdit()">Cancel</button>
+      <button mat-raised-button color="primary" [disabled]="!editingContent.trim()" (click)="saveEdit()">
+        Save
+      </button>
+    </div>
+  </div>
+
+  <!-- Reply suggestions: loading -->
+  <div *ngIf="suggestionsLoading" class="suggestions-loading">
+    <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
+    <span>Generating reply suggestions…</span>
+  </div>
+
+  <!-- Reply suggestions: panel -->
+  <div *ngIf="showSuggestions" class="suggestions-panel">
+    <div class="suggestions-header">
+      <mat-icon class="suggestions-icon">auto_awesome</mat-icon>
+      <span>Reply suggestions</span>
+      <button mat-icon-button class="suggestions-close" title="Dismiss" (click)="dismissSuggestions()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div *ngIf="suggestions.length === 0" class="suggestions-empty">No suggestions available.</div>
+    <button
+      *ngFor="let suggestion of suggestions"
+      type="button"
+      class="suggestion-chip"
+      (click)="useSuggestion(suggestion)">
+      {{ suggestion }}
+    </button>
+  </div>
+
+  <!-- Reply composer -->
+  <div *ngIf="replying" class="reply-composer">
+    <mat-form-field appearance="outline" class="comment-field">
+      <textarea
+        matInput
+        [(ngModel)]="replyContent"
+        rows="2"
+        maxlength="2000"
+        placeholder="Write a reply...">
+      </textarea>
+      <mat-hint align="end">{{ replyContent.length }} / 2000</mat-hint>
+    </mat-form-field>
+    <div class="reply-actions">
+      <button mat-button [disabled]="submittingReply" (click)="cancelReply()">Cancel</button>
+      <button mat-raised-button color="primary" [disabled]="!replyContent.trim() || submittingReply" (click)="submitReply()">
+        <mat-icon>send</mat-icon> Reply
+      </button>
+    </div>
+  </div>
+
+  <!-- Nested replies -->
+  <div *ngIf="comment.replies.length > 0" class="reply-list">
+    <app-comment-item
+      *ngFor="let reply of comment.replies"
+      [comment]="reply"
+      [taskId]="taskId"
+      [currentUserId]="currentUserId"
+      [isReply]="true"
+      (changed)="onReplyChanged()">
+    </app-comment-item>
+  </div>
+
+</div>

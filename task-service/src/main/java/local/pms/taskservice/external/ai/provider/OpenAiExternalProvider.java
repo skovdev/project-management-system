@@ -4,16 +4,19 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import io.github.resilience4j.retry.annotation.Retry;
 
+import local.pms.taskservice.exception.CommentSuggestionGenerationException;
 import local.pms.taskservice.exception.AcceptanceCriteriaGenerationException;
 
 import local.pms.taskservice.external.ai.client.AiFeignClient;
 import local.pms.taskservice.external.ai.client.AcceptanceCriteriaRequestDto;
+import local.pms.taskservice.external.ai.client.CommentSuggestionsRequestDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -28,6 +31,9 @@ public class OpenAiExternalProvider implements AiExternalProvider {
 
     private static final String FALLBACK_MESSAGE_TEMPLATE =
             "Acceptance criteria generation is temporarily unavailable. Reference ID: %s";
+
+    private static final String SUGGESTIONS_FALLBACK_MESSAGE_TEMPLATE =
+            "Comment reply suggestions are temporarily unavailable. Reference ID: %s";
 
     private final AiFeignClient aiFeignClient;
 
@@ -66,5 +72,42 @@ public class OpenAiExternalProvider implements AiExternalProvider {
         var correlationId = UUID.randomUUID().toString();
         log.error("AI call failed for taskTitle='{}', correlationId='{}'.", taskTitle, correlationId, t);
         return String.format(FALLBACK_MESSAGE_TEMPLATE, correlationId);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Protected by Resilience4j circuit breaker and retry. Falls back to a single static
+     * suggestion when the AI service is unreachable or returns an error.
+     */
+    @Override
+    @CircuitBreaker(name = "commentSuggestionsAiGeneration", fallbackMethod = "fallbackCommentSuggestions")
+    @Retry(name = "commentSuggestionsAiGeneration", fallbackMethod = "fallbackCommentSuggestions")
+    public List<String> generateCommentSuggestions(String taskTitle, String taskDescription, String commentContent, List<String> threadContext) {
+        var response = aiFeignClient.generateCommentSuggestions(
+                new CommentSuggestionsRequestDto(taskTitle, taskDescription, commentContent, threadContext));
+        if (response == null) {
+            log.warn("AI service returned null response for taskTitle='{}'", taskTitle);
+            throw new CommentSuggestionGenerationException(
+                    "AI service returned null response for taskTitle='" + taskTitle + "'");
+        }
+        if (response.getErrors() != null && !response.getErrors().isEmpty()) {
+            log.warn("AI service returned errors for taskTitle='{}': {}", taskTitle, response.getErrors());
+            throw new CommentSuggestionGenerationException(
+                    "AI service returned errors for taskTitle='" + taskTitle + "': " + response.getErrors());
+        }
+        var result = response.getData();
+        if (result == null || result.isEmpty()) {
+            log.warn("AI service returned no comment suggestions for taskTitle='{}'", taskTitle);
+            throw new CommentSuggestionGenerationException(
+                    "AI service returned no comment suggestions for taskTitle='" + taskTitle + "'");
+        }
+        return result;
+    }
+
+    private List<String> fallbackCommentSuggestions(String taskTitle, String taskDescription, String commentContent, List<String> threadContext, Throwable t) {
+        var correlationId = UUID.randomUUID().toString();
+        log.error("AI call failed for taskTitle='{}', correlationId='{}'.", taskTitle, correlationId, t);
+        return List.of(String.format(SUGGESTIONS_FALLBACK_MESSAGE_TEMPLATE, correlationId));
     }
 }
