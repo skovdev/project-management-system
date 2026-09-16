@@ -1,14 +1,15 @@
 # Project Overview
 
 * Java 21, Spring Boot 3.3.2, Spring Cloud 4.1.3
-* Microservices architecture (8 services)
+* Microservices architecture (10 services)
 * Communication: OpenFeign (sync), Kafka Saga (async)
 * Security: JWT via api-gateway
 
 # Modules
 
-* auth-service, user-service, project-service, task-service
-* ai-service, api-gateway, service-discovery, config-server
+* auth-service, user-service, organization-service, project-service, task-service
+* notification-service, ai-service, api-gateway, service-discovery, config-server
+* app-client (Angular frontend, outside the scope of these Java rules)
 
 # Build & Run
 

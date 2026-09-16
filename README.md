@@ -116,6 +116,18 @@ Every project belongs to an organization. `project-service` verifies the caller'
 | `PUT` | `/api/v1/tasks/{taskId}` | Update a task |
 | `DELETE` | `/api/v1/tasks/{taskId}` | Delete a task |
 
+### Comments
+
+Comments are attached to a task. The caller must be a member of the task's organization; updating requires being the comment's author, and deleting requires being the author or an organization OWNER/ADMIN.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/tasks/{taskId}/comments` | Create a comment on a task |
+| `GET` | `/api/v1/tasks/{taskId}/comments` | List all comments for a task (paginated) |
+| `PUT` | `/api/v1/tasks/{taskId}/comments/{commentId}` | Update a comment (author only) |
+| `DELETE` | `/api/v1/tasks/{taskId}/comments/{commentId}` | Delete a comment (author or OWNER/ADMIN) |
+| `POST` | `/api/v1/tasks/{taskId}/comments/{commentId}/suggestions` | Generate 3 AI-powered reply suggestions for a comment (not persisted) |
+
 ### Users
 
 | Method | Endpoint | Description |
