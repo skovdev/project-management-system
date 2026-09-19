@@ -1,6 +1,7 @@
 package local.pms.notificationservice.entity;
 
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -21,7 +22,9 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Table(name = "project_management_system_notification")
+@Table(name = "project_management_system_notification", indexes = {
+        @Index(name = "idx_notification_user_id_read_created_at", columnList = "user_id, read, created_at")
+})
 @SQLRestriction(value = "deleted = false")
 @SQLDelete(sql = "UPDATE project_management_system_notification SET deleted = true WHERE id = ?")
 public class Notification extends AbstractBaseModel {

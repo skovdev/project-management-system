@@ -246,6 +246,15 @@ services:
     networks:
       - project-management-system-network
 
+  redis:
+    image: redis:7-alpine
+    deploy:
+      replicas: 1
+    ports:
+      - "6379:6379"
+    networks:
+      - project-management-system-network
+
   zipkin:
     image: openzipkin/zipkin:3
     deploy:

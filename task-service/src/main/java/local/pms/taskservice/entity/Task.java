@@ -1,5 +1,6 @@
 package local.pms.taskservice.entity;
 
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
@@ -20,7 +21,10 @@ import java.util.UUID;
 @Entity
 @Setter
 @Getter
-@Table(name = "project_management_system_task")
+@Table(name = "project_management_system_task", indexes = {
+        @Index(name = "idx_task_project_id", columnList = "project_id"),
+        @Index(name = "idx_task_user_id", columnList = "user_id")
+})
 @SQLRestriction(value = "deleted = false")
 @SQLDelete(sql = "UPDATE project_management_system_task SET deleted = true WHERE id = ?")
 public class Task extends AbstractBaseModel {

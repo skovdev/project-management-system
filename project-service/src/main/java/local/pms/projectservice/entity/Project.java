@@ -1,6 +1,7 @@
 package local.pms.projectservice.entity;
 
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -22,7 +23,9 @@ import java.util.UUID;
 @Entity
 @Setter
 @Getter
-@Table(name = "project_management_system_project")
+@Table(name = "project_management_system_project", indexes = {
+        @Index(name = "idx_project_organization_id", columnList = "organization_id")
+})
 @SQLRestriction(value = "deleted = false")
 @SQLDelete(sql = "UPDATE project_management_system_project SET deleted = true WHERE id = ?")
 public class Project extends AbstractBaseModel {
