@@ -16,6 +16,8 @@ import lombok.Getter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
+
 import java.util.UUID;
 
 @Entity
@@ -57,6 +59,12 @@ public class Task extends AbstractBaseModel {
 
     @Column(name = "acceptance_criteria", columnDefinition = "TEXT")
     private String acceptanceCriteria;
+
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
+    @Column(name = "assignee_id")
+    private UUID assigneeId;
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;

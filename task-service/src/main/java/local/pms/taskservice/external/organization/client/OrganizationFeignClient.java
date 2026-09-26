@@ -25,4 +25,15 @@ public interface OrganizationFeignClient {
      */
     @GetMapping("/{organizationId}/members/me")
     ApiResponseDto<OrganizationMemberResponseDto> getMyMembership(@PathVariable("organizationId") UUID organizationId);
+
+    /**
+     * Retrieves a specific user's membership in the given organization.
+     *
+     * @param organizationId the organization identifier
+     * @param userId         the user identifier to look up
+     * @return API response wrapping the target user's membership (404 if not a member)
+     */
+    @GetMapping("/{organizationId}/members/by-user/{userId}")
+    ApiResponseDto<OrganizationMemberResponseDto> getMembership(@PathVariable("organizationId") UUID organizationId,
+                                                                  @PathVariable("userId") UUID userId);
 }

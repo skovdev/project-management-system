@@ -66,6 +66,24 @@ public class OrganizationMemberRestController {
         return ApiResponseDto.buildSuccessResponse(organizationMemberService.getMyMembership(organizationId));
     }
 
+    @Operation(
+            summary = "Get a specific user's membership in an organization",
+            description = "Used by other services to validate that a given user (e.g. a task assignee) is a member. The caller must themselves be a member")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membership retrieved successfully", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrganizationMemberDto.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Organization not found, caller is not a member, or the user is not a member"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @GetMapping(value = "/by-user/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponseDto<OrganizationMemberDto> getMembership(@Parameter(description = "Organization identifier")
+                                                                @PathVariable(name = "organizationId") UUID organizationId,
+                                                                @Parameter(description = "User identifier to look up")
+                                                                @PathVariable(name = "userId") UUID userId) {
+        return ApiResponseDto.buildSuccessResponse(organizationMemberService.getMembership(organizationId, userId));
+    }
+
     @Operation(summary = "Add a member to an organization", description = "The caller must be an OWNER or ADMIN member")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Member added successfully", content = {

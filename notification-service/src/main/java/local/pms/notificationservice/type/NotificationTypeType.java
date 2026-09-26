@@ -6,5 +6,6 @@ package local.pms.notificationservice.type;
 public enum NotificationTypeType {
     WELCOME,
     PROJECT_CREATED,
-    TASK_CREATED
+    TASK_CREATED,
+    TASK_ASSIGNED
 }

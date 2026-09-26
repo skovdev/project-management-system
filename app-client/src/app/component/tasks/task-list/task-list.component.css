@@ -22,6 +22,12 @@
   color: var(--color-text) !important;
 }
 
+.cell-date {
+  color: var(--color-text-secondary) !important;
+  font-size: 13px !important;
+  white-space: nowrap;
+}
+
 .cell-actions {
   white-space: nowrap;
 }

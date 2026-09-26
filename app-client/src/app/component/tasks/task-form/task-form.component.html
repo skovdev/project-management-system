@@ -40,6 +40,23 @@
       </mat-form-field>
     </div>
 
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Assignee</mat-label>
+        <mat-select formControlName="assigneeId">
+          <mat-option [value]="null">Unassigned</mat-option>
+          <mat-option *ngFor="let m of members" [value]="m.userId">{{ memberDisplayName(m.userId) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Due Date</mat-label>
+        <input matInput [matDatepicker]="dueDatePicker" formControlName="dueDatePart" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="dueDatePicker"></mat-datepicker-toggle>
+        <mat-datepicker #dueDatePicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
     <mat-checkbox formControlName="active">Active</mat-checkbox>
 
   </form>

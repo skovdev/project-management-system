@@ -58,4 +58,15 @@ public interface OrganizationMemberService {
      * @return the caller's membership DTO
      */
     OrganizationMemberDto getMyMembership(UUID organizationId);
+
+    /**
+     * Retrieves a specific user's membership in an organization; the caller must
+     * themselves be a member. Used by other services (via Feign) to validate that
+     * a given user (e.g. a task assignee) actually belongs to the organization.
+     *
+     * @param organizationId the unique organization identifier
+     * @param userId         the user identifier to look up
+     * @return the target user's membership DTO
+     */
+    OrganizationMemberDto getMembership(UUID organizationId, UUID userId);
 }

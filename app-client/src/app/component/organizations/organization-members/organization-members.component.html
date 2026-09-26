@@ -16,7 +16,7 @@
       <mat-form-field appearance="outline">
         <mat-label>User</mat-label>
         <mat-select formControlName="userId">
-          <mat-option *ngFor="let u of availableUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }} ({{ u.email }})</mat-option>
+          <mat-option *ngFor="let u of availableUsers" [value]="u.authUserId">{{ u.firstName }} {{ u.lastName }} ({{ u.email }})</mat-option>
         </mat-select>
       </mat-form-field>
 
