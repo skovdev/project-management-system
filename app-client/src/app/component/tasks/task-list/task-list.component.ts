@@ -10,7 +10,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { TaskService } from '../../../services/task.service';
+import { UserService } from '../../../services/user.service';
 import { TaskDto } from '../../../models/task.model';
+import { UserDto } from '../../../models/user.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
 @Component({
@@ -25,8 +27,9 @@ import { TaskFormComponent } from '../task-form/task-form.component';
   styleUrl: './task-list.component.css'
 })
 export class TaskListComponent implements OnInit {
-  displayedColumns = ['title', 'priority', 'status', 'active', 'actions'];
+  displayedColumns = ['title', 'priority', 'status', 'dueDate', 'assignee', 'active', 'actions'];
   tasks: TaskDto[] = [];
+  usersById = new Map<string, UserDto>();
   totalElements = 0;
   pageSize = 10;
   pageIndex = 0;
@@ -34,13 +37,23 @@ export class TaskListComponent implements OnInit {
 
   constructor(
     private taskService: TaskService,
+    private userService: UserService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.userService.getUsers(0, 1000).subscribe({
+      next: (page) => { this.usersById = new Map(page.content.map(u => [u.authUserId, u])); }
+    });
     this.loadTasks();
+  }
+
+  assigneeName(task: TaskDto): string {
+    if (!task.assigneeId) return 'Unassigned';
+    const u = this.usersById.get(task.assigneeId);
+    return u ? `${u.firstName} ${u.lastName}` : 'Unassigned';
   }
 
   loadTasks(): void {

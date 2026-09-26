@@ -15,4 +15,17 @@ public interface OrganizationAccessProvider {
      *         is not a member, or membership could not be verified (fails closed)
      */
     OrganizationRoleType verifyMembership(UUID organizationId);
+
+    /**
+     * Verifies that the given user (e.g. a task assignee) is a member of the given
+     * organization. Unlike {@link #verifyMembership(UUID)}, this checks an arbitrary
+     * user rather than the caller.
+     *
+     * @param organizationId the organization identifier
+     * @param userId         the user identifier to verify
+     * @return the user's role in that organization
+     * @throws local.pms.taskservice.exception.InvalidTaskInputException if the user
+     *         is not a member, or membership could not be verified (fails closed)
+     */
+    OrganizationRoleType verifyMembership(UUID organizationId, UUID userId);
 }

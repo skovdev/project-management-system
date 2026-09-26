@@ -103,7 +103,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank title returns 400")
     void should_return400_when_createWithBlankTitle() throws Exception {
         var body = new TaskDto(null, "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -116,7 +116,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank description returns 400")
     void should_return400_when_createWithBlankDescription() throws Exception {
         var body = new TaskDto(null, "My Task", "", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -129,7 +129,7 @@ class TaskRestControllerTest {
     @DisplayName("POST /tasks with blank projectId returns 400")
     void should_return400_when_createWithBlankProjectId() throws Exception {
         var body = new TaskDto(null, "My Task", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, "", null, null, null);
+                TaskPriorityType.MEDIUM, true, "", null, null, null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .header("Authorization", BEARER)
@@ -230,7 +230,7 @@ class TaskRestControllerTest {
     void should_return400_when_updateWithBlankTitle() throws Exception {
         var id = UUID.randomUUID();
         var body = new TaskDto(id.toString(), "", "A task description", TaskStatusType.TODO,
-                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null);
+                TaskPriorityType.MEDIUM, true, UUID.randomUUID().toString(), null, null, null, null, null);
 
         mockMvc.perform(put(BASE_URL + "/" + id)
                         .header("Authorization", BEARER)
@@ -396,6 +396,8 @@ class TaskRestControllerTest {
                 TaskPriorityType.MEDIUM,
                 true,
                 UUID.randomUUID().toString(),
+                null,
+                null,
                 null,
                 null,
                 null

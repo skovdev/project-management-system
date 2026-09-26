@@ -5,6 +5,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 
 import local.pms.taskservice.exception.TaskAccessDeniedException;
+import local.pms.taskservice.exception.InvalidTaskInputException;
 
 import local.pms.taskservice.external.organization.client.OrganizationFeignClient;
 
@@ -47,5 +48,24 @@ public class FeignOrganizationAccessProvider implements OrganizationAccessProvid
         log.error("Failed to verify membership for organizationId='{}'. Denying access.", organizationId, t);
         throw new TaskAccessDeniedException(
                 "Access denied: unable to verify membership for organization with ID " + organizationId);
+    }
+
+    @Override
+    @CircuitBreaker(name = "organizationMemberLookup", fallbackMethod = "fallbackVerifyMembership")
+    @Retry(name = "organizationMemberLookup", fallbackMethod = "fallbackVerifyMembership")
+    public OrganizationRoleType verifyMembership(UUID organizationId, UUID userId) {
+        var response = organizationFeignClient.getMembership(organizationId, userId);
+        if (response == null || response.getData() == null) {
+            log.warn("organization-service returned no membership for userId='{}' in organizationId='{}'", userId, organizationId);
+            throw new InvalidTaskInputException(
+                    "User " + userId + " is not a member of organization with ID " + organizationId);
+        }
+        return response.getData().role();
+    }
+
+    private OrganizationRoleType fallbackVerifyMembership(UUID organizationId, UUID userId, Throwable t) {
+        log.error("Failed to verify membership for userId='{}' in organizationId='{}'. Rejecting assignee.", userId, organizationId, t);
+        throw new InvalidTaskInputException(
+                "User " + userId + " is not a member of organization with ID " + organizationId);
     }
 }

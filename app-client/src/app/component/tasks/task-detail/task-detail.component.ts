@@ -14,6 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { TaskService } from '../../../services/task.service';
 import { CommentService } from '../../../services/comment.service';
 import { AuthTokenService } from '../../../services/auth-token.service';
+import { UserService } from '../../../services/user.service';
 import { TaskDto } from '../../../models/task.model';
 import { CommentDto } from '../../../models/comment.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
@@ -37,6 +38,7 @@ export class TaskDetailComponent implements OnInit {
   loading = true;
   error = false;
   taskId = '';
+  assigneeName: string | null = null;
 
   comments: CommentDto[] = [];
   commentsTotalElements = 0;
@@ -69,6 +71,7 @@ export class TaskDetailComponent implements OnInit {
     private taskService: TaskService,
     private commentService: CommentService,
     private authTokenService: AuthTokenService,
+    private userService: UserService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {
@@ -84,6 +87,7 @@ export class TaskDetailComponent implements OnInit {
         this.acText = this.savedAcText;
         this.loading = false;
         this.loadComments();
+        this.loadAssignee();
       },
       error: () => {
         this.error = true;
@@ -138,12 +142,32 @@ export class TaskDetailComponent implements OnInit {
       if (updated) {
         this.task = updated;
         this.snackBar.open('Task updated.', 'Close', { duration: 3000 });
+        this.loadAssignee();
       }
     });
   }
 
   goBack(): void {
     this.router.navigate(['/tasks']);
+  }
+
+  loadAssignee(): void {
+    const assigneeId = this.task?.assigneeId;
+    if (!assigneeId) {
+      this.assigneeName = null;
+      return;
+    }
+    this.userService.getUserById(assigneeId).subscribe({
+      next: (u) => { this.assigneeName = `${u.firstName} ${u.lastName}`; },
+      error: () => { this.assigneeName = null; }
+    });
+  }
+
+  get isOverdue(): boolean {
+    if (!this.task?.dueDate) return false;
+    const status = this.task.taskStatusType;
+    if (status === 'DONE' || status === 'CANCELLED') return false;
+    return new Date(this.task.dueDate).getTime() < Date.now();
   }
 
   // ── Acceptance Criteria methods ──────────────────────────────────────────

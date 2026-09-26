@@ -29,7 +29,9 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put(JsonSerializer.TYPE_MAPPINGS, "taskCreated:local.pms.taskservice.event.TaskCreatedEvent");
+        props.put(JsonSerializer.TYPE_MAPPINGS,
+                "taskCreated:local.pms.taskservice.event.TaskCreatedEvent," +
+                "taskAssigned:local.pms.taskservice.event.TaskAssignedEvent");
         return props;
     }
 

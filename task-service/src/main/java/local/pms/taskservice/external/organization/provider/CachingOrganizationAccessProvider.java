@@ -34,14 +34,20 @@ public class CachingOrganizationAccessProvider implements OrganizationAccessProv
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    @Cacheable(cacheNames = "organizationMembership", key = "#organizationId + ':' + root.target.currentAuthUserId()")
+    @Cacheable(cacheNames = "organizationMembership", key = "#organizationId + ':' + #root.target.currentAuthUserId()")
     public OrganizationRoleType verifyMembership(UUID organizationId) {
         return delegate.verifyMembership(organizationId);
     }
 
+    @Override
+    @Cacheable(cacheNames = "organizationMembership", key = "#organizationId + ':' + #userId")
+    public OrganizationRoleType verifyMembership(UUID organizationId, UUID userId) {
+        return delegate.verifyMembership(organizationId, userId);
+    }
+
     /**
      * Public only so the {@code @Cacheable} key SpEL above (evaluated via reflection on
-     * {@code root.target}) can call it; not part of this class's real API.
+     * {@code #root.target}) can call it; not part of this class's real API.
      */
     public UUID currentAuthUserId() {
         return jwtTokenProvider.extractAuthUserId(tokenService.getToken());

@@ -5,6 +5,7 @@ import local.pms.taskservice.config.jwt.JwtTokenProvider;
 import local.pms.taskservice.dto.TaskDto;
 
 import local.pms.taskservice.event.TaskCreatedEvent;
+import local.pms.taskservice.event.TaskAssignedEvent;
 
 import local.pms.taskservice.exception.TaskNotFoundException;
 import local.pms.taskservice.exception.InvalidTaskInputException;
@@ -75,13 +76,20 @@ public class TaskServiceImpl implements TaskService {
         // re-checking here would be a redundant second round trip for the same decision.
         var organizationId = projectOrganizationProvider.resolveOrganizationId(projectId);
 
+        var assigneeId = resolveAssigneeId(taskDto.assigneeId(), organizationId);
+
         var task = taskMapping.toEntity(taskDto);
         task.setUserId(extractAuthUserId());
         task.setOrganizationId(organizationId);
+        task.setAssigneeId(assigneeId);
         var savedTask = taskRepository.save(task);
         log.info("Task created with ID: {} in organization: {}", savedTask.getId(), savedTask.getOrganizationId());
         eventPublisher.publishEvent(
                 new TaskCreatedEvent(savedTask.getId(), savedTask.getUserId(), savedTask.getTitle()));
+        if (assigneeId != null) {
+            eventPublisher.publishEvent(
+                    new TaskAssignedEvent(savedTask.getId(), assigneeId, savedTask.getTitle()));
+        }
         return taskMapping.toDto(savedTask);
     }
 
@@ -131,6 +139,9 @@ public class TaskServiceImpl implements TaskService {
             var newOrganizationId = projectOrganizationProvider.resolveOrganizationId(newProjectId);
             taskToUpdate.setOrganizationId(newOrganizationId);
         }
+        var previousAssigneeId = taskToUpdate.getAssigneeId();
+        var newAssigneeId = resolveAssigneeId(taskDto.assigneeId(), taskToUpdate.getOrganizationId());
+
         taskToUpdate.setTitle(taskDto.title());
         taskToUpdate.setDescription(taskDto.description());
         taskToUpdate.setTaskStatusType(taskDto.taskStatusType());
@@ -138,8 +149,14 @@ public class TaskServiceImpl implements TaskService {
         taskToUpdate.setActive(taskDto.active());
         taskToUpdate.setProjectId(newProjectId);
         taskToUpdate.setAcceptanceCriteria(taskDto.acceptanceCriteria());
+        taskToUpdate.setDueDate(taskDto.dueDate());
+        taskToUpdate.setAssigneeId(newAssigneeId);
         var updatedTask = taskRepository.save(taskToUpdate);
         log.info("Task with ID {} updated successfully.", taskId);
+        if (newAssigneeId != null && !newAssigneeId.equals(previousAssigneeId)) {
+            eventPublisher.publishEvent(
+                    new TaskAssignedEvent(updatedTask.getId(), newAssigneeId, updatedTask.getTitle()));
+        }
         return taskMapping.toDto(updatedTask);
     }
 
@@ -175,6 +192,15 @@ public class TaskServiceImpl implements TaskService {
             throw new AcceptanceCriteriaGenerationException(
                     "An error occurred while generating acceptance criteria", e);
         }
+    }
+
+    private UUID resolveAssigneeId(String assigneeId, UUID organizationId) {
+        if (assigneeId == null || assigneeId.isBlank()) {
+            return null;
+        }
+        var parsedAssigneeId = UUID.fromString(assigneeId);
+        organizationAccessProvider.verifyMembership(organizationId, parsedAssigneeId);
+        return parsedAssigneeId;
     }
 
     private Task findTaskOrThrow(UUID taskId) {

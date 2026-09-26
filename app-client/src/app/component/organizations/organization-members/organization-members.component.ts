@@ -60,7 +60,7 @@ export class OrganizationMembersComponent implements OnInit {
     this.userService.getUsers(0, 1000).subscribe({
       next: (page) => {
         this.allUsers = page.content;
-        this.usersById = new Map(page.content.map(u => [u.id, u]));
+        this.usersById = new Map(page.content.map(u => [u.authUserId, u]));
         this.loadMembers();
       },
       error: () => this.loadMembers()
@@ -92,7 +92,7 @@ export class OrganizationMembersComponent implements OnInit {
 
   get availableUsers(): UserDto[] {
     const memberIds = new Set(this.members.map(m => m.userId));
-    return this.allUsers.filter(u => !memberIds.has(u.id));
+    return this.allUsers.filter(u => !memberIds.has(u.authUserId));
   }
 
   toggleAddForm(): void {

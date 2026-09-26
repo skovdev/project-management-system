@@ -46,7 +46,8 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.TYPE_MAPPINGS,
                 "userCreated:local.pms.notificationservice.event.UserDetailsCreatedEvent," +
                 "projectCreated:local.pms.notificationservice.event.ProjectCreatedEvent," +
-                "taskCreated:local.pms.notificationservice.event.TaskCreatedEvent");
+                "taskCreated:local.pms.notificationservice.event.TaskCreatedEvent," +
+                "taskAssigned:local.pms.notificationservice.event.TaskAssignedEvent");
         return props;
     }
 
