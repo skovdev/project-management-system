@@ -142,7 +142,7 @@ class TaskServiceImplTest {
     @DisplayName("create throws InvalidTaskInputException when projectId is blank")
     void should_throwInvalidTaskInputException_when_createWithBlankProjectId() {
         var badDto = new TaskDto(null, "My Task", "A task description",
-                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null, null, null);
+                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null, null, null, null, null);
 
         assertThatThrownBy(() -> taskService.create(badDto))
                 .isInstanceOf(InvalidTaskInputException.class)
@@ -363,7 +363,7 @@ class TaskServiceImplTest {
     void should_throwInvalidTaskInputException_when_projectIdIsBlank() {
         var taskId = UUID.randomUUID();
         var badDto = new TaskDto(taskId.toString(), "My Task", "A task description",
-                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null, null, null);
+                TaskStatusType.TODO, TaskPriorityType.MEDIUM, true, "  ", null, null, null, null, null);
 
         assertThatThrownBy(() -> taskService.update(taskId, badDto))
                 .isInstanceOf(InvalidTaskInputException.class)
@@ -511,6 +511,8 @@ class TaskServiceImplTest {
                 TaskPriorityType.MEDIUM,
                 true,
                 projectId.toString(),
+                null,
+                null,
                 null,
                 null,
                 null

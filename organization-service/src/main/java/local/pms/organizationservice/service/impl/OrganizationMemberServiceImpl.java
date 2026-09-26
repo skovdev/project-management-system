@@ -131,6 +131,19 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
         return organizationMemberMapping.toDto(member);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OrganizationMemberDto getMembership(UUID organizationId, UUID userId) {
+        organizationAccessGuard.requireMembership(organizationId, organizationAccessGuard.getAuthenticatedUserId());
+        var member = organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, userId)
+                .orElseThrow(() -> {
+                    log.error("User {} is not a member of organization {}.", userId, organizationId);
+                    return new OrganizationMemberNotFoundException(
+                            "User " + userId + " is not a member of organization " + organizationId);
+                });
+        return organizationMemberMapping.toDto(member);
+    }
+
     private OrganizationMember buildOrganizationMember(AddMemberRequestDto request, Organization organization) {
         var member = new OrganizationMember();
         member.setOrganization(organization);

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import local.pms.taskservice.type.TaskStatusType;
 import local.pms.taskservice.type.TaskPriorityType;
 
+import java.time.LocalDateTime;
+
 public record TaskDto(
         String id,
 
@@ -33,5 +35,9 @@ public record TaskDto(
 
         String organizationId,
 
-        String acceptanceCriteria
+        String acceptanceCriteria,
+
+        LocalDateTime dueDate,
+
+        String assigneeId
 ) {}

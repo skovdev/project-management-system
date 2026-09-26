@@ -19,4 +19,6 @@ export interface TaskDto {
   projectId: string;
   userId?: string;
   acceptanceCriteria?: string;
+  dueDate?: string;
+  assigneeId?: string;
 }

@@ -81,7 +81,19 @@
         </div>
 
         <div class="detail-item">
-          <span class="detail-label">Assigned User ID</span>
+          <span class="detail-label">Assignee</span>
+          <span class="detail-value">{{ assigneeName ?? 'Unassigned' }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Due Date</span>
+          <span class="detail-value" [class.overdue]="isOverdue">
+            {{ task.dueDate ? (task.dueDate | date:'mediumDate') : '—' }}
+          </span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Created By</span>
           <span class="detail-value id-value">{{ task.userId || '—' }}</span>
         </div>
 
