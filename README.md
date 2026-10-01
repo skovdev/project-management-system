@@ -18,7 +18,7 @@ app-client (Angular, :4200)
        ├── user-service          (user profile management)
        ├── organization-service  (organization & membership management)
        ├── project-service       (project CRUD, scoped to an organization)
-       ├── task-service          (task CRUD, linked to projects)
+       ├── task-service          (task CRUD & assignment, comments)
        ├── notification-service  (in-app notifications via Kafka events)
        └── ai-service            (AI-powered project assistance)
 
@@ -27,6 +27,8 @@ Infrastructure:
   config-server      (Spring Cloud Config)
   postgresql         (shared DB host, each service owns its schema)
   kafka              (async Saga workflows)
+  redis              (task-service membership cache)
+  zipkin             (distributed tracing)
 ```
 
 ### Services
@@ -41,11 +43,13 @@ Infrastructure:
 | `user-service` | User profile data and roles | — |
 | `organization-service` | Organizations and membership management | — |
 | `project-service` | Project management, scoped to an organization | — |
-| `task-service` | Task management within projects | — |
+| `task-service` | Task management and assignment within projects, comments | — |
 | `notification-service` | In-app notifications (Kafka consumer) | — |
 | `ai-service` | AI-powered assistance (OpenAI) | — |
 | `postgresql` | Persistence | 5432 |
 | `kafka` | Async messaging (KRaft mode) | 9092 |
+| `redis` | Cache for organization membership checks in `task-service` | 6379 |
+| `zipkin` | Distributed tracing UI | 9411 |
 
 ## Technology Stack
 
@@ -55,6 +59,7 @@ Infrastructure:
 | Framework | Spring Boot 3.3.2, Spring Cloud 4.1.3 |
 | Security | Spring Security 6, JWT (jjwt 0.12.6) |
 | Persistence | Spring Data JPA, PostgreSQL 42.7.4 |
+| Caching | Spring Cache, Redis 7 |
 | Messaging | Apache Kafka (Spring Cloud Stream) |
 | Service Mesh | Eureka, Spring Cloud Config, Spring Cloud Gateway |
 | Sync Communication | OpenFeign |
@@ -89,6 +94,7 @@ The caller is automatically added as `OWNER` on creation. All endpoints require 
 | `PUT` | `/api/v1/organizations/{organizationId}` | Update an organization (OWNER/ADMIN) |
 | `DELETE` | `/api/v1/organizations/{organizationId}` | Delete an organization (OWNER) |
 | `GET` | `/api/v1/organizations/{organizationId}/members/me` | Get the caller's own membership and role |
+| `GET` | `/api/v1/organizations/{organizationId}/members/by-user/{userId}` | Get a specific user's membership (caller must be a member; used for assignee validation) |
 | `POST` | `/api/v1/organizations/{organizationId}/members` | Add a member (OWNER/ADMIN) |
 | `GET` | `/api/v1/organizations/{organizationId}/members` | List all members |
 | `PUT` | `/api/v1/organizations/{organizationId}/members/{memberId}/role` | Change a member's role (OWNER) |
@@ -108,12 +114,14 @@ Every project belongs to an organization. `project-service` verifies the caller'
 
 ### Tasks
 
+A task may optionally carry an `assigneeId` and a `dueDate`. The assignee must be a member of the task's organization — `task-service` validates this via an OpenFeign call to `organization-service` (protected by Resilience4j retry/circuit breaker, results cached in Redis for 60s). When a task is created with an assignee, or its assignee changes on update, a `task-assigned` Kafka event is published and `notification-service` creates a `TASK_ASSIGNED` notification for the assignee.
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/projects/{projectId}/tasks` | Create a task in a project |
+| `POST` | `/api/v1/projects/{projectId}/tasks` | Create a task in a project (optional `assigneeId`, `dueDate`) |
 | `GET` | `/api/v1/projects/{projectId}/tasks` | List all tasks in a project |
 | `GET` | `/api/v1/tasks/{taskId}` | Get task by ID |
-| `PUT` | `/api/v1/tasks/{taskId}` | Update a task |
+| `PUT` | `/api/v1/tasks/{taskId}` | Update a task, including (re)assignment and due date |
 | `DELETE` | `/api/v1/tasks/{taskId}` | Delete a task |
 
 ### Comments
@@ -138,7 +146,7 @@ Comments are attached to a task. The caller must be a member of the task's organ
 
 ### Notifications
 
-Notifications are created automatically by Kafka events (user registered, project created, task created).
+Notifications are created automatically by Kafka events (user registered, project created, task created, task assigned).
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -203,8 +211,8 @@ project-management-system/
 ├── app-client/          # Angular frontend
 ├── postgresql/          # DB Dockerfile & init scripts
 ├── spring-config/       # Externalized config files
-├── docs/                # API docs and scenarios
 ├── postman/             # Postman collection
+├── k6/                  # k6 load/stress test scripts
 ├── docker-compose.yml
 ├── docker_swarm_deploy.sh
 └── build-all-docker-images.sh
