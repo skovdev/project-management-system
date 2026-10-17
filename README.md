@@ -81,6 +81,8 @@ All endpoints are routed through `api-gateway` at port `8762`. JWT is required f
 |---|---|---|
 | `POST` | `/api/v1/auth/sign-up` | Register a new user |
 | `POST` | `/api/v1/auth/sign-in` | Log in and receive a JWT |
+| `GET` | `/api/v1/auth/{username}` | Find an auth user by username |
+| `DELETE` | `/api/v1/auth/{id}` | Delete an auth user by ID |
 
 ### Organizations
 
@@ -111,6 +113,10 @@ Every project belongs to an organization. `project-service` verifies the caller'
 | `POST` | `/api/v1/projects` | Create a new project (`organizationId` in body) |
 | `GET` | `/api/v1/projects?organizationId={organizationId}` | List all projects in an organization |
 | `GET` | `/api/v1/projects/{projectId}?organizationId={organizationId}` | Get project by ID |
+| `PUT` | `/api/v1/projects/{projectId}` | Update a project |
+| `DELETE` | `/api/v1/projects/{projectId}?organizationId={organizationId}` | Delete a project |
+| `POST` | `/api/v1/projects/{projectId}/description?organizationId={organizationId}&projectTitle={title}` | Generate an AI project description (not persisted) |
+| `GET` | `/api/v1/projects/{projectId}/organization-id` | Resolve the project's organization ID (used by other services) |
 
 ### Tasks
 
@@ -118,11 +124,12 @@ A task may optionally carry an `assigneeId` and a `dueDate`. The assignee must b
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/projects/{projectId}/tasks` | Create a task in a project (optional `assigneeId`, `dueDate`) |
-| `GET` | `/api/v1/projects/{projectId}/tasks` | List all tasks in a project |
+| `POST` | `/api/v1/tasks` | Create a task (`projectId` in body; optional `assigneeId`, `dueDate`) |
+| `GET` | `/api/v1/tasks?projectId={projectId}` | List tasks (paginated), optionally scoped to a project |
 | `GET` | `/api/v1/tasks/{taskId}` | Get task by ID |
 | `PUT` | `/api/v1/tasks/{taskId}` | Update a task, including (re)assignment and due date |
 | `DELETE` | `/api/v1/tasks/{taskId}` | Delete a task |
+| `POST` | `/api/v1/tasks/{taskId}/acceptance-criteria` | Generate AI acceptance criteria for a task (not persisted; save via `PUT`) |
 
 ### Comments
 
@@ -140,9 +147,23 @@ Comments are attached to a task. The caller must be a member of the task's organ
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` | `/api/v1/users` | List users (paginated) |
 | `GET` | `/api/v1/users/{id}` | Get user profile |
 | `PUT` | `/api/v1/users/{id}` | Update user profile |
 | `DELETE` | `/api/v1/users/{id}` | Delete user account |
+| `PUT` | `/api/v1/users/{id}/avatar` | Upload an avatar (multipart `file`; JPEG/PNG/WebP, max 5 MB; own profile or admin) |
+| `DELETE` | `/api/v1/users/{id}/avatar` | Delete the avatar (own profile or admin) |
+
+### AI
+
+Served by `ai-service` (OpenAI). Responses are returned to the caller and are not persisted.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/ai/ask` | General AI chat request |
+| `POST` | `/api/v1/ai/project/description` | Generate a project description |
+| `POST` | `/api/v1/ai/task/acceptance-criteria` | Generate task acceptance criteria |
+| `POST` | `/api/v1/ai/task/comment-suggestions` | Generate comment reply suggestions |
 
 ### Notifications
 
@@ -213,6 +234,7 @@ project-management-system/
 ├── spring-config/       # Externalized config files
 ├── postman/             # Postman collection
 ├── k6/                  # k6 load/stress test scripts
+├── monitoring/          # Prometheus & Grafana config
 ├── docker-compose.yml
 ├── docker_swarm_deploy.sh
 └── build-all-docker-images.sh
