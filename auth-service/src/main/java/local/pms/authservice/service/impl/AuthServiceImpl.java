@@ -22,6 +22,7 @@ import local.pms.authservice.mapping.AuthUserMapper;
 import local.pms.authservice.repository.AuthUserRepository;
 
 import local.pms.authservice.service.AuthService;
+import local.pms.authservice.service.LoginAttemptService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.ApplicationEventPublisher;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
@@ -66,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
     final JwtTokenProvider jwtTokenProvider;
     final ApplicationEventPublisher applicationEventPublisher;
     final PasswordEncoder passwordEncoder;
+    final LoginAttemptService loginAttemptService;
 
     @Override
     public Optional<AuthUserDto> findById(UUID id) {
@@ -86,19 +91,14 @@ public class AuthServiceImpl implements AuthService {
     public void signUp(SignUpDto signUpDto) {
         isAuthUsernameExists(signUpDto.username());
         try {
-
             AuthUser authUser = buildAuthUser(signUpDto);
-
-            authUserRepository.save(authUser);
-
+            authUserRepository.saveAndFlush(authUser);
             log.info("The authentication user is saved successfully. AuthUserID: {}", authUser.getId());
-
             UserDetailsDto userDetailsDto = fillUserDetailsDto(signUpDto, authUser.getId());
-
             UserDetailsCreatedEvent event = new UserDetailsCreatedEvent(userDetailsDto);
-
             applicationEventPublisher.publishEvent(event);
-
+        } catch (DataIntegrityViolationException e) {
+            throw new AuthUsernameAlreadyExistsException("Username '" + signUpDto.username() + "' already exists");
         } catch (RuntimeException e) {
             log.error("Failed to sign up the authenticated user: {}", signUpDto.username(), e);
             throw new AuthUserSignUpException("Error occurred during sign-up.");
@@ -118,7 +118,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthUserDto authenticate(String username, String password) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        loginAttemptService.checkNotBlocked(username);
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailure(username);
+            throw e;
+        }
+        loginAttemptService.recordSuccess(username);
         String authenticatedUsername = authentication.getName();
         return findByUsername(authenticatedUsername)
                 .orElseThrow(() -> new AuthUserNotFoundException(authenticatedUsername + " is not found"));

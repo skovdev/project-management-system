@@ -4,7 +4,6 @@ import local.pms.taskservice.entity.Task;
 
 import local.pms.taskservice.external.project.provider.ProjectOrganizationProvider;
 
-import local.pms.taskservice.repository.TaskRepository;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -30,9 +29,6 @@ import static org.mockito.Mockito.verify;
 class TaskOrganizationResolverTest {
 
     @Mock
-    private TaskRepository taskRepository;
-
-    @Mock
     private ProjectOrganizationProvider projectOrganizationProvider;
 
     @InjectMocks
@@ -48,12 +44,11 @@ class TaskOrganizationResolverTest {
 
         assertThat(result).isEqualTo(organizationId);
         verify(projectOrganizationProvider, never()).resolveOrganizationId(any());
-        verify(taskRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("resolve backfills organizationId from project-service and persists it when missing")
-    void should_backfillAndSaveOrganizationId_when_missing() {
+    @DisplayName("resolve looks up organizationId from project-service when missing")
+    void should_lookUpOrganizationId_when_missing() {
         var projectId = UUID.randomUUID();
         var organizationId = UUID.randomUUID();
         var task = buildTask(projectId, null);
@@ -63,8 +58,6 @@ class TaskOrganizationResolverTest {
         var result = taskOrganizationResolver.resolve(task);
 
         assertThat(result).isEqualTo(organizationId);
-        assertThat(task.getOrganizationId()).isEqualTo(organizationId);
-        verify(taskRepository).save(task);
     }
 
     private Task buildTask(UUID projectId, UUID organizationId) {

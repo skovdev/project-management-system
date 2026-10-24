@@ -366,14 +366,12 @@ class ProjectServiceImplTest {
         var organizationId = UUID.randomUUID();
         var project1 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
         var project2 = buildProject(UUID.randomUUID(), UUID.randomUUID(), organizationId);
-        var page = new PageImpl<>(List.of(project1, project2));
 
-        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(page);
+        when(projectRepository.findIdsByOrganizationId(organizationId)).thenReturn(List.of(project1.getId(), project2.getId()));
 
         projectService.deleteAllByOrganizationId(organizationId);
 
-        verify(projectRepository).deleteById(project1.getId());
-        verify(projectRepository).deleteById(project2.getId());
+        verify(projectRepository).softDeleteAllByOrganizationId(organizationId);
         verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project1.getId()));
         verify(eventPublisher).publishEvent(new ProjectDeletedEvent(project2.getId()));
     }
@@ -382,11 +380,10 @@ class ProjectServiceImplTest {
     @DisplayName("deleteAllByOrganizationId is a no-op when the organization has no projects")
     void should_doNothing_when_deleteAllByOrganizationIdWithNoProjects() {
         var organizationId = UUID.randomUUID();
-        when(projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+        when(projectRepository.findIdsByOrganizationId(organizationId)).thenReturn(List.of());
 
         projectService.deleteAllByOrganizationId(organizationId);
 
-        verify(projectRepository, never()).deleteById(any());
         verify(eventPublisher, never()).publishEvent(any(ProjectDeletedEvent.class));
     }
 

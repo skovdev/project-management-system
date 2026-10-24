@@ -178,9 +178,10 @@ public class TaskServiceImpl implements TaskService {
         log.info("All tasks deleted for projectId: {}", projectId);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    @Transactional(readOnly = true)
     public String generateAcceptanceCriteria(UUID taskId) {
         var task = findTaskOrThrow(taskId);
         organizationAccessProvider.verifyMembership(taskOrganizationResolver.resolve(task));

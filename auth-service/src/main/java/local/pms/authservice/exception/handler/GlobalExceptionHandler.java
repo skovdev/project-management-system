@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import local.pms.authservice.exception.TooManyLoginAttemptsException;
+
 import java.util.List;
 
 /**
@@ -78,6 +80,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
                 List.of("AUTH_USER_NOT_FOUND")
+        );
+    }
+
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ApiResponseDto<String> handleTooManyLoginAttemptsException(TooManyLoginAttemptsException ex) {
+        log.warn("Sign-in blocked: {}", ex.getMessage());
+        return ApiResponseDto.buildErrorResponse(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                ex.getMessage(),
+                List.of("TOO_MANY_LOGIN_ATTEMPTS")
         );
     }
 

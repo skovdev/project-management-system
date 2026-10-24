@@ -120,12 +120,14 @@ public class UserServiceImpl implements UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with id '" + id + "' not found"));
         checkOwnership(user);
-        if (user.getAvatarUrl() != null) {
-            storageService.deleteAvatar(user.getAvatarUrl());
-        }
+        var previousAvatarKey = user.getAvatarUrl();
+        // upload first: if it fails the user keeps their current avatar
         var avatarKey = storageService.uploadAvatar(id, file);
         user.setAvatarUrl(avatarKey);
         userRepository.save(user);
+        if (previousAvatarKey != null) {
+            storageService.deleteAvatar(previousAvatarKey);
+        }
         var presignedUrl = storageService.getPresignedUrl(avatarKey, PRESIGNED_URL_DURATION);
         return new AvatarUploadResponseDto(presignedUrl);
     }

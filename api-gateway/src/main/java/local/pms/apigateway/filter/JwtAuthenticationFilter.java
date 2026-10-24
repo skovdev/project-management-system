@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import local.pms.apigateway.config.jwt.JwtTokenProvider;
 
+import local.pms.apigateway.config.security.JwtServerSecurityContextRepository;
+
 import local.pms.apigateway.dto.ErrorResponse;
 
 import local.pms.apigateway.exception.InvalidJwtException;
@@ -59,6 +61,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         var path = exchange.getRequest().getPath().value();
 
         if (isPublicPath(path)) {
+            return chain.filter(exchange);
+        }
+
+        if (Boolean.TRUE.equals(exchange.getAttribute(JwtServerSecurityContextRepository.JWT_VALIDATED_ATTRIBUTE))) {
             return chain.filter(exchange);
         }
 

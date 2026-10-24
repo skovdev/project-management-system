@@ -51,6 +51,8 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var organizationMember = organizationAccessGuard.requireMembership(organizationId, authUserId);
         organizationAccessGuard.requireAtLeast(organizationId, organizationMember, OrganizationRoleType.ADMIN);
+        // nobody may grant a role higher than their own (an ADMIN must not be able to create OWNERs)
+        organizationAccessGuard.requireAtLeast(organizationId, organizationMember, request.role());
 
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> {
@@ -85,6 +87,7 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
         UUID authUserId = organizationAccessGuard.getAuthenticatedUserId();
         var callerMember = organizationAccessGuard.requireMembership(organizationId, authUserId);
         organizationAccessGuard.requireAtLeast(organizationId, callerMember, OrganizationRoleType.OWNER);
+        organizationRepository.findByIdForUpdate(organizationId);
 
         var targetMember = findMemberOrThrow(organizationId, memberId);
 
@@ -111,7 +114,10 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
         boolean isSelfRemoval = targetMember.getUserId().equals(authUserId);
         if (!isSelfRemoval) {
             organizationAccessGuard.requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
+            // an ADMIN must not be able to remove an OWNER
+            organizationAccessGuard.requireAtLeast(organizationId, callerMember, targetMember.getRole());
         }
+        organizationRepository.findByIdForUpdate(organizationId);
 
         if (targetMember.getRole() == OrganizationRoleType.OWNER
                 && organizationMemberRepository.countByOrganizationIdAndRole(organizationId, OrganizationRoleType.OWNER) <= 1) {

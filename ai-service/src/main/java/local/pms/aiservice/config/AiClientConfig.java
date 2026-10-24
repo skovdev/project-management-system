@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
 public class AiClientConfig {
 
     private static final String SECRET_NAME = "project-management-system-openai-api-key";
+    private static final int MAX_COMPLETION_TOKENS = 800;
     private static final String KEY_NAME = "openai-public-api-key";
 
     private final AwsSecretsManagerService awsSecretsManagerService;
@@ -48,6 +49,7 @@ public class AiClientConfig {
                 .build();
         var options = OpenAiChatOptions.builder()
                 .model(model)
+                .maxTokens(MAX_COMPLETION_TOKENS)
                 .build();
         return OpenAiChatModel.builder()
                 .openAiApi(openAiApi)

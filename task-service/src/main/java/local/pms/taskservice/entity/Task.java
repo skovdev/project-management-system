@@ -25,7 +25,9 @@ import java.util.UUID;
 @Getter
 @Table(name = "project_management_system_task", indexes = {
         @Index(name = "idx_task_project_id", columnList = "project_id"),
-        @Index(name = "idx_task_user_id", columnList = "user_id")
+        @Index(name = "idx_task_user_id", columnList = "user_id"),
+        @Index(name = "idx_task_organization_id", columnList = "organization_id"),
+        @Index(name = "idx_task_assignee_id", columnList = "assignee_id")
 })
 @SQLRestriction(value = "deleted = false")
 @SQLDelete(sql = "UPDATE project_management_system_task SET deleted = true WHERE id = ?")

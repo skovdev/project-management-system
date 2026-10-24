@@ -12,5 +12,4 @@ import org.mapstruct.factory.Mappers;
 public interface AuthUserMapper {
     AuthUserMapper INSTANCE = Mappers.getMapper(AuthUserMapper.class);
     AuthUserDto toDto(AuthUser authUser);
-    AuthUser toEntity(AuthUserDto authUserDto);
 }

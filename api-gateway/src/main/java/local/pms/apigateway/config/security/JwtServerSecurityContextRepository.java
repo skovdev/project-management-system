@@ -31,6 +31,8 @@ import java.util.List;
 public class JwtServerSecurityContextRepository implements ServerSecurityContextRepository {
 
     private static final Logger log = LoggerFactory.getLogger(JwtServerSecurityContextRepository.class);
+    public static final String JWT_VALIDATED_ATTRIBUTE = JwtServerSecurityContextRepository.class.getName() + ".validated";
+
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -52,6 +54,7 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 
         try {
             jwtTokenProvider.validateToken(token);
+            exchange.getAttributes().put(JWT_VALIDATED_ATTRIBUTE, Boolean.TRUE);
 
             var authentication = new UsernamePasswordAuthenticationToken(
                     jwtTokenProvider.extractUsername(token),

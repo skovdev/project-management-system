@@ -17,6 +17,8 @@ import local.pms.authservice.exception.AuthUsernameAlreadyExistsException;
 
 import local.pms.authservice.repository.AuthUserRepository;
 
+import local.pms.authservice.service.LoginAttemptService;
+
 import local.pms.authservice.service.impl.AuthServiceImpl;
 
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -71,6 +74,9 @@ class AuthServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private LoginAttemptService loginAttemptService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -127,7 +133,7 @@ class AuthServiceImplTest {
         var dto = new SignUpDto("bob", "pass123", "bob@mail.com", "Bob", "Smith");
         when(authUserRepository.findByUsername("bob")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("pass123")).thenReturn("hashed");
-        when(authUserRepository.save(any(AuthUser.class))).thenAnswer(inv -> {
+        when(authUserRepository.saveAndFlush(any(AuthUser.class))).thenAnswer(inv -> {
             AuthUser u = inv.getArgument(0);
             u.setId(UUID.randomUUID());
             return u;
@@ -135,7 +141,7 @@ class AuthServiceImplTest {
 
         authService.signUp(dto);
 
-        verify(authUserRepository).save(any(AuthUser.class));
+        verify(authUserRepository).saveAndFlush(any(AuthUser.class));
         var eventCaptor = ArgumentCaptor.forClass(UserDetailsCreatedEvent.class);
         verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
         var event = eventCaptor.getValue();
@@ -153,7 +159,7 @@ class AuthServiceImplTest {
                 .isInstanceOf(AuthUsernameAlreadyExistsException.class)
                 .hasMessageContaining("taken");
 
-        verify(authUserRepository, never()).save(any());
+        verify(authUserRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -162,7 +168,7 @@ class AuthServiceImplTest {
         var dto = new SignUpDto("bob", "pass123", "bob@mail.com", "Bob", "Smith");
         when(authUserRepository.findByUsername("bob")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashed");
-        when(authUserRepository.save(any())).thenThrow(new RuntimeException("DB error"));
+        when(authUserRepository.saveAndFlush(any())).thenThrow(new RuntimeException("DB error"));
 
         assertThatThrownBy(() -> authService.signUp(dto))
                 .isInstanceOf(AuthUserSignUpException.class);
@@ -294,7 +300,7 @@ class AuthServiceImplTest {
     }
 
     private AuthUserDto buildAuthUserDto(UUID id, String username) {
-        return new AuthUserDto(id, username, "hashed");
+        return new AuthUserDto(id, username);
     }
 
     private Authentication buildAuthentication(String username) {

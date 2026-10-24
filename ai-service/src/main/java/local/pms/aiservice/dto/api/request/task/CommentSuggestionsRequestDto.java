@@ -2,6 +2,7 @@ package local.pms.aiservice.dto.api.request.task;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
@@ -16,17 +17,21 @@ public record CommentSuggestionsRequestDto(
 
         @Schema(description = "Title of the task the comment belongs to", example = "Implement user login")
         @NotBlank(message = "Task title must not be blank")
+        @Size(max = 255, message = "Task title must be at most 255 characters")
         String taskTitle,
 
         @Schema(description = "Description of the task the comment belongs to", example = "Allow users to log in using email and password")
         @NotBlank(message = "Task description must not be blank")
+        @Size(max = 2000, message = "Task description must be at most 2000 characters")
         String taskDescription,
 
         @Schema(description = "Content of the comment to generate reply suggestions for", example = "I think we should use OAuth instead of a custom login flow.")
         @NotBlank(message = "Comment content must not be blank")
+        @Size(max = 2000, message = "Comment content must be at most 2000 characters")
         String commentContent,
 
         @Schema(description = "Recent prior comments on the same task, used as additional thread context; may be null or empty")
+        @Size(max = 20, message = "Thread context must contain at most 20 comments")
         List<String> threadContext
 
 ) {}

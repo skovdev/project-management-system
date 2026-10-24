@@ -122,7 +122,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public String generateProjectDescription(UUID projectId, UUID organizationId, String projectTitle) {
         organizationAccessProvider.verifyMembership(organizationId);
         findProjectOrThrow(projectId, organizationId);
@@ -143,11 +143,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void deleteAllByOrganizationId(UUID organizationId) {
         log.info("Deleting all projects for organizationId: {}", organizationId);
-        var projects = projectRepository.findAllByOrganizationId(organizationId, Pageable.unpaged());
-        projects.forEach(project -> {
-            projectRepository.deleteById(project.getId());
-            eventPublisher.publishEvent(new ProjectDeletedEvent(project.getId()));
-        });
+        var projectIds = projectRepository.findIdsByOrganizationId(organizationId);
+        projectRepository.softDeleteAllByOrganizationId(organizationId);
+        projectIds.forEach(projectId -> eventPublisher.publishEvent(new ProjectDeletedEvent(projectId)));
         log.info("All projects deleted for organizationId: {}", organizationId);
     }
 

@@ -127,68 +127,6 @@ class AuthRestControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("GET /{username} authenticated returns 200 with user data")
-    @WithMockUser(roles = "USER")
-    void should_return200_when_findByUsernameAuthenticated() throws Exception {
-        var id = UUID.randomUUID();
-        var authUserDto = buildAuthUserDto(id, "alice");
-        when(authService.findByUsername("alice")).thenReturn(Optional.of(authUserDto));
-
-        mockMvc.perform(get(BASE_URL + "/alice"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.username").value("alice"));
-    }
-
-    @Test
-    @DisplayName("GET /{username} when user not found returns 404")
-    @WithMockUser(roles = "USER")
-    void should_return404_when_usernameNotFound() throws Exception {
-        when(authService.findByUsername("ghost"))
-                .thenThrow(new AuthUserNotFoundException("User with username 'ghost' not found"));
-
-        mockMvc.perform(get(BASE_URL + "/ghost"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("GET /{username} unauthenticated returns 403")
-    void should_return403_when_findByUsernameUnauthenticated() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/alice"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("DELETE /{id} authenticated returns 200")
-    @WithMockUser(roles = "USER")
-    void should_return200_when_deleteByIdAuthenticated() throws Exception {
-        var id = UUID.randomUUID();
-        doNothing().when(authService).deleteById(id);
-
-        mockMvc.perform(delete(BASE_URL + "/" + id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200));
-    }
-
-    @Test
-    @DisplayName("DELETE /{id} when user not found returns 404")
-    @WithMockUser(roles = "USER")
-    void should_return404_when_deleteByIdNotFound() throws Exception {
-        var id = UUID.randomUUID();
-        doThrow(new AuthUserNotFoundException("User with ID '" + id + "' not found"))
-                .when(authService).deleteById(id);
-
-        mockMvc.perform(delete(BASE_URL + "/" + id))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("DELETE /{id} unauthenticated returns 403")
-    void should_return403_when_deleteByIdUnauthenticated() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/" + UUID.randomUUID()))
-                .andExpect(status().isForbidden());
-    }
-
     private String signUpJson(String username, String password, String email, String firstName, String lastName) {
         return String.format(
                 "{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"firstName\":\"%s\",\"lastName\":\"%s\"}",
@@ -196,6 +134,6 @@ class AuthRestControllerTest {
     }
 
     private AuthUserDto buildAuthUserDto(UUID id, String username) {
-        return new AuthUserDto(id, username, "hashed");
+        return new AuthUserDto(id, username);
     }
 }

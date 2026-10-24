@@ -1,13 +1,14 @@
 package local.pms.organizationservice.entity;
 
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.UniqueConstraint;
 
 import local.pms.organizationservice.type.OrganizationRoleType;
@@ -15,9 +16,7 @@ import local.pms.organizationservice.type.OrganizationRoleType;
 import lombok.Setter;
 import lombok.Getter;
 
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -25,9 +24,8 @@ import java.util.UUID;
 @Setter
 @Getter
 @Table(name = "project_management_system_organization_member",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "user_id"}))
-@SQLRestriction(value = "deleted = false")
-@SQLDelete(sql = "UPDATE project_management_system_organization_member SET deleted = true WHERE id = ?")
+        uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "user_id"}),
+        indexes = @Index(name = "idx_organization_member_user_id", columnList = "user_id"))
 public class OrganizationMember extends AbstractBaseModel {
 
     @ManyToOne(fetch = FetchType.LAZY)

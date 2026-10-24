@@ -165,7 +165,6 @@ public class CommentServiceImpl implements CommentService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public List<String> generateReplySuggestions(UUID taskId, UUID commentId) {
         var task = findTaskOrThrow(taskId);
         organizationAccessProvider.verifyMembership(taskOrganizationResolver.resolve(task));

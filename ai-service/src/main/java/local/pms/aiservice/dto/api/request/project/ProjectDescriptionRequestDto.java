@@ -2,6 +2,7 @@ package local.pms.aiservice.dto.api.request.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -12,5 +13,6 @@ import jakarta.validation.constraints.NotBlank;
 public record ProjectDescriptionRequestDto(
         @Schema(description = "Project title", example = "Project Management System")
         @NotBlank(message = "Title must not be blank")
+        @Size(max = 255, message = "Title must be at most 255 characters")
         String title
 ) {}

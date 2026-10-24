@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.kafka.annotation.KafkaListener;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -46,7 +48,7 @@ public class UserDetailsCreationConsumer {
             var userDto = buildUserDto(event);
             log.info("Attempting to save the user details");
             userService.save(userDto);
-        } catch (Exception e) {
+        } catch (DataIntegrityViolationException e) {
             log.error("Failed to process saving the user details. Error: {}", e.getMessage(), e);
             handleUserDetailsFailed(event);
         }

@@ -107,9 +107,27 @@ public class AWSS3StorageServiceImpl implements StorageService {
             throw new AvatarUploadException(
                     "Unsupported file type '" + file.getContentType() + "'. Allowed: " + ALLOWED_CONTENT_TYPES);
         }
+        if (!matchesMagicBytes(file, contentType)) {
+            throw new AvatarUploadException("File content does not match the declared type '" + contentType + "'");
+        }
         if (file.getSize() > MAX_FILE_SIZE_BYTES) {
             throw new AvatarUploadException(
                     "File size " + file.getSize() + " bytes exceeds the 5 MB limit");
+        }
+    }
+
+    private boolean matchesMagicBytes(MultipartFile file, String contentType) {
+        try (var in = file.getInputStream()) {
+            byte[] head = in.readNBytes(12);
+            return switch (contentType) {
+                case "image/jpeg" -> head.length >= 3 && (head[0] & 0xFF) == 0xFF && (head[1] & 0xFF) == 0xD8 && (head[2] & 0xFF) == 0xFF;
+                case "image/png" -> head.length >= 4 && (head[0] & 0xFF) == 0x89 && head[1] == 'P' && head[2] == 'N' && head[3] == 'G';
+                case "image/webp" -> head.length >= 12 && head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F'
+                        && head[8] == 'W' && head[9] == 'E' && head[10] == 'B' && head[11] == 'P';
+                default -> false;
+            };
+        } catch (IOException e) {
+            throw new AvatarUploadException("Avatar upload failed: could not read the provided file");
         }
     }
 

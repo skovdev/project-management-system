@@ -80,12 +80,11 @@ class UserDetailsCreationConsumerTest {
 
     @Test
     @DisplayName("receiveUserDataToCreate publishes compensation event when save fails")
-    @SuppressWarnings("unchecked")
     void should_publishCompensationEvent_when_saveFails() {
         var authUserId = UUID.randomUUID();
         var event = buildEvent(authUserId);
         when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(false);
-        doThrow(new RuntimeException("DB error")).when(userService).save(any());
+        doThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate email")).when(userService).save(any());
         when(kafkaTemplate.send(eq(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC), eq(event)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
@@ -94,6 +93,20 @@ class UserDetailsCreationConsumerTest {
         verify(kafkaTemplate).send(
                 eq(KafkaConstants.Topics.USER_DETAILS_CREATION_FAILED_TOPIC),
                 eq(event));
+    }
+
+    @Test
+    @DisplayName("receiveUserDataToCreate rethrows transient failures without compensating, so they are retried")
+    void should_rethrowWithoutCompensation_when_saveFailsTransiently() {
+        var authUserId = UUID.randomUUID();
+        var event = buildEvent(authUserId);
+        when(userService.existsByAuthUserIdIncludingDeleted(authUserId)).thenReturn(false);
+        doThrow(new RuntimeException("DB down")).when(userService).save(any());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> consumer.receiveUserDataToCreate(event))
+                .isInstanceOf(RuntimeException.class);
+
+        verify(kafkaTemplate, never()).send(any(), any());
     }
 
     @Test

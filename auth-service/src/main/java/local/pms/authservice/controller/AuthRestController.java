@@ -17,7 +17,6 @@ import local.pms.authservice.dto.api.response.ApiResponseDto;
 
 import local.pms.authservice.dto.authuser.AuthUserDto;
 
-import local.pms.authservice.exception.AuthUserNotFoundException;
 
 import local.pms.authservice.service.AuthService;
 
@@ -30,16 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static local.pms.authservice.constant.VersionAPI.API_V1;
 
@@ -80,31 +75,5 @@ public class AuthRestController {
                 "authUserId", authUserDto.id(),
                 "username", authUserDto.username(),
                 "token", token));
-    }
-
-    @Operation(summary = "Find user by username")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-            @ApiResponse(responseCode = "404", description = "User not found")
-    })
-    @GetMapping(value = "/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponseDto<AuthUserDto> findByUsername(@Parameter(description = "This parameter contains the username to find")
-                                                          @PathVariable("username") String username) {
-        return ApiResponseDto.buildSuccessResponse(
-                authService.findByUsername(username)
-                        .orElseThrow(() -> new AuthUserNotFoundException("User with username '" + username + "' not found")));
-    }
-
-    @Operation(summary = "Delete user by identifier")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User successfully deleted"),
-            @ApiResponse(responseCode = "404", description = "User not found")
-    })
-    @DeleteMapping(value = "/{id}")
-    public ApiResponseDto<String> deleteById(@Parameter(description = "This parameter contains the user's id to delete")
-                               @PathVariable("id") UUID id) {
-        authService.deleteById(id);
-        return ApiResponseDto.buildSuccessResponse("User with ID '" + id + "' successfully deleted");
     }
 }

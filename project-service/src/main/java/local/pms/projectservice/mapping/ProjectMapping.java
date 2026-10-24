@@ -5,6 +5,7 @@ import local.pms.projectservice.dto.ProjectDto;
 import local.pms.projectservice.entity.Project;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import org.mapstruct.factory.Mappers;
 
@@ -12,5 +13,6 @@ import org.mapstruct.factory.Mappers;
 public interface ProjectMapping {
     ProjectMapping INSTANCE = Mappers.getMapper(ProjectMapping.class);
     ProjectDto toDto(Project project);
+    @Mapping(target = "id", ignore = true)
     Project toEntity(ProjectDto projectDto);
 }

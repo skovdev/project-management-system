@@ -7,7 +7,11 @@ import local.pms.organizationservice.type.OrganizationRoleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import org.springframework.data.repository.query.Param;
 
 import java.util.UUID;
 import java.util.Optional;
@@ -18,5 +22,7 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
     Optional<OrganizationMember> findByIdAndOrganizationId(UUID id, UUID organizationId);
     boolean existsByOrganizationIdAndUserId(UUID organizationId, UUID userId);
     long countByOrganizationIdAndRole(UUID organizationId, OrganizationRoleType role);
-    void deleteAllByOrganizationId(UUID organizationId);
+    @Modifying(clearAutomatically = true)
+    @Query("delete from OrganizationMember m where m.organization.id = :organizationId")
+    void deleteAllByOrganizationId(@Param("organizationId") UUID organizationId);
 }

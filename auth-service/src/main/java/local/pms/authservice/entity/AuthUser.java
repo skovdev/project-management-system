@@ -23,7 +23,7 @@ import org.hibernate.annotations.SQLRestriction;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuthUser extends AbstractBaseModel {
 
-    @Column(name = "username", nullable = false)
+    @Column(name = "username", nullable = false, unique = true)
     String username;
 
     @Column(name = "password", nullable = false)

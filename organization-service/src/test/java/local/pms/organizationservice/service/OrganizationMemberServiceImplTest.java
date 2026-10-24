@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doNothing;
 
 @ExtendWith(MockitoExtension.class)
 class OrganizationMemberServiceImplTest {
@@ -368,6 +369,50 @@ class OrganizationMemberServiceImplTest {
 
         assertThatThrownBy(() -> organizationMemberService.removeMember(organizationId, memberId))
                 .isInstanceOf(LastOwnerRemovalException.class);
+
+        verify(organizationMemberRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("addMember rejects granting a role higher than the caller's own (ADMIN cannot create OWNER)")
+    void should_throwAccessDenied_when_adminGrantsOwnerRole() {
+        var organizationId = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var organization = buildOrganization(organizationId);
+        var callerMember = buildMember(organization, authUserId, OrganizationRoleType.ADMIN);
+        var request = new AddMemberRequestDto(UUID.randomUUID(), OrganizationRoleType.OWNER);
+
+        when(organizationAccessGuard.getAuthenticatedUserId()).thenReturn(authUserId);
+        when(organizationAccessGuard.requireMembership(organizationId, authUserId)).thenReturn(callerMember);
+        doNothing().when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
+        doThrow(new OrganizationAccessDeniedException("Access denied"))
+                .when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.OWNER);
+
+        assertThatThrownBy(() -> organizationMemberService.addMember(organizationId, request))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+
+        verify(organizationMemberRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("removeMember rejects an ADMIN removing an OWNER")
+    void should_throwAccessDenied_when_adminRemovesOwner() {
+        var organizationId = UUID.randomUUID();
+        var authUserId = UUID.randomUUID();
+        var memberId = UUID.randomUUID();
+        var organization = buildOrganization(organizationId);
+        var callerMember = buildMember(organization, authUserId, OrganizationRoleType.ADMIN);
+        var targetMember = buildMember(organization, UUID.randomUUID(), OrganizationRoleType.OWNER);
+
+        when(organizationAccessGuard.getAuthenticatedUserId()).thenReturn(authUserId);
+        when(organizationAccessGuard.requireMembership(organizationId, authUserId)).thenReturn(callerMember);
+        when(organizationMemberRepository.findByIdAndOrganizationId(memberId, organizationId)).thenReturn(Optional.of(targetMember));
+        doNothing().when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.ADMIN);
+        doThrow(new OrganizationAccessDeniedException("Access denied"))
+                .when(organizationAccessGuard).requireAtLeast(organizationId, callerMember, OrganizationRoleType.OWNER);
+
+        assertThatThrownBy(() -> organizationMemberService.removeMember(organizationId, memberId))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
 
         verify(organizationMemberRepository, never()).deleteById(any());
     }

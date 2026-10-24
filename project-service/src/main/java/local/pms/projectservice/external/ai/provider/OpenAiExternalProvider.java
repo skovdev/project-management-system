@@ -27,9 +27,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OpenAiExternalProvider implements AiExternalProvider {
 
-    private static final String FALLBACK_MESSAGE_TEMPLATE =
-            "Project description generation is temporarily unavailable. Reference ID: %s";
-
     private final AiFeignClient aiFeignClient;
 
     @Override
@@ -58,8 +55,7 @@ public class OpenAiExternalProvider implements AiExternalProvider {
     }
 
     private String fallbackProjectDescription(String projectTitle, Throwable t) {
-        var correlationId = UUID.randomUUID().toString();
-        log.error("AI call failed for projectTitle='{}', correlationId='{}'.", projectTitle, correlationId, t);
-        return String.format(FALLBACK_MESSAGE_TEMPLATE, correlationId);
+        log.error("AI call failed for projectTitle='{}'.", projectTitle, t);
+        throw new DescriptionGenerationException("Project description generation is temporarily unavailable", t);
     }
 }
