@@ -73,16 +73,16 @@ Infrastructure:
 
 ## API Reference (v1)
 
-All endpoints are routed through `api-gateway` at port `8762`. JWT is required for all endpoints except auth.
+All endpoints are routed through `api-gateway` at port `8762`. JWT is required for all endpoints except auth. The gateway applies a 2s connect timeout and a 30s response timeout to downstream calls. Paginated endpoints cap the page size at 1000.
 
 ### Authentication
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/auth/sign-up` | Register a new user |
+| `POST` | `/api/v1/auth/sign-up` | Register a new user (password: 8–255 characters) |
 | `POST` | `/api/v1/auth/sign-in` | Log in and receive a JWT |
-| `GET` | `/api/v1/auth/{username}` | Find an auth user by username |
-| `DELETE` | `/api/v1/auth/{id}` | Delete an auth user by ID |
+
+Sign-in has in-memory brute-force protection: after 5 consecutive failed attempts a username is blocked for 5 minutes and `sign-in` returns `429 Too Many Requests`. State is per `auth-service` instance.
 
 ### Organizations
 
@@ -160,7 +160,6 @@ Served by `ai-service` (OpenAI). Responses are returned to the caller and are no
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/ai/ask` | General AI chat request |
 | `POST` | `/api/v1/ai/project/description` | Generate a project description |
 | `POST` | `/api/v1/ai/task/acceptance-criteria` | Generate task acceptance criteria |
 | `POST` | `/api/v1/ai/task/comment-suggestions` | Generate comment reply suggestions |
