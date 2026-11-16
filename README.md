@@ -69,7 +69,7 @@ Infrastructure:
 | AI | OpenAI Java SDK 2.12.0 |
 | Testing | JUnit 5, Mockito, Testcontainers 1.21.0 |
 | Build | Maven |
-| Deployment | Docker, Docker Compose, Docker Swarm |
+| Deployment | Docker, Docker Compose |
 
 ## API Reference (v1)
 
@@ -196,12 +196,6 @@ bash build-all-docker-images.sh
 docker-compose up
 ```
 
-### Deploy as a Docker Swarm stack
-
-```bash
-bash docker_swarm_deploy.sh
-```
-
 ### Build all modules (without Docker)
 
 ```bash
@@ -235,7 +229,6 @@ project-management-system/
 ├── k6/                  # k6 load/stress test scripts
 ├── monitoring/          # Prometheus & Grafana config
 ├── docker-compose.yml
-├── docker_swarm_deploy.sh
 └── build-all-docker-images.sh
 ```
 
