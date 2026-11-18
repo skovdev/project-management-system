@@ -3,6 +3,7 @@
 * Java 21, Spring Boot 3.3.2, Spring Cloud 4.1.3
 * Microservices architecture (10 services)
 * Communication: OpenFeign (sync), Kafka Saga (async)
+* Infrastructure: PostgreSQL, Kafka, Redis (task-service caching), Zipkin (tracing)
 * Security: JWT via api-gateway
 
 # Modules
@@ -10,6 +11,13 @@
 * auth-service, user-service, organization-service, project-service, task-service
 * notification-service, ai-service, api-gateway, service-discovery, config-server
 * app-client (Angular frontend, outside the scope of these Java rules)
+
+# Repo Layout
+
+* spring-config/configurations: per-service config served by config-server (`-local` / `-docker` variants)
+* postgresql/init.sql: database bootstrap (schema is managed by Hibernate `ddl-auto`, no Flyway/Liquibase)
+* k6: load/stress test scripts
+* postman: API collections
 
 # Build & Run
 
@@ -88,7 +96,8 @@
 
 # Performance & Reliability
 
-* Use Resilience4j for fault tolerance (retry, circuit breaker)
+* Use Resilience4j for fault tolerance (retry, circuit breaker); currently a dependency of project-service, task-service and organization-service
+* Redis caching lives in task-service; keep cache eviction consistent with writes
 * Avoid blocking calls inside async/Kafka flows
 * Ensure idempotency in Saga consumers
 
